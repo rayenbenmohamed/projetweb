@@ -1,0 +1,52 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Modifier l'offre | SyfonuRH{% endblock %}
+{% block page_title %}Modifier : {{ job_offre.title }}{% endblock %}
+
+{% block content %}
+<div class="row g-6 mt-2 justify-content-center">
+    <div class="col-xl-8">
+        <div class="card card-lg">
+            <div class="card-body p-6">
+                <form method="post">
+                    <div class="mb-4">
+                        <label class="form-label">Titre du poste <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control" value="{{ job_offre.title }}" required>
+                    </div>
+                    
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Lieu</label>
+                            <input type="text" name="location" class="form-control" value="{{ job_offre.location }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Salaire annuel (€)</label>
+                            <input type="number" name="salary" class="form-control" value="{{ job_offre.salary }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Type d'emploi</label>
+                        <select name="employment_type" class="form-select">
+                            <option value="CDI" {{ job_offre.employmentType == 'CDI' ? 'selected' }}>CDI</option>
+                            <option value="CDD" {{ job_offre.employmentType == 'CDD' ? 'selected' }}>CDD</option>
+                            <option value="Freelance" {{ job_offre.employmentType == 'Freelance' ? 'selected' }}>Freelance</option>
+                            <option value="Stage" {{ job_offre.employmentType == 'Stage' ? 'selected' }}>Stage</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Description détaillée</label>
+                        <textarea name="description" class="form-control" rows="8">{{ job_offre.description }}</textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-6">
+                        <a href="{{ path('app_job_offre_index') }}" class="btn btn-light">Annuler</a>
+                        <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
