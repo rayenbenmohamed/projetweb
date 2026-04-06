@@ -1,0 +1,65 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block page_title %}Liste des CVs{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Gestion des CVs</h1>
+        <a href="{{ path('app_cv_new') }}" class="btn btn-primary shadow-sm">
+            <i class="ti ti-plus"></i> Créer un nouveau CV
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0 border-top border-primary border-3">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Id</th>
+                            <th>Nom complet</th>
+                            <th>Titre</th>
+                            <th>Email</th>
+                            <th>Créé le</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for cv in cvs %}
+                        <tr>
+                            <td class="fw-bold">#{{ cv.id }}</td>
+                            <td>{{ cv.fullName }}</td>
+                            <td>
+                                {% if cv.title %}
+                                    <span class="badge bg-info-subtle text-info fw-semibold">{{ cv.title }}</span>
+                                {% else %}
+                                    <span class="text-muted fst-italic">Non défini</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ cv.email }}</td>
+                            <td>{{ cv.createdAt ? cv.createdAt|date('d/m/Y H:i') : '' }}</td>
+                            <td class="text-end">
+                                <a href="{{ path('app_cv_show', {'id': cv.id}) }}" class="btn btn-sm btn-outline-info" title="Voir">
+                                    <i class="ti ti-eye"></i>
+                                </a>
+                                <a href="{{ path('app_cv_edit', {'id': cv.id}) }}" class="btn btn-sm btn-outline-primary ms-1" title="Modifier">
+                                    <i class="ti ti-edit"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="ti ti-file-x fs-1 d-block mb-2"></i>
+                                Aucun CV n'a été trouvé.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

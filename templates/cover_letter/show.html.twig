@@ -1,0 +1,46 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block page_title %}Détails de la Lettre{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Détails de la Lettre</h1>
+        <div>
+            <a href="{{ path('app_cover_letter_index') }}" class="btn btn-outline-secondary me-2">
+                <i class="ti ti-list"></i> Retour à la liste
+            </a>
+            <a href="{{ path('app_cover_letter_edit', {'id': cover_letter.id}) }}" class="btn btn-primary">
+                <i class="ti ti-edit"></i> Modifier
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow border-0 border-top border-info border-3 mb-4">
+        <div class="card-body p-4">
+            <div class="row">
+                <div class="col-md-4 border-end">
+                    <h4 class="text-primary mb-3">{{ cover_letter.companyName }}</h4>
+                    <p class="text-muted"><i class="ti ti-briefcase me-2"></i> Poste: {{ cover_letter.position }}</p>
+                    <p><i class="ti ti-user me-2"></i> À l'attention de : {{ cover_letter.recipientName ?: 'Non renseigné' }}</p>
+                    <p><i class="ti ti-id me-2"></i> Titre contact : {{ cover_letter.recipientTitle ?: 'Non renseigné' }}</p>
+                    <p><i class="ti ti-map-pin me-2"></i> {{ cover_letter.companyAddress ?: 'Adresse non renseignée' }}</p>
+                    
+                    <div class="mt-4">
+                        {{ include('cover_letter/_delete_form.html.twig') }}
+                    </div>
+                </div>
+                <div class="col-md-8 ps-md-4">
+                    <h5 class="mb-3 text-secondary border-bottom pb-2">Contenu de la lettre</h5>
+                    <div class="bg-light p-4 rounded border text-break font-monospace" style="font-size: 0.95rem;">
+                        {{ cover_letter.letterContent|nl2br }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer bg-light text-muted small">
+            Créée le : {{ cover_letter.createdAt ? cover_letter.createdAt|date('d/m/Y H:i') : '' }} | Visibilité : {{ cover_letter.isPublic ? 'Publique' : 'Privée' }}
+        </div>
+    </div>
+</div>
+{% endblock %}

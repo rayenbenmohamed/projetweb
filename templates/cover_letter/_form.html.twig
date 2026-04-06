@@ -1,0 +1,44 @@
+{{ form_start(form, {'attr': {'class': 'needs-validation'}}) }}
+    
+    <div class="row mb-3">
+        <div class="col-md-6 mb-3 mb-md-0">
+            {{ form_row(form.companyName) }}
+        </div>
+        <div class="col-md-6">
+            {{ form_row(form.position) }}
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-6 mb-3 mb-md-0">
+            {{ form_row(form.recipientName) }}
+        </div>
+        <div class="col-md-6">
+            {{ form_row(form.recipientTitle) }}
+        </div>
+    </div>
+
+    <div class="mb-3">
+        {{ form_row(form.companyAddress) }}
+    </div>
+
+    <div class="mb-4">
+        {{ form_row(form.letterContent) }}
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            {{ form_row(form.user) }}
+        </div>
+        <div class="col-md-6 d-flex align-items-center pt-3">
+            <div class="form-check form-switch mt-3">
+                {{ form_widget(form.isPublic) }}
+                {{ form_label(form.isPublic) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end">
+        <button class="btn btn-primary px-4 py-2 shadow-sm">{{ button_label|default('Enregistrer la lettre') }} <i class="ti ti-check ms-1"></i></button>
+    </div>
+{{ form_end(form) }}

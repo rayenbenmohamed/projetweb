@@ -1,0 +1,35 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block page_title %}Modifier CV{% endblock %}
+
+{% block content %}
+    <div class="container-fluid mt-4 mb-5">
+        <div class="row mb-4">
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">Modifier le CV : {{ cv.fullName }}</h1>
+                <div>
+                    <a href="{{ path('app_cv_index') }}" class="btn btn-outline-secondary shadow-sm me-2">
+                        <i class="ti ti-list"></i> Liste des CVs
+                    </a>
+                    <a href="{{ path('app_cv_show', {'id': cv.id}) }}" class="btn btn-outline-info shadow-sm">
+                        <i class="ti ti-eye"></i> Aperçu
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12 col-xl-8 mx-auto">
+                <div class="card shadow border-0 border-top border-warning border-3">
+                    <div class="card-body p-4">
+                        <div class="alert alert-info d-flex align-items-center" role="alert">
+                            <i class="ti ti-info-circle fs-4 me-2"></i>
+                            <div>Assurez-vous que les informations sont à jour. Modifié pour la dernière fois le <strong>{{ cv.updatedAt ? cv.updatedAt|date('d/m/Y H:i') : '' }}</strong>.</div>
+                        </div>
+                        {{ include('cv/_form.html.twig', {'button_label': 'Mettre à jour'}) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
