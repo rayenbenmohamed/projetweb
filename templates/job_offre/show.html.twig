@@ -4,78 +4,150 @@
 
 {% block content %}
 <div class="row g-6 mt-2">
+
+    {# === COLONNE PRINCIPALE === #}
     <div class="col-xl-8">
-        <div class="card card-lg mb-6">
+
+        {# En-tête de l'offre #}
+        <div class="card card-lg mb-4">
             <div class="card-body p-6">
-                <div class="d-flex justify-content-between align-items-start mb-6">
-                    <div>
-                        <h2 class="mb-1">{{ job_offre.title }}</h2>
-                        <div class="d-flex gap-4 text-secondary small">
-                            <span><i class="ti ti-map-pin me-1"></i>{{ job_offre.location }}</span>
-                            <span><i class="ti ti-briefcase me-1"></i>{{ job_offre.employmentType }}</span>
-                            <span><i class="ti ti-calendar me-1"></i>Publiée le {{ job_offre.createdAt|date('d/m/Y') }}</span>
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div class="d-flex gap-3 align-items-center">
+                        <div class="icon-shape icon-xl rounded-3 bg-primary-subtle text-primary">
+                            <i class="ti ti-briefcase fs-2"></i>
+                        </div>
+                        <div>
+                            <h2 class="mb-1 fs-4 fw-bold">{{ job_offre.title }}</h2>
+                            <div class="d-flex flex-wrap gap-3 text-secondary small">
+                                {% if job_offre.location %}
+                                <span><i class="ti ti-map-pin me-1"></i>{{ job_offre.location }}</span>
+                                {% endif %}
+                                {% if job_offre.employmentType %}
+                                <span><i class="ti ti-briefcase me-1"></i>{{ job_offre.employmentType }}</span>
+                                {% endif %}
+                                <span><i class="ti ti-calendar me-1"></i>Publiée le {{ job_offre.createdAt|date('d/m/Y') }}</span>
+                            </div>
                         </div>
                     </div>
-                    <span class="badge bg-success-subtle text-success-emphasis px-3 py-2">
-                        {{ job_offre.status|capitalize }}
+                    {% set statusClass = job_offre.status == 'PUBLISHED' ? 'success' : (job_offre.status == 'DRAFT' ? 'warning' : 'secondary') %}
+                    {% set statusLabel = job_offre.status == 'PUBLISHED' ? 'Publiée' : (job_offre.status == 'DRAFT' ? 'Brouillon' : job_offre.status) %}
+                    <span class="badge bg-{{ statusClass }}-subtle text-{{ statusClass }}-emphasis px-3 py-2 fs-6">
+                        {{ statusLabel }}
                     </span>
                 </div>
 
-                <div class="mb-8">
-                    <h5 class="mb-3">Description du poste</h5>
-                    <div class="text-secondary lh-lg">
-                        {{ job_offre.description|nl2br }}
-                    </div>
-                </div>
-
-                <div class="mb-8">
-                    <h5 class="mb-3">Informations complémentaires</h5>
-                    <div class="row g-4 mb-4">
-                        <div class="col-md-6">
-                            <div class="d-flex align-items-center gap-2 mb-2">
-                                <i class="ti ti-coin text-primary fs-4"></i>
-                                <span class="fw-semibold">{{ job_offre.salary|number_format(0, ',', ' ') }} € / an</span>
+                {# Infos rapides #}
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-4">
+                        <div class="bg-primary-subtle rounded-3 p-3 text-center">
+                            <i class="ti ti-coin fs-3 text-primary d-block mb-1"></i>
+                            <div class="fw-semibold">
+                                {% if job_offre.salary %}
+                                    {{ job_offre.salary|number_format(0, ',', ' ') }} €/an
+                                {% else %}
+                                    Non précisé
+                                {% endif %}
                             </div>
-                            <p class="text-secondary small">
-                                Salaire <span class="badge bg-{{ job_offre.isSalaryNegotiable ? 'success' : 'secondary' }}-subtle text-{{ job_offre.isSalaryNegotiable ? 'success' : 'secondary' }}-emphasis">
-                                    {{ job_offre.isSalaryNegotiable ? 'négociable' : 'non négociable' }}
-                                </span>
-                            </p>
-                        </div>
-                        {% if job_offre.expiresAt %}
-                        <div class="col-md-6">
-                            <div class="d-flex align-items-center gap-2 mb-2">
-                                <i class="ti ti-alarm text-danger fs-4"></i>
-                                <span class="fw-semibold">Date d'expiration</span>
+                            <div class="small text-secondary">
+                                {% if job_offre.isSalaryNegotiable %}<span class="badge bg-success-subtle text-success-emphasis">Négociable</span>{% endif %}
                             </div>
-                            <p class="text-secondary small">Cette offre expire le {{ job_offre.expiresAt|date('d/m/Y à H:i') }}.</p>
                         </div>
-                        {% endif %}
                     </div>
-                    
-                    {% if job_offre.advantages %}
-                    <h5 class="mb-3">Avantages</h5>
-                    <div class="d-flex flex-wrap gap-2 mb-6">
-                        {% for advantage in job_offre.advantages|split(',') %}
-                            {% set advantage = advantage|trim %}
-                            {% if advantage %}
-                            <span class="badge bg-primary-subtle text-primary-emphasis px-3 py-2 rounded-pill fs-6">
-                                {{ advantage }}
-                            </span>
+                    <div class="col-sm-4">
+                        <div class="bg-info-subtle rounded-3 p-3 text-center">
+                            <i class="ti ti-users fs-3 text-info d-block mb-1"></i>
+                            <div class="fw-semibold">{{ job_offre.jobApplications|length }} candidature(s)</div>
+                            <div class="small text-secondary">reçues</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="bg-{{ job_offre.expiresAt and job_offre.expiresAt < date() ? 'danger' : 'warning' }}-subtle rounded-3 p-3 text-center">
+                            <i class="ti ti-alarm fs-3 text-{{ job_offre.expiresAt and job_offre.expiresAt < date() ? 'danger' : 'warning' }} d-block mb-1"></i>
+                            {% if job_offre.expiresAt %}
+                                <div class="fw-semibold">{{ job_offre.expiresAt|date('d/m/Y') }}</div>
+                                <div class="small text-secondary">Date d'expiration</div>
+                            {% else %}
+                                <div class="fw-semibold">—</div>
+                                <div class="small text-secondary">Pas de date limite</div>
                             {% endif %}
-                        {% endfor %}
+                        </div>
                     </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
+
+        {# Description #}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="ti ti-file-description me-2"></i>Description du poste</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-secondary lh-lg">
+                    {{ job_offre.description|nl2br }}
+                </div>
+            </div>
+        </div>
+
+        {# Avantages #}
+        {% if job_offre.advantages %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="ti ti-star me-2"></i>Avantages</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    {% for advantage in job_offre.advantages|split(',') %}
+                        {% set advantage = advantage|trim %}
+                        {% if advantage %}
+                        <span class="badge bg-primary-subtle text-primary-emphasis px-3 py-2 rounded-pill fs-6">
+                            <i class="ti ti-check me-1"></i>{{ advantage }}
+                        </span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {# Candidatures #}
+        {% if job_offre.jobApplications|length > 0 %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="ti ti-users me-2"></i>Candidatures reçues ({{ job_offre.jobApplications|length }})</h5>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Candidat</th>
+                            <th>Date</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for application in job_offre.jobApplications %}
+                        <tr>
+                            <td>{{ application.candidate.firstName ?? 'Candidat' }} {{ application.candidate.lastName ?? '' }}</td>
+                            <td>{{ application.createdAt is defined ? application.createdAt|date('d/m/Y') : '—' }}</td>
+                            <td><span class="badge bg-secondary-subtle text-secondary-emphasis">{{ application.status ?? 'En attente' }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
+    {# === COLONNE LATÉRALE === #}
     <div class="col-xl-4">
-        <div class="card card-lg mb-6">
-            <div class="card-body p-6">
-                <h5 class="mb-4">Actions</h5>
-                <div class="d-grid gap-3">
+        {# Actions #}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
                     {% if is_granted('ROLE_CANDIDAT') %}
                     <a href="{{ path('app_job_application_new', {id: job_offre.id}) }}" class="btn btn-primary">
                         <i class="ti ti-send me-1"></i> Postuler maintenant
@@ -83,31 +155,83 @@
                     {% elseif not app.user %}
                     <a href="{{ path('app_login') }}" class="btn btn-primary">Connectez-vous pour postuler</a>
                     {% endif %}
+
                     {% if is_granted('ROLE_RECRUTEUR') or is_granted('ROLE_ADMIN') %}
-                    <a href="{{ path('app_job_offre_edit', {id: job_offre.id}) }}" class="btn btn-outline-secondary">
-                        <i class="ti ti-pencil me-1"></i> Modifier l'offre
+                    <a href="{{ path('app_job_offre_edit', {id: job_offre.id}) }}" class="btn btn-warning">
+                        <i class="ti ti-pencil me-2"></i>Modifier l'offre
                     </a>
+                    <form method="post" action="{{ path('app_job_offre_duplicate', {id: job_offre.id}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('duplicate' ~ job_offre.id) }}">
+                        <button type="submit" class="btn btn-outline-primary w-100">
+                            <i class="ti ti-copy me-2"></i>Dupliquer l'offre
+                        </button>
+                    </form>
                     {% endif %}
-                    <hr class="my-2">
-                    <a href="{{ path('app_job_offre_index') }}" class="btn btn-link btn-sm text-secondary">
-                        <i class="ti ti-arrow-left me-1"></i> Retour à la liste
+                    <hr class="my-1">
+                    <a href="{{ path('app_job_offre_index') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="ti ti-arrow-left me-2"></i>Retour à la liste
                     </a>
+                    {% if is_granted('ROLE_RECRUTEUR') or is_granted('ROLE_ADMIN') %}
+                    <form method="post" action="{{ path('app_job_offre_delete', {id: job_offre.id}) }}"
+                          onsubmit="return confirm('Confirmer la suppression de cette offre ?');">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ job_offre.id) }}">
+                        <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                            <i class="ti ti-trash me-2"></i>Supprimer l'offre
+                        </button>
+                    </form>
+                    {% endif %}
                 </div>
             </div>
         </div>
 
-        <div class="card card-lg">
-            <div class="card-body p-6">
-                <h5 class="mb-4">Recruteur</h5>
+        {# Recruteur #}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Recruteur</h5>
+            </div>
+            <div class="card-body">
                 <div class="d-flex align-items-center gap-3">
-                    <div class="avatar avatar-md rounded-circle bg-primary-subtle text-primary">
-                        <i class="ti ti-user fs-3"></i>
+                    <div class="avatar avatar-md rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                        <i class="ti ti-user fs-4"></i>
                     </div>
                     <div>
                         <h6 class="mb-0">{{ job_offre.user ? (job_offre.user.firstName ~ ' ' ~ job_offre.user.lastName) : 'Non renseigné' }}</h6>
-                        <span class="small text-secondary">Service Recrutement</span>
+                        <span class="small text-secondary">{{ job_offre.user ? job_offre.user.email : 'Service Recrutement' }}</span>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        {# Infos dates #}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Informations</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-secondary small">Créée le</span>
+                        <span class="fw-semibold small">{{ job_offre.createdAt|date('d/m/Y à H:i') }}</span>
+                    </li>
+                    {% if job_offre.publishedAt %}
+                    <li class="d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-secondary small">Publiée le</span>
+                        <span class="fw-semibold small">{{ job_offre.publishedAt|date('d/m/Y à H:i') }}</span>
+                    </li>
+                    {% endif %}
+                    {% if job_offre.updatedAt %}
+                    <li class="d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-secondary small">Modifiée le</span>
+                        <span class="fw-semibold small">{{ job_offre.updatedAt|date('d/m/Y à H:i') }}</span>
+                    </li>
+                    {% endif %}
+                    {% if job_offre.expiresAt %}
+                    <li class="d-flex justify-content-between py-2">
+                        <span class="text-secondary small">Expire le</span>
+                        <span class="fw-semibold small text-danger">{{ job_offre.expiresAt|date('d/m/Y à H:i') }}</span>
+                    </li>
+                    {% endif %}
+                </ul>
             </div>
         </div>
     </div>

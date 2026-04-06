@@ -107,12 +107,42 @@ class JobOffreController extends AbstractController
         ]);
     }
 
+    #[Route('/{id}/duplicate', name: 'app_job_offre_duplicate', methods: ['POST'])]
+    public function duplicate(Request $request, JobOffre $jobOffre, EntityManagerInterface $entityManager, UserRepository $userRepository): Response
+    {
+        if (!$this->isCsrfTokenValid('duplicate' . $jobOffre->getId(), $request->request->get('_token'))) {
+            return $this->redirectToRoute('app_job_offre_index');
+        }
+
+        $copy = new JobOffre();
+        $copy->setTitle('[Copie] ' . $jobOffre->getTitle());
+        $copy->setDescription($jobOffre->getDescription());
+        $copy->setLocation($jobOffre->getLocation());
+        $copy->setSalary($jobOffre->getSalary());
+        $copy->setEmploymentType($jobOffre->getEmploymentType());
+        $copy->setSalaryNegotiable($jobOffre->isSalaryNegotiable());
+        $copy->setAdvantages($jobOffre->getAdvantages());
+        $copy->setStatus('DRAFT');
+        $copy->setPublishedAt(new \DateTime());
+
+        $user = $this->getUser() ?: $userRepository->find(1);
+        $copy->setUser($user);
+
+        $entityManager->persist($copy);
+        $entityManager->flush();
+
+        $this->addFlash('success', 'Offre dupliquée avec succès (statut: Brouillon).');
+
+        return $this->redirectToRoute('app_job_offre_index');
+    }
+
     #[Route('/{id}', name: 'app_job_offre_delete', methods: ['POST'])]
     public function delete(Request $request, JobOffre $jobOffre, EntityManagerInterface $entityManager): Response
     {
         if ($this->isCsrfTokenValid('delete' . $jobOffre->getId(), $request->request->get('_token'))) {
             $entityManager->remove($jobOffre);
             $entityManager->flush();
+            $this->addFlash('success', 'Offre supprimée avec succès.');
         }
 
         return $this->redirectToRoute('app_job_offre_index');
