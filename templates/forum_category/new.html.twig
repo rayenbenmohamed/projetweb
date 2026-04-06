@@ -1,11 +1,80 @@
-{% extends 'base.html.twig' %}
+{% extends 'layout/admin.html.twig' %}
+{% form_theme form 'bootstrap_5_layout.html.twig' %}
 
-{% block title %}New ForumCategory{% endblock %}
+{% block title %}Nouvelle Catégorie{% endblock %}
+{% block page_title %}Créer une Catégorie{% endblock %}
 
-{% block body %}
-    <h1>Create new ForumCategory</h1>
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .premium-form-container {
+            background: linear-gradient(145deg, #ffffff, #fdfbfb);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.04);
+            max-width: 700px;
+            margin: 2rem auto;
+            color: #2b2b2b;
+        }
+        .premium-gradient-text {
+            background: linear-gradient(90deg, #6C5CE7, #A29BFE);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            margin-bottom: 2rem;
+            text-align: center;
+            font-size: 1.9rem;
+        }
+        .form-control, .form-select {
+            border-radius: 12px;
+            border: 1px solid #e1e1e1;
+            padding: 0.9rem 1.2rem;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #6C5CE7;
+            box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.15);
+            background: #fff;
+        }
+        .premium-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 0.7rem 1.4rem;
+            font-weight: 700;
+            transition: all 0.25s ease;
+        }
+        .premium-btn-primary {
+            background: linear-gradient(135deg, #6C5CE7, #8e7eff);
+            color: #fff;
+            box-shadow: 0 6px 18px rgba(108, 92, 231, 0.35);
+        }
+        .premium-btn-primary:hover {
+            transform: translateY(-2px);
+            color: #fff;
+            box-shadow: 0 10px 24px rgba(108, 92, 231, 0.45);
+        }
+    </style>
+{% endblock %}
 
-    {{ include('forum_category/_form.html.twig') }}
+{% block content %}
+<div class="container-fluid">
+    <div class="premium-form-container">
+        <h2 class="premium-gradient-text">✨ Nouvelle Catégorie</h2>
 
-    <a href="{{ path('app_forum_category_index') }}">back to list</a>
+        {{ form_start(form) }}
+            {{ form_widget(form) }}
+
+            <div class="d-flex justify-content-between align-items-center mt-4 pt-4 border-top">
+                <a href="{{ path('app_forum_category_index') }}" class="btn btn-light text-secondary rounded-pill px-4 fw-semibold shadow-sm">
+                    🔙 Retour
+                </a>
+                <button class="premium-btn premium-btn-primary">
+                    Créer la catégorie
+                </button>
+            </div>
+        {{ form_end(form) }}
+    </div>
+</div>
 {% endblock %}

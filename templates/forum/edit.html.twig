@@ -1,13 +1,83 @@
-{% extends 'base.html.twig' %}
+{% extends 'layout/admin.html.twig' %}
+{% form_theme form 'bootstrap_5_layout.html.twig' %}
 
 {% block title %}Modifier le post{% endblock %}
+{% block page_title %}Édition du Post{% endblock %}
 
-{% block body %}
-<div class="container">
-    <h1>Modifier le post</h1>
-    {{ form_start(form) }}
-    {{ form_widget(form) }}
-    {{ form_end(form) }}
-    <a href="{{ path('app_forum_post_show', {'id': post.id}) }}" class="btn btn-secondary">Annuler</a>
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .premium-form-container {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            border-radius: 24px;
+            padding: 2.75rem;
+            box-shadow: 0 10px 30px rgba(31, 38, 135, 0.08);
+            max-width: 760px;
+            margin: 2rem auto;
+            color: #2b2b2b;
+        }
+        .premium-gradient-text {
+            background: linear-gradient(90deg, #6C5CE7, #A29BFE);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            margin-bottom: 2rem;
+            text-align: center;
+            font-size: 2rem;
+        }
+        .form-control, .form-select {
+            border-radius: 12px;
+            border: 1px solid #e1e1e1;
+            padding: 0.9rem 1.2rem;
+            transition: all 0.3s ease;
+            background: #fafafa;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #6C5CE7;
+            box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.18);
+            background: #fff;
+        }
+        .premium-btn {
+            border: none;
+            border-radius: 12px;
+            padding: 0.75rem 1.6rem;
+            font-weight: 700;
+            transition: all 0.25s ease;
+            text-decoration: none;
+        }
+        .premium-btn-primary {
+            background: linear-gradient(135deg, #6C5CE7, #8e7eff);
+            color: #fff;
+            box-shadow: 0 6px 18px rgba(108, 92, 231, 0.35);
+        }
+        .premium-btn-primary:hover {
+            transform: translateY(-2px);
+            color: #fff;
+            box-shadow: 0 10px 24px rgba(108, 92, 231, 0.45);
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="premium-form-container">
+        <h1 class="premium-gradient-text">📝 Modifier le post</h1>
+
+        {{ form_start(form) }}
+            {{ form_widget(form) }}
+
+            <div class="d-flex justify-content-between mt-4 pt-4 border-top">
+                <a href="{{ path('app_forum_post_show', {'id': post.id}) }}" class="btn btn-light text-secondary rounded-pill px-4 fw-semibold shadow-sm">
+                    Annuler
+                </a>
+                <button type="submit" class="premium-btn premium-btn-primary">
+                    Enregistrer les modifications
+                </button>
+            </div>
+        {{ form_end(form) }}
+    </div>
 </div>
 {% endblock %}
