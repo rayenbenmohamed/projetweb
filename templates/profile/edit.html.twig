@@ -1,0 +1,72 @@
+{% extends 'layout/front.html.twig' %}
+
+{% block title %}Mon profil | SyfonuRH{% endblock %}
+{% block page_title %}Mon profil{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-2">
+    <div class="col-lg-8">
+        <div class="card card-lg mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Mes informations</h5>
+            </div>
+            <div class="card-body p-6">
+                <form method="post">
+                    <input type="hidden" name="_token" value="{{ csrf_token('profile_edit') }}">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Prénom</label>
+                            <input type="text" name="firstName" class="form-control" value="{{ user.firstName|default('') }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nom</label>
+                            <input type="text" name="lastName" class="form-control" value="{{ user.lastName|default('') }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">E-mail <span class="text-danger">*</span></label>
+                        <input type="email" name="email" class="form-control" required value="{{ user.email }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Téléphone</label>
+                        <input type="text" name="phone" class="form-control" value="{{ user.phone|default('') }}">
+                    </div>
+                    {% if is_recruiter %}
+                    <div class="mb-3 border-top pt-3">
+                        <h6 class="text-secondary small">Recruteur</h6>
+                        <div class="mb-2">
+                            <label class="form-label">Entreprise</label>
+                            <input type="text" name="companyname" class="form-control" value="{{ user.companyname|default('') }}">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Département</label>
+                            <input type="text" name="departement" class="form-control" value="{{ user.departement|default('') }}">
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="mb-4">
+                        <label class="form-label">Nouveau mot de passe</label>
+                        <input type="password" name="password" class="form-control" autocomplete="new-password" placeholder="Laisser vide pour ne pas changer">
+                        <div class="form-text">Minimum 4 caractères si vous changez le mot de passe.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card card-lg border-danger">
+            <div class="card-header bg-danger-subtle">
+                <h5 class="mb-0 text-danger">Zone de danger</h5>
+            </div>
+            <div class="card-body p-6">
+                <p class="text-secondary small mb-3">La suppression est définitive. Impossible si vous avez encore des candidatures, offres ou autres données liées.</p>
+                <form method="post" action="{{ path('app_profile_delete') }}" onsubmit="return confirm('Supprimer définitivement votre compte ?');">
+                    <input type="hidden" name="_token" value="{{ csrf_token('profile_delete') }}">
+                    <button type="submit" class="btn btn-outline-danger">Supprimer mon compte</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

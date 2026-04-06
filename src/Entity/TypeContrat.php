@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: TypeContratRepository::class)]
+#[ORM\Table(name: 'contract_type')]
 class TypeContrat
 {
     #[ORM\Id]

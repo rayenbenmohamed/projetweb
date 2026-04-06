@@ -1,0 +1,113 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Administration | SyfonuRH{% endblock %}
+{% block page_title %}Tableau de bord administrateur{% endblock %}
+
+{% block content %}
+<div class="row mb-6 g-6 mt-2">
+    <div class="col-xl-8 col-lg-6">
+        <div class="bg-gradient-mixed p-8 py-10 rounded-3 p-lg-7">
+            <h1 class="fs-3">Back-office SyfonuRH</h1>
+            <p class="mb-0">Vue globale : utilisateurs, offres et candidatures.</p>
+            <a href="{{ path('app_home') }}" class="btn btn-outline-light mt-3">Voir le site public</a>
+        </div>
+    </div>
+    <div class="col-xl-4 col-lg-6">
+        <div class="card card-lg h-100">
+            <div class="card-body d-flex flex-column justify-content-center gap-4">
+                <h5 class="mb-0">Accès rapide</h5>
+                <a href="{{ path('admin_users_index') }}" class="btn btn-outline-dark btn-sm">Utilisateurs</a>
+                <a href="{{ path('app_friends_index') }}" class="btn btn-outline-secondary btn-sm">Amis &amp; messages</a>
+                <a href="{{ path('app_job_offre_index') }}" class="btn btn-outline-primary btn-sm">Offres d'emploi</a>
+                <a href="{{ path('app_job_application_index') }}" class="btn btn-outline-success btn-sm">Candidatures</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-xl-4 row-cols-md-2 mb-6 g-6">
+    <div class="col">
+        <div class="card card-lg">
+            <div class="card-body d-flex flex-column gap-8">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icon-shape icon-lg rounded-circle bg-primary-subtle text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/></svg>
+                    </div>
+                    <div>Utilisateurs</div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center lh-1">
+                    <div class="fs-3 fw-bold">{{ count_users }}</div>
+                    <span class="badge bg-primary-subtle text-primary-emphasis small">Total</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card card-lg">
+            <div class="card-body d-flex flex-column gap-8">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icon-shape icon-lg rounded-circle bg-warning-darker text-warning-lighter">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/></svg>
+                    </div>
+                    <div>Offres d'emploi</div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center lh-1">
+                    <div class="fs-3 fw-bold">{{ count_offres }}</div>
+                    <span class="badge bg-warning-subtle text-warning-emphasis small">Total</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card card-lg">
+            <div class="card-body d-flex flex-column gap-8">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icon-shape icon-lg rounded-circle bg-info-darker text-info-lighter">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/></svg>
+                    </div>
+                    <div>Candidatures</div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center lh-1">
+                    <div class="fs-3 fw-bold">{{ count_applications }}</div>
+                    <span class="badge bg-info-subtle text-info-emphasis small">Reçues</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-6 mb-6">
+    <div class="col-xl-8">
+        <div class="card card-lg">
+            <div class="card-header border-bottom-0 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Dernières offres d'emploi</h5>
+                <a href="{{ path('app_job_offre_index') }}" class="small">Voir tout</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover table-centered mb-0 text-nowrap">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Titre</th>
+                            <th>Lieu</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in latest_jobs %}
+                        <tr>
+                            <td>{{ job.title }}</td>
+                            <td>{{ job.location }}</td>
+                            <td><span class="badge bg-success-subtle text-success-emphasis">{{ job.status }}</span></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center py-4 text-secondary">Aucune offre pour le moment.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

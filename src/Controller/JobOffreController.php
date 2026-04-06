@@ -32,7 +32,7 @@ class JobOffreController extends AbstractController
             $jobOffre->setLocation($request->request->get('location'));
             $jobOffre->setSalary((float) $request->request->get('salary'));
             $jobOffre->setEmploymentType($request->request->get('employment_type'));
-            $jobOffre->setStatus(OfferStatus::PUBLISHED);
+            $jobOffre->setStatus(OfferStatus::PUBLISHED->value);
             $jobOffre->setUser($this->getUser());
 
             $entityManager->persist($jobOffre);

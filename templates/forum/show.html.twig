@@ -1,0 +1,6 @@
+{% extends 'layout/front.html.twig' %}
+{% block title %}{{ post.title }} | Forum{% endblock %}
+{% block page_title %}{{ post.title }}{% endblock %}
+{% block content %}
+<div class="card card-lg"><div class="card-body">{{ post.content|nl2br }}</div></div>
+{% endblock %}

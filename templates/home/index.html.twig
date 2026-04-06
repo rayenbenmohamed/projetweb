@@ -1,0 +1,55 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}SyfonuRH — Accueil{% endblock %}
+
+{% block body %}
+<main class="min-vh-100 d-flex flex-column">
+    <nav class="navbar navbar-expand-lg border-bottom bg-body-tertiary px-4 py-3">
+        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="{{ path('app_home') }}">
+            <img src="{{ asset('dasher/images/brand/logo/logo-icon.svg') }}" alt="" width="32" height="32"/>
+            SyfonuRH
+        </a>
+        <div class="ms-auto d-flex gap-2 align-items-center">
+            <a href="{{ path('app_job_offre_index') }}" class="btn btn-outline-primary btn-sm">Offres d'emploi</a>
+            {% if app.user %}
+                {% if is_granted('ROLE_ADMIN') %}
+                    <a href="{{ path('admin_dashboard') }}" class="btn btn-dark btn-sm">Administration</a>
+                {% endif %}
+                <a href="{{ path('app_app_dashboard') }}" class="btn btn-primary btn-sm">Mon espace</a>
+                <a href="{{ path('app_logout') }}" class="btn btn-link btn-sm">Déconnexion</a>
+            {% else %}
+                <a href="{{ path('app_login') }}" class="btn btn-outline-secondary btn-sm">Connexion</a>
+                <a href="{{ path('app_register') }}" class="btn btn-primary btn-sm">Inscription</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <section class="flex-grow-1 d-flex align-items-center">
+        <div class="container py-5">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-7">
+                    <h1 class="display-5 fw-bold mb-3">Recrutement et candidatures, simplement.</h1>
+                    <p class="lead text-secondary mb-4">
+                        Candidats : postulez aux offres. Recruteurs : publiez vos annonces et suivez les candidatures.
+                    </p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{{ path('app_job_offre_index') }}" class="btn btn-primary btn-lg">Voir les offres</a>
+                        {% if not app.user %}
+                            <a href="{{ path('app_register') }}" class="btn btn-outline-primary btn-lg">Créer un compte</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <h5 class="card-title">Déjà inscrit ?</h5>
+                            <p class="card-text text-secondary small">Connectez-vous pour accéder à votre espace (front-office). Les administrateurs sont redirigés vers le back-office.</p>
+                            <a href="{{ path('app_login') }}" class="btn btn-dark w-100">Se connecter</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}

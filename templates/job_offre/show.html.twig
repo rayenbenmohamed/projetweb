@@ -1,7 +1,6 @@
-{% extends 'layout/admin.html.twig' %}
+{% extends 'layout/public.html.twig' %}
 
 {% block title %}{{ job_offre.title }} | SyfonuRH{% endblock %}
-{% block page_title %}Détails de l'offre{% endblock %}
 
 {% block content %}
 <div class="row g-6 mt-2">
@@ -18,7 +17,7 @@
                         </div>
                     </div>
                     <span class="badge bg-success-subtle text-success-emphasis px-3 py-2">
-                        {{ job_offre.status.value|capitalize }}
+                        {{ job_offre.status|capitalize }}
                     </span>
                 </div>
 
@@ -46,12 +45,18 @@
             <div class="card-body p-6">
                 <h5 class="mb-4">Actions</h5>
                 <div class="d-grid gap-3">
+                    {% if is_granted('ROLE_CANDIDAT') %}
                     <a href="{{ path('app_job_application_new', {id: job_offre.id}) }}" class="btn btn-primary">
                         <i class="ti ti-send me-1"></i> Postuler maintenant
                     </a>
+                    {% elseif not app.user %}
+                    <a href="{{ path('app_login') }}" class="btn btn-primary">Connectez-vous pour postuler</a>
+                    {% endif %}
+                    {% if is_granted('ROLE_RECRUTEUR') or is_granted('ROLE_ADMIN') %}
                     <a href="{{ path('app_job_offre_edit', {id: job_offre.id}) }}" class="btn btn-outline-secondary">
                         <i class="ti ti-pencil me-1"></i> Modifier l'offre
                     </a>
+                    {% endif %}
                     <hr class="my-2">
                     <a href="{{ path('app_job_offre_index') }}" class="btn btn-link btn-sm text-secondary">
                         <i class="ti ti-arrow-left me-1"></i> Retour à la liste
@@ -68,7 +73,7 @@
                         <i class="ti ti-user fs-3"></i>
                     </div>
                     <div>
-                        <h6 class="mb-0">{{ job_offre.user.firstName }} {{ job_offre.user.lastName }}</h6>
+                        <h6 class="mb-0">{{ job_offre.user ? (job_offre.user.firstName ~ ' ' ~ job_offre.user.lastName) : 'Non renseigné' }}</h6>
                         <span class="small text-secondary">Service Recrutement</span>
                     </div>
                 </div>

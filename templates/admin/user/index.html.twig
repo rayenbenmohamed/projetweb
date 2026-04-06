@@ -1,0 +1,52 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Utilisateurs | Admin{% endblock %}
+{% block page_title %}Gestion des utilisateurs{% endblock %}
+
+{% block content %}
+<div class="card card-lg mt-2">
+    <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
+        <h5 class="mb-0">Tous les comptes</h5>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ path('admin_users_new') }}" class="btn btn-sm btn-primary">Ajouter un utilisateur</a>
+            <a href="{{ path('admin_dashboard') }}" class="btn btn-sm btn-outline-secondary">Retour tableau de bord</a>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Nom</th>
+                    <th>E-mail</th>
+                    <th>Rôle (stocké)</th>
+                    <th>Type</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                    <tr>
+                        <td>{{ u.id }}</td>
+                        <td>{{ u.firstName|default('') }} {{ u.lastName|default('') }}</td>
+                        <td>{{ u.email }}</td>
+                        <td><code class="small">{{ u.role }}</code></td>
+                        <td class="small text-secondary">{{ u.roles|join(', ') }}</td>
+                        <td class="text-end">
+                            <a href="{{ path('admin_users_edit', {id: u.id}) }}" class="btn btn-sm btn-primary">Modifier</a>
+                            {% if app.user and u.id != app.user.id %}
+                                <form class="d-inline" method="post" action="{{ path('admin_users_delete', {id: u.id}) }}" onsubmit="return confirm('Supprimer définitivement cet utilisateur ?');">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_user_delete' ~ u.id) }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="text-center py-5 text-secondary">Aucun utilisateur.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
