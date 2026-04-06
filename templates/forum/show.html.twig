@@ -1,35 +1,150 @@
-{% extends 'base.html.twig' %}
+{% extends 'layout/admin.html.twig' %}
 
-{% block title %}{{ post.title }}{% endblock %}
+{% block title %}Lecture: {{ post.title }}{% endblock %}
+{% block page_title %}Détails du Post{% endblock %}
 
-{% block body %}
-<div class="container">
-    <h1>{{ post.title }}</h1>
-    <p>{{ post.content }}</p>
-    {% if post.imagePath %}
-    <img src="{{ asset('uploads/forum/' ~ post.imagePath) }}" alt="Image" class="img-fluid">
-    {% endif %}
-    <p>Par {{ post.user.email }} le {{ post.createdAt|date('d/m/Y H:i') }}</p>
-    <a href="{{ path('app_forum_index') }}" class="btn btn-secondary">Retour</a>
-    <a href="{{ path('app_forum_post_edit', {'id': post.id}) }}" class="btn btn-warning">Modifier</a>
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .post-header {
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            border-radius: 20px;
+            padding: 3rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .post-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #2d3436;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+        .post-meta {
+            color: #636e72;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .post-body {
+            font-size: 1.15rem;
+            line-height: 1.8;
+            color: #2d3436;
+            padding: 2.5rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.03);
+            margin-bottom: 3rem;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+        .post-image {
+            max-height: 500px;
+            width: 100%;
+            object-fit: cover;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .comment-card {
+            background: #f8f9fa;
+            border: none;
+            border-left: 4px solid #6C5CE7;
+            border-radius: 0 12px 12px 0;
+            margin-bottom: 1rem;
+            padding: 1.5rem;
+        }
+        .comment-author {
+            font-weight: 700;
+            color: #2d3436;
+            margin-bottom: 0.5rem;
+        }
+        .comment-date {
+            font-size: 0.85rem;
+            color: #b2bec3;
+        }
+        .comment-form-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .comment-input:focus {
+            border-color: #6C5CE7;
+            box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.15);
+        }
+    </style>
+{% endblock %}
 
-    <h2>Commentaires</h2>
-    {% for comment in post.comments %}
-    <div class="card mb-2">
-        <div class="card-body">
-            <p>{{ comment.content }}</p>
-            <small>Par {{ comment.user.email }} le {{ comment.createdAt|date('d/m/Y H:i') }}</small>
+{% block content %}
+<div class="container-fluid mx-auto" style="max-width: 1000px;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="{{ path('app_forum_index') }}" class="btn btn-light text-secondary rounded-pill px-4 fw-semibold shadow-sm">
+            🔙 Retour au forum
+        </a>
+        <a href="{{ path('app_forum_post_edit', {'id': post.id}) }}" class="btn btn-warning text-dark rounded-pill px-4 fw-bold shadow-sm">
+            📝 Modifier
+        </a>
+    </div>
+
+    <div class="post-header">
+        <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 mb-3 fs-6">
+            {{ post.category ? post.category.name : 'Général' }}
+        </span>
+        <h1 class="post-title">{{ post.title }}</h1>
+        <div class="post-meta">
+            <span class="d-flex align-items-center"><span class="fs-4 me-2">👤</span> {{ post.user.email|default('Anonyme') }}</span>
+            <span class="d-flex align-items-center"><span class="fs-4 me-2">📅</span> {{ post.createdAt|date('d/m/Y à H:i') }}</span>
         </div>
     </div>
-    {% endfor %}
 
-    <h3>Ajouter un commentaire</h3>
-    <form method="post" action="{{ path('app_forum_comment_add', {'id': post.id}) }}">
-        <input type="hidden" name="_token" value="{{ csrf_token('add_comment') }}">
-        <div class="form-group">
-            <textarea name="content" class="form-control" rows="3" required></textarea>
+    {% if post.imagePath %}
+        <img src="{{ asset('uploads/forum/' ~ post.imagePath) }}" alt="Image attachée au post" class="post-image">
+    {% endif %}
+
+    <div class="post-body">
+        {{ post.content|nl2br }}
+    </div>
+
+    <div class="comments-section mt-5 pt-4 border-top">
+        <h3 class="fw-bold mb-4 d-flex align-items-center gap-2">
+            <span>💬</span> Commentaires ({{ post.comments|length }})
+        </h3>
+
+        <div class="mb-5">
+            {% for comment in post.comments %}
+            <div class="comment-card">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="comment-author">{{ comment.user.email|default('Anonyme') }}</div>
+                    <div class="comment-date">{{ comment.createdAt|date('d M Y, H:i') }}</div>
+                </div>
+                <p class="mb-0 text-secondary lh-base">{{ comment.content|nl2br }}</p>
+            </div>
+            {% else %}
+            <div class="text-center py-4 bg-light rounded-4 text-muted">
+                Soyez le premier à commenter !
+            </div>
+            {% endfor %}
         </div>
-        <button type="submit" class="btn btn-primary">Commenter</button>
-    </form>
+
+        <div class="comment-form-container mt-4">
+            <h5 class="fw-bold mb-3">Ajouter un commentaire</h5>
+            <form method="post" action="{{ path('app_forum_comment_add', {'id': post.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('add_comment') }}">
+                <div class="mb-3">
+                    <textarea name="content" class="form-control comment-input" rows="4" placeholder="Exprimez-vous respectueusement..." required></textarea>
+                </div>
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary px-4 py-2 rounded-pill fw-bold shadow-sm">
+                        Publier le commentaire 🚀
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 </div>
 {% endblock %}

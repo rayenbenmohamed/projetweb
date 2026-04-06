@@ -1,13 +1,49 @@
-{% extends 'base.html.twig' %}
+{% extends 'layout/admin.html.twig' %}
+{% form_theme form 'bootstrap_5_layout.html.twig' %}
 
-{% block title %}Edit ForumCategory{% endblock %}
+{% block title %}Modifier la Catégorie{% endblock %}
 
-{% block body %}
-    <h1>Edit ForumCategory</h1>
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .premium-form-container {
+            background: linear-gradient(145deg, #ffffff, #fdfbfb);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.04);
+            max-width: 600px;
+            margin: 2rem auto;
+            color: #2b2b2b;
+        }
+        .form-control, .form-select {
+            border-radius: 12px;
+            border: 1px solid #e1e1e1;
+            padding: 0.9rem 1.2rem;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+        .form-control:focus {
+            border-color: #6C5CE7;
+            box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.15);
+            background: #fff;
+        }
+    </style>
+{% endblock %}
 
-    {{ include('forum_category/_form.html.twig', {'button_label': 'Update'}) }}
+{% block content %}
+<div class="container-fluid">
+    <div class="premium-form-container">
+        <h2 class="fw-bold mb-4 text-center">📝 Modifier la Catégorie</h2>
+        
+        {{ include('forum_category/_form.html.twig', {'button_label': 'Mettre à jour'}) }}
 
-    <a href="{{ path('app_forum_category_index') }}">back to list</a>
-
-    {{ include('forum_category/_delete_form.html.twig') }}
+        <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
+            <a href="{{ path('app_forum_category_index') }}" class="btn btn-light text-secondary rounded-pill px-4 fw-semibold shadow-sm">🔙 Retour</a>
+            <div class="m-0">
+                {{ include('forum_category/_delete_form.html.twig') }}
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
