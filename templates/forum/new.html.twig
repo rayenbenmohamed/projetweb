@@ -1,0 +1,119 @@
+{% extends 'base.html.twig' %}
+{% form_theme form 'bootstrap_5_layout.html.twig' %}
+
+{% block title %}Créer un nouveau post{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        body {
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+        }
+        .premium-form-container {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+            max-width: 600px;
+            margin: 4rem auto;
+            color: #2b2b2b;
+            animation: formEntrance 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        @keyframes formEntrance {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .premium-gradient-text {
+            background: linear-gradient(90deg, #6C5CE7, #A29BFE);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            margin-bottom: 2rem;
+            text-align: center;
+            font-size: 2rem;
+        }
+        .form-control, .form-select {
+            border-radius: 12px;
+            border: 1px solid #e1e1e1;
+            padding: 0.9rem 1.2rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+            font-size: 1rem;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #6C5CE7;
+            box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.2);
+            transform: translateY(-2px);
+            background: #fff;
+        }
+        /* Custom Button */
+        .premium-btn {
+            background: linear-gradient(135deg, #6C5CE7, #8e7eff);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 28px;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .premium-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.5);
+            color: white;
+        }
+        .cancel-btn {
+            background: #f8f9fa;
+            color: #6c757d;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid #dee2e6;
+        }
+        .cancel-btn:hover {
+            background: #e9ecef;
+            color: #495057;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #4a4a4a;
+            margin-bottom: 0.5rem;
+            margin-top: 1rem;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="premium-form-container">
+        <h1 class="premium-gradient-text">✨ Créer une Publication</h1>
+        
+        {{ form_start(form, {'attr': {'class': 'needs-validation'}}) }}
+            
+            <div class="mb-4">
+                {{ form_widget(form) }}
+            </div>
+
+            <div class="d-flex justify-content-between mt-5 pt-3 border-top border-light">
+                <a href="{{ path('app_forum_index') }}" class="premium-btn cancel-btn">
+                    Annuler
+                </a>
+                <button type="submit" class="premium-btn">
+                    Publier le post 🚀
+                </button>
+            </div>
+            
+        {{ form_end(form) }}
+    </div>
+</div>
+{% endblock %}

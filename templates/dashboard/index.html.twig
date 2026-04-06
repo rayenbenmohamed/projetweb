@@ -19,8 +19,8 @@
         <div class="card card-lg h-100">
             <div class="card-body d-flex flex-column justify-content-center gap-4">
                 <h5 class="mb-0">Accès rapide</h5>
-                <a href="#" class="btn btn-outline-primary btn-sm">📄 Nouveau contrat</a>
-                <a href="#" class="btn btn-outline-success btn-sm">💼 Nouvelle offre d'emploi</a>
+                <a href="{{ path('app_forum_category_new') }}" class="btn btn-outline-primary btn-sm">📄 Nouvelle Catégorie</a>
+                <a href="{{ path('app_forum_post_new') }}" class="btn btn-outline-success btn-sm">💼 Nouveau Post</a>
                 <a href="#" class="btn btn-outline-info btn-sm">👤 Ajouter un utilisateur</a>
             </div>
         </div>
@@ -91,11 +91,11 @@
                             <path d="M8 7v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2"/>
                         </svg>
                     </div>
-                    <div>Offres d'emploi</div>
+                    <div>Forum Posts</div>
                 </div>
                 <div class="d-flex justify-content-between align-items-center lh-1">
-                    <div class="fs-3 fw-bold">{{ count_offres }}</div>
-                    <span class="badge bg-warning-subtle text-warning-emphasis small">Publiées</span>
+                    <div class="fs-3 fw-bold">{{ count_posts }}</div>
+                    <span class="badge bg-warning-subtle text-warning-emphasis small">Publiés</span>
                 </div>
             </div>
         </div>
@@ -114,11 +114,11 @@
                             <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
                         </svg>
                     </div>
-                    <div>Candidatures</div>
+                    <div>Catégories</div>
                 </div>
                 <div class="d-flex justify-content-between align-items-center lh-1">
-                    <div class="fs-3 fw-bold">{{ count_applications }}</div>
-                    <span class="badge bg-info-subtle text-info-emphasis small">Reçues</span>
+                    <div class="fs-3 fw-bold">{{ count_categories }}</div>
+                    <span class="badge bg-info-subtle text-info-emphasis small">Actives</span>
                 </div>
             </div>
         </div>
@@ -130,33 +130,33 @@
     <div class="col-xl-8">
         <div class="card card-lg">
             <div class="card-header border-bottom-0 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Dernières offres d'emploi</h5>
-                <a href="{{ path('app_job_offre_index') }}" class="small">Voir tout</a>
+                <h5 class="mb-0">Derniers Posts</h5>
+                <a href="{{ path('app_forum_index') }}" class="small">Voir tout</a>
             </div>
             <div class="table-responsive">
                 <table class="table table-hover table-centered mb-0 text-nowrap">
                     <thead class="table-light">
                         <tr>
                             <th>Titre</th>
-                            <th>Lieu</th>
-                            <th>Statut</th>
+                            <th>Auteur</th>
+                            <th>Date</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for job in latest_jobs %}
+                        {% for post in latest_posts %}
                         <tr>
-                            <td>{{ job.title }}</td>
-                            <td>{{ job.location }}</td>
+                            <td>{{ post.title }}</td>
+                            <td>{{ post.user.email|default('Anonyme') }}</td>
                             <td>
                                 <span class="badge bg-success-subtle text-success-emphasis">
-                                    {{ job.status }}
+                                    {{ post.createdAt|date('Y-m-d') }}
                                 </span>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
                             <td colspan="3" class="text-center py-4 text-secondary">
-                                Aucune offre pour le moment.
+                                Aucun post pour le moment.
                             </td>
                         </tr>
                         {% endfor %}

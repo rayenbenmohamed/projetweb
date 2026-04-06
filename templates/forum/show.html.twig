@@ -1,0 +1,35 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block body %}
+<div class="container">
+    <h1>{{ post.title }}</h1>
+    <p>{{ post.content }}</p>
+    {% if post.imagePath %}
+    <img src="{{ asset('uploads/forum/' ~ post.imagePath) }}" alt="Image" class="img-fluid">
+    {% endif %}
+    <p>Par {{ post.user.email }} le {{ post.createdAt|date('d/m/Y H:i') }}</p>
+    <a href="{{ path('app_forum_index') }}" class="btn btn-secondary">Retour</a>
+    <a href="{{ path('app_forum_post_edit', {'id': post.id}) }}" class="btn btn-warning">Modifier</a>
+
+    <h2>Commentaires</h2>
+    {% for comment in post.comments %}
+    <div class="card mb-2">
+        <div class="card-body">
+            <p>{{ comment.content }}</p>
+            <small>Par {{ comment.user.email }} le {{ comment.createdAt|date('d/m/Y H:i') }}</small>
+        </div>
+    </div>
+    {% endfor %}
+
+    <h3>Ajouter un commentaire</h3>
+    <form method="post" action="{{ path('app_forum_comment_add', {'id': post.id}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('add_comment') }}">
+        <div class="form-group">
+            <textarea name="content" class="form-control" rows="3" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Commenter</button>
+    </form>
+</div>
+{% endblock %}

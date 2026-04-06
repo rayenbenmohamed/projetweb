@@ -33,11 +33,12 @@ class ForumService
         $this->entityManager->flush();
     }
 
-    public function addComment(ForumPost $post, string $content): ForumComment
+    public function addComment(ForumPost $post, string $content, User $user): ForumComment
     {
         $comment = new ForumComment();
         $comment->setPost($post);
         $comment->setContent($content);
+        $comment->setUser($user);
         $comment->setCreatedAt(new \DateTime());
 
         $this->entityManager->persist($comment);
@@ -49,6 +50,17 @@ class ForumService
     public function deletePost(ForumPost $post): void
     {
         $this->entityManager->remove($post);
+        $this->entityManager->flush();
+    }
+
+    public function getAllPosts(): array
+    {
+        return $this->forumPostRepository->findAll();
+    }
+
+    public function updatePost(ForumPost $post): void
+    {
+        $post->setUpdatedAt(new \DateTime());
         $this->entityManager->flush();
     }
 }

@@ -56,49 +56,6 @@
             </ul>
         </li>
 
-        {# Contrats #}
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <span class="nav-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                         class="icon icon-tabler icon-tabler-file-description">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                        <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
-                        <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
-                        <path d="M9 17h6"/><path d="M9 13h6"/>
-                    </svg>
-                </span>
-                <span class="text">Contrats</span>
-            </a>
-            <ul class="dropdown-menu flex-column">
-                <li class="nav-item"><a class="nav-link" href="#">Liste</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">Types</a></li>
-            </ul>
-        </li>
-
-        {# Offres d'emploi #}
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <span class="nav-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                         class="icon icon-tabler icon-tabler-briefcase">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                        <path d="M3 7m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/>
-                        <path d="M8 7v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2"/>
-                        <path d="M12 12l0 .01"/><path d="M3 13a20 20 0 0 0 18 0"/>
-                    </svg>
-                </span>
-                <span class="text">Offres d'emploi</span>
-            </a>
-            <ul class="dropdown-menu flex-column">
-                <li class="nav-item"><a class="nav-link" href="{{ path('app_job_offre_index') }}">Liste des offres</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ path('app_job_offre_new') }}">Nouvelle offre</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ path('app_job_application_index') }}">Candidatures reçues</a></li>
-            </ul>
-        </li>
-
         {# Forum #}
         <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -114,48 +71,15 @@
                 <span class="text">Forum</span>
             </a>
             <ul class="dropdown-menu flex-column">
-                <li class="nav-item"><a class="nav-link" href="#">Posts</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">Catégories</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ path('app_forum_index') }}">Tous les Posts</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ path('app_forum_post_new') }}">Créer un Post</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ path('app_forum_category_index') }}">Gérer les Catégories</a></li>
             </ul>
         </li>
 
-        {# CV #}
-        <li class="nav-item">
-            <a class="nav-link" href="#">
-                <span class="nav-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                         class="icon icon-tabler icon-tabler-id-badge">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                        <path d="M5 4m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z"/>
-                        <path d="M9 4v4"/><path d="M15 4v4"/>
-                        <path d="M9 12l.01 0"/><path d="M13 12l2 0"/>
-                        <path d="M9 16l.01 0"/><path d="M13 16l2 0"/>
-                    </svg>
-                </span>
-                <span class="text">CV</span>
-            </a>
-        </li>
-
-        {# --- Profil / Authentification --- #}
         <li class="nav-item">
             <div class="nav-heading">Compte</div>
             <hr class="mx-5 nav-line mb-1"/>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#">
-                <span class="nav-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                         class="icon icon-tabler icon-tabler-user-circle">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                        <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/>
-                        <path d="M12 10m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/>
-                        <path d="M6.168 18.849a4 4 0 0 1 3.832 -2.849h4a4 4 0 0 1 3.834 2.855"/>
-                    </svg>
-                </span>
-                <span class="text">Profil</span>
-            </a>
         </li>
         <li class="nav-item">
             <a class="nav-link" href="{{ path('app_login') }}">
