@@ -1,0 +1,79 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Mes Entretiens | SyfonuRH{% endblock %}
+{% block page_title %}Mes Entretiens{% endblock %}
+
+{% block content %}
+<div class="row g-6 mt-2">
+    <div class="col-12">
+        <div class="card h-100">
+            <div class="card-header border-bottom-0">
+                <h5 class="mb-0">Mes entretiens prévus et passés</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover table-centered mb-0 text-nowrap">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date & Heure</th>
+                            <th>Offre d'emploi</th>
+                            <th>Candidat</th>
+                            <th>Statut</th>
+                            <th>Lien Visio / Lieu</th>
+                            <th>Notes</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for interview in interviews %}
+                        <tr>
+                            <td>
+                                <strong>{{ interview.scheduledAt|date('d/m/Y') }}</strong> à {{ interview.scheduledAt|date('H:i') }}
+                            </td>
+                            <td>{{ interview.application.jobOffre.title }}</td>
+                            <td>{{ interview.application.candidat.firstName }} {{ interview.application.candidat.lastName }}</td>
+                            <td>
+                                <span class="badge bg-{{ interview.status == 'Prévue' ? 'primary' : (interview.status == 'Réalisée' ? 'success' : 'secondary') }}-subtle text-{{ interview.status == 'Prévue' ? 'primary' : (interview.status == 'Réalisée' ? 'success' : 'secondary') }}-emphasis px-2 py-1">
+                                    {{ interview.status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if interview.meetingLink %}
+                                    {% if 'http' in interview.meetingLink %}
+                                        <a href="{{ interview.meetingLink }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="ti ti-video"></i> Rejoindre</a>
+                                    {% else %}
+                                        {{ interview.meetingLink }}
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-secondary">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ interview.notes|default('-')|slice(0, 30) }}{% if interview.notes|length > 30 %}...{% endif %}
+                            </td>
+                            <td>
+                                {% if interview.status == 'Prévue' %}
+                                    <form method="post" action="{{ path('app_interview_confirm', {id: interview.id}) }}" class="d-inline" onsubmit="return confirm('Confirmer votre présence à cet entretien ?');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('confirm' ~ interview.id) }}">
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="ti ti-check me-1"></i> Confirmer
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-secondary small">Aucune action</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-8">
+                                <p class="text-secondary mb-0">Aucun entretien prévu pour le moment.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

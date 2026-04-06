@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\JobOffre;
 use App\Entity\OfferStatus;
 use App\Repository\JobOffreRepository;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,7 +24,7 @@ class JobOffreController extends AbstractController
     }
 
     #[Route('/new', name: 'app_job_offre_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    public function new(Request $request, EntityManagerInterface $entityManager, UserRepository $userRepository): Response
     {
         $jobOffre = new JobOffre();
         if ($request->isMethod('POST')) {
@@ -32,8 +33,23 @@ class JobOffreController extends AbstractController
             $jobOffre->setLocation($request->request->get('location'));
             $jobOffre->setSalary((float) $request->request->get('salary'));
             $jobOffre->setEmploymentType($request->request->get('employment_type'));
-            $jobOffre->setStatus(OfferStatus::PUBLISHED);
-            $jobOffre->setUser($this->getUser());
+            $jobOffre->setStatus($request->request->get('status', OfferStatus::PUBLISHED->value));
+            $jobOffre->setAdvantages($request->request->get('advantages'));
+            $jobOffre->setSalaryNegotiable($request->request->get('is_salary_negotiable') === 'on');
+            
+            if ($request->request->get('expires_at')) {
+                $jobOffre->setExpiresAt(new \DateTime($request->request->get('expires_at')));
+            }
+
+            if ($request->request->get('published_at')) {
+                $jobOffre->setPublishedAt(new \DateTime($request->request->get('published_at')));
+            } else {
+                $jobOffre->setPublishedAt(new \DateTime());
+            }
+            
+            // Hardcoded User ID 1 by default until login is functional
+            $user = $this->getUser() ?: $userRepository->find(1);
+            $jobOffre->setUser($user);
 
             $entityManager->persist($jobOffre);
             $entityManager->flush();
@@ -55,7 +71,7 @@ class JobOffreController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_job_offre_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, JobOffre $jobOffre, EntityManagerInterface $entityManager): Response
+    public function edit(Request $request, JobOffre $jobOffre, EntityManagerInterface $entityManager, UserRepository $userRepository): Response
     {
         if ($request->isMethod('POST')) {
             $jobOffre->setTitle($request->request->get('title'));
@@ -63,6 +79,23 @@ class JobOffreController extends AbstractController
             $jobOffre->setLocation($request->request->get('location'));
             $jobOffre->setSalary((float) $request->request->get('salary'));
             $jobOffre->setEmploymentType($request->request->get('employment_type'));
+            $jobOffre->setAdvantages($request->request->get('advantages'));
+            $jobOffre->setSalaryNegotiable($request->request->get('is_salary_negotiable') === 'on');
+            $jobOffre->setUpdatedAt(new \DateTime());
+            
+            if ($request->request->get('expires_at')) {
+                $jobOffre->setExpiresAt(new \DateTime($request->request->get('expires_at')));
+            } else {
+                $jobOffre->setExpiresAt(null);
+            }
+
+            if ($request->request->get('published_at')) {
+                $jobOffre->setPublishedAt(new \DateTime($request->request->get('published_at')));
+            }
+
+            if (!$jobOffre->getUser()) {
+                $jobOffre->setUser($userRepository->find(1));
+            }
 
             $entityManager->flush();
 

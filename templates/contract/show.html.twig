@@ -1,0 +1,168 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Contrat #{{ contract.id }} | SyfonuRH{% endblock %}
+{% block page_title %}Fiche de Contrat{% endblock %}
+
+{% block content %}
+{% set badge_map = {
+    'En Attente': 'warning',
+    'Signé': 'info',
+    'Actif': 'success',
+    'Terminé': 'dark',
+    'Annulé': 'danger'
+} %}
+{% set badge_class = badge_map[contract.status]|default('secondary') %}
+
+<div class="row g-6 mt-2">
+    {# === COLONNE PRINCIPALE === #}
+    <div class="col-xl-8">
+
+        {# En-tête du contrat #}
+        <div class="card shadow-sm mb-6">
+            <div class="card-body p-6" style="background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 50%);">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="icon-shape icon-lg rounded-3 bg-primary text-white">
+                                <i class="ti ti-file-text fs-2"></i>
+                            </div>
+                            <div>
+                                <h3 class="mb-0">Contrat #{{ contract.id }}</h3>
+                                <p class="mb-0 text-secondary">{{ contract.typeContrat.name|default('N/A') }} — {{ contract.jobOffre.title }}</p>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-3 mt-3">
+                            <span class="badge bg-light text-dark border px-3 py-2">
+                                <i class="ti ti-calendar me-1"></i> Du {{ contract.startDate|date('d/m/Y') }}
+                            </span>
+                            {% if contract.endDate %}
+                            <span class="badge bg-light text-dark border px-3 py-2">
+                                <i class="ti ti-calendar-off me-1"></i> Au {{ contract.endDate|date('d/m/Y') }}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-3 py-2">
+                                <i class="ti ti-infinity me-1"></i> Durée indéterminée
+                            </span>
+                            {% endif %}
+                            {% if contract.isSigned %}
+                            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-3 py-2">
+                                <i class="ti ti-signature me-1"></i> Signé
+                                {% if contract.signedAt %} le {{ contract.signedAt|date('d/m/Y') }}{% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <span class="badge bg-{{ badge_class }}-subtle text-{{ badge_class }}-emphasis px-4 py-3 fs-6 rounded-3">
+                        {{ contract.status }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        {# Salaire #}
+        <div class="card shadow-sm mb-6">
+            <div class="card-body p-6">
+                <h5 class="mb-4"><i class="ti ti-coin-euro text-primary me-2"></i>Rémunération</h5>
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="p-4 rounded-3 bg-light text-center">
+                            <div class="small text-secondary mb-1">Salaire Brut Annuel</div>
+                            <h4 class="mb-0 text-primary fw-bold">{{ contract.salary|number_format(0, ',', ' ') }} €</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-4 rounded-3 bg-success-subtle text-center">
+                            <div class="small text-success-emphasis mb-1">Salaire Net Annuel</div>
+                            <h4 class="mb-0 text-success fw-bold">{{ contract.salaireNet|number_format(0, ',', ' ') }} €</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-4 rounded-3 border text-center" style="border-color: #c3e6cb !important;">
+                            <div class="small text-secondary mb-1">Net Mensuel Estimé</div>
+                            <h4 class="mb-0 fw-bold text-success">{{ (contract.salaireNet / 12)|number_format(2, ',', ' ') }} €</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Offre liée #}
+        <div class="card shadow-sm">
+            <div class="card-body p-6">
+                <h5 class="mb-4"><i class="ti ti-briefcase text-info me-2"></i>Offre d'emploi liée</h5>
+                <div class="d-flex align-items-center justify-content-between p-3 rounded-3 bg-light">
+                    <div>
+                        <h6 class="mb-1">{{ contract.jobOffre.title }}</h6>
+                        <span class="small text-secondary">
+                            <i class="ti ti-map-pin me-1"></i>{{ contract.jobOffre.location }}
+                            &nbsp;•&nbsp;
+                            <i class="ti ti-briefcase me-1"></i>{{ contract.jobOffre.employmentType }}
+                        </span>
+                    </div>
+                    <a href="{{ path('app_job_offre_show', {id: contract.jobOffre.id}) }}" class="btn btn-sm btn-outline-info">
+                        Voir l'offre
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# === COLONNE LATÉRALE === #}
+    <div class="col-xl-4">
+
+        {# Candidat #}
+        <div class="card shadow-sm mb-6">
+            <div class="card-body p-6">
+                <h5 class="mb-4">Candidat</h5>
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="avatar avatar-lg rounded-circle bg-info-subtle text-info fs-4 fw-bold">
+                        {{ contract.candidate.firstName|first }}{{ contract.candidate.lastName|first }}
+                    </div>
+                    <div>
+                        <h6 class="mb-0">{{ contract.candidate.firstName }} {{ contract.candidate.lastName }}</h6>
+                        <a href="mailto:{{ contract.candidate.email }}" class="small text-secondary">{{ contract.candidate.email }}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Recruteur #}
+        <div class="card shadow-sm mb-6">
+            <div class="card-body p-6">
+                <h5 class="mb-4">Recruteur Signataire</h5>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="avatar avatar-lg rounded-circle bg-primary-subtle text-primary fs-4 fw-bold">
+                        {{ contract.recruiter ? (contract.recruiter.firstName|first ~ contract.recruiter.lastName|first) : '?' }}
+                    </div>
+                    <div>
+                        <h6 class="mb-0">{{ contract.recruiter ? (contract.recruiter.firstName ~ ' ' ~ contract.recruiter.lastName) : 'Non assigné' }}</h6>
+                        <span class="small text-secondary">Service RH</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Actions #}
+        <div class="card shadow-sm">
+            <div class="card-body p-6">
+                <h5 class="mb-4">Actions</h5>
+                <div class="d-grid gap-3">
+                    <a href="{{ path('app_contract_edit', {id: contract.id}) }}" class="btn btn-warning">
+                        <i class="ti ti-pencil me-1"></i> Modifier le contrat
+                    </a>
+                    <hr class="my-1">
+                    <form method="post" action="{{ path('app_contract_delete', {id: contract.id}) }}" onsubmit="return confirm('Confirmer la suppression définitive ?');">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ contract.id) }}">
+                        <button class="btn btn-outline-danger w-100">
+                            <i class="ti ti-trash me-1"></i> Supprimer
+                        </button>
+                    </form>
+                    <a href="{{ path('app_contract_index') }}" class="btn btn-link text-secondary text-center">
+                        <i class="ti ti-arrow-left me-1"></i> Retour à la liste
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

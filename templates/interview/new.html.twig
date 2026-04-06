@@ -1,0 +1,79 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Planifier un entretien | SyfonuRH{% endblock %}
+{% block page_title %}Planifier un entretien{% endblock %}
+
+{% block content %}
+<div class="row g-6 mt-2 justify-content-center">
+    <div class="col-xl-6">
+        <div class="card card-lg overflow-hidden">
+            <div class="bg-primary p-6 py-8">
+                <h4 class="text-white mb-2">Entretien pour : {{ job_application.jobOffre.title }}</h4>
+                <div class="d-flex gap-4 text-white-50 small">
+                    <span><i class="ti ti-user me-1"></i>{{ job_application.candidat.firstName }} {{ job_application.candidat.lastName }}</span>
+                </div>
+            </div>
+            <div class="card-body p-6">
+                <form method="post" id="interviewForm" class="needs-validation" novalidate>
+                    <div class="mb-4">
+                        <label class="form-label">Date et heure de l'entretien <span class="text-danger">*</span></label>
+                        <input type="datetime-local" id="scheduledAt" name="scheduledAt" class="form-control" required />
+                        <div class="invalid-feedback">La date doit être dans le futur.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Lien de la réunion (visio) ou lieu <span class="text-danger">*</span></label>
+                        <input type="text" name="meetingLink" class="form-control" placeholder="ex: https://meet.google.com/..." minlength="5" maxlength="255" required />
+                        <div class="invalid-feedback">Veuillez indiquer un lieu ou un lien valide (min 5 caractères).</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Notes supplémentaires <span class="text-danger">*</span></label>
+                        <textarea name="notes" class="form-control" rows="4" minlength="10" maxlength="500" required></textarea>
+                        <div class="invalid-feedback">Un minimum de 10 caractères est requis pour justifier l'entretien.</div>
+                        <div class="form-text">Maximum 500 caractères.</div>
+                    </div>
+                    
+                    <div class="d-grid mt-6">
+                        <button type="submit" class="btn btn-primary">Planifier l'entretien</button>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{{ path('app_job_application_index') }}" class="small text-secondary">Annuler</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Validation: Date in future
+        const dateInput = document.getElementById('scheduledAt');
+        
+        // Add 1 hour to current time to enforce a small notice period
+        const now = new Date();
+        now.setHours(now.getHours() + 1);
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        dateInput.min = now.toISOString().slice(0, 16);
+
+        dateInput.addEventListener('change', function() {
+            if (this.value < this.min) {
+                this.setCustomValidity('La date de l\'entretien doit être prévue au moins 1h à l\'avance.');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+        
+        // Form generic validation logic
+        const form = document.getElementById('interviewForm');
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+</script>
+{% endblock %}

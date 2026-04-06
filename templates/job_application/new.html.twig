@@ -15,16 +15,17 @@
                 </div>
             </div>
             <div class="card-body p-6">
-                <form method="post">
+                <form method="post" enctype="multipart/form-data" id="jobAppForm" class="needs-validation" novalidate>
                     <div class="mb-4">
-                        <label class="form-label">Lettre de motivation</label>
-                        <textarea name="cover_letter" class="form-control" rows="6" placeholder="Expliquez pourquoi vous êtes le candidat idéal..."></textarea>
+                        <label class="form-label">Lettre de motivation <span class="text-danger">*</span></label>
+                        <textarea name="cover_letter" class="form-control" rows="6" placeholder="Expliquez pourquoi vous êtes le candidat idéal... (Min: 400 caractères)" minlength="400" required></textarea>
+                        <div class="invalid-feedback">La lettre de motivation est importante. Elle doit contenir au moins 400 caractères.</div>
                     </div>
                     
                     <div class="mb-4">
-                        <label class="form-label">Lien vers votre CV (ou chemin de fichier)</label>
-                        <input type="text" name="cv_path" class="form-control" placeholder="C:\Users\...\CV.pdf">
-                        <div class="form-text small opacity-75 mt-2">Simulation d'upload pour le squelette.</div>
+                        <label class="form-label">Votre CV (PDF, Image) <span class="text-danger">*</span></label>
+                        <input type="file" name="cv_file" class="form-control" accept=".pdf,.doc,.docx,image/*" required>
+                        <div class="form-text small opacity-75 mt-2">Le fichier sera hébergé sur Cloudinary.</div>
                     </div>
 
                     <div class="d-grid mt-6">
@@ -38,4 +39,20 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const form = document.getElementById('jobAppForm');
+    form.addEventListener('submit', function (event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    }, false);
+});
+</script>
 {% endblock %}

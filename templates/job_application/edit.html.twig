@@ -1,0 +1,62 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Modifier Candidature #{{ job_application.id }} | SyfonuRH{% endblock %}
+{% block page_title %}Modifier la candidature{% endblock %}
+
+{% block content %}
+<div class="row g-6 mt-2 justify-content-center">
+    <div class="col-xl-6">
+        <div class="card card-lg overflow-hidden">
+            <div class="bg-warning p-6 py-8">
+                <h4 class="text-white mb-2">{{ job_application.jobOffre.title }}</h4>
+                <div class="d-flex gap-4 text-white-50 small">
+                    <span><i class="ti ti-user me-1"></i>{{ job_application.candidat.firstName }} {{ job_application.candidat.lastName }}</span>
+                    <span><i class="ti ti-calendar me-1"></i>Postulé le {{ job_application.applyDate|date('d/m/Y') }}</span>
+                </div>
+            </div>
+            <div class="card-body p-6">
+                <form method="post" id="jobAppForm" class="needs-validation" novalidate>
+                    <div class="mb-4">
+                        <label class="form-label">Statut de la candidature <span class="text-danger">*</span></label>
+                        <select name="status" class="form-select" required>
+                            <option value="PENDING" {{ job_application.status == 'PENDING' ? 'selected' }}>En attente (PENDING)</option>
+                            <option value="ACCEPTED" {{ job_application.status == 'ACCEPTED' ? 'selected' }}>Accepté (ACCEPTED)</option>
+                            <option value="REJECTED" {{ job_application.status == 'REJECTED' ? 'selected' }}>Refusé (REJECTED)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Lettre de motivation</label>
+                        <textarea name="cover_letter" class="form-control" rows="8" minlength="400" maxlength="5000">{{ job_application.coverLetter }}</textarea>
+                        <div class="invalid-feedback">La lettre de motivation doit contenir au moins 400 caractères.</div>
+                        <div class="form-text">Entre 400 et 5000 caractères.</div>
+                    </div>
+                    
+                    <div class="d-grid mt-6">
+                        <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{{ path('app_job_application_show', {id: job_application.id}) }}" class="small text-secondary">Annuler et retourner aux détails</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const form = document.getElementById('jobAppForm');
+    form.addEventListener('submit', function (event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    }, false);
+});
+</script>
+{% endblock %}

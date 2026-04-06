@@ -1,0 +1,113 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Candidature #{{ job_application.id }} | SyfonuRH{% endblock %}
+{% block page_title %}Détails de la candidature{% endblock %}
+
+{% block content %}
+<div class="row g-6 mt-2">
+    <div class="col-xl-8">
+        <div class="card card-lg mb-6">
+            <div class="card-body p-6">
+                <div class="d-flex justify-content-between align-items-start mb-6">
+                    <div>
+                        <h2 class="mb-1">Candidature de {{ job_application.candidat.firstName }} {{ job_application.candidat.lastName }}</h2>
+                        <div class="d-flex gap-4 text-secondary small">
+                            <span><i class="ti ti-mail me-1"></i>{{ job_application.candidat.email }}</span>
+                            <span><i class="ti ti-calendar me-1"></i>Postulé le {{ job_application.applyDate|date('d/m/Y') }}</span>
+                        </div>
+                    </div>
+                    <span class="badge bg-{{ job_application.status == 'ACCEPTED' ? 'success' : (job_application.status == 'REJECTED' ? 'danger' : 'info') }}-subtle text-{{ job_application.status == 'ACCEPTED' ? 'success' : (job_application.status == 'REJECTED' ? 'danger' : 'info') }}-emphasis px-3 py-2">
+                        {{ job_application.status }}
+                    </span>
+                </div>
+
+                <div class="mb-8 p-4 rounded-3 bg-light">
+                    <h5 class="mb-3">Lettre de motivation</h5>
+                    <div class="text-secondary lh-lg">
+                        {{ job_application.coverLetter|nl2br|default('Aucune lettre fournie.') }}
+                    </div>
+                </div>
+
+                <div class="mb-0">
+                    <h5 class="mb-3">Pièces jointes</h5>
+                    {% if job_application.cvPath %}
+                        <div class="d-flex align-items-center justify-content-between p-4 rounded-3 border">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="icon-shape icon-md rounded-3 bg-danger-subtle text-danger">
+                                    <i class="ti ti-file-pdf fs-3"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Curriculum Vitae</h6>
+                                    <span class="small text-secondary">Hébergé sur Cloudinary</span>
+                                </div>
+                            </div>
+                            <a href="{{ job_application.cvPath }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                <i class="ti ti-eye me-1"></i> Consulter le CV
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning mb-0">Aucun CV n'a été téleversé pour cette candidature.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-lg">
+            <div class="card-body p-6">
+                <h5 class="mb-4">Détails de l'offre</h5>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="mb-1">{{ job_application.jobOffre.title }}</h6>
+                        <span class="small text-secondary">{{ job_application.jobOffre.location }} • {{ job_application.jobOffre.employmentType }}</span>
+                    </div>
+                    <a href="{{ path('app_job_offre_show', {id: job_application.jobOffre.id}) }}" class="btn btn-link btn-sm">Voir l'offre</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card card-lg mb-6">
+            <div class="card-body p-6">
+                <h5 class="mb-4">Actions de recrutement</h5>
+                <div class="d-grid gap-3">
+                    <form method="post" action="{{ path('app_job_application_status', {id: job_application.id}) }}">
+                        <input type="hidden" name="status" value="ACCEPTED">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="ti ti-check me-1"></i> Accepter la candidature
+                        </button>
+                    </form>
+                    <form method="post" action="{{ path('app_job_application_status', {id: job_application.id}) }}">
+                        <input type="hidden" name="status" value="REJECTED">
+                        <button type="submit" class="btn btn-danger w-100">
+                            <i class="ti ti-x me-1"></i> Refuser la candidature
+                        </button>
+                    </form>
+                    <hr class="my-2">
+                    <a href="{{ path('app_job_application_edit', {id: job_application.id}) }}" class="btn btn-outline-secondary w-100">
+                        <i class="ti ti-pencil me-1"></i> Modifier / Annoter
+                    </a>
+                    <a href="{{ path('app_job_application_index') }}" class="btn btn-link btn-sm text-secondary w-100 text-center">
+                        <i class="ti ti-arrow-left me-1"></i> Retour à la liste
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-lg">
+            <div class="card-body p-6 text-center">
+                <div class="avatar avatar-xl rounded-circle bg-primary-subtle text-primary mb-4 mx-auto">
+                    <i class="ti ti-user fs-1"></i>
+                </div>
+                <h6 class="mb-1">{{ job_application.candidat.firstName }} {{ job_application.candidat.lastName }}</h6>
+                <p class="small text-secondary mb-4">Candidat externe</p>
+                <div class="d-grid">
+                    <a href="mailto:{{ job_application.candidat.email }}" class="btn btn-light btn-sm">
+                        <i class="ti ti-mail me-1"></i> Contacter par email
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -18,7 +18,7 @@
                         </div>
                     </div>
                     <span class="badge bg-success-subtle text-success-emphasis px-3 py-2">
-                        {{ job_offre.status.value|capitalize }}
+                        {{ job_offre.status|capitalize }}
                     </span>
                 </div>
 
@@ -30,12 +30,43 @@
                 </div>
 
                 <div class="mb-8">
-                    <h5 class="mb-3">Salaire et avantages</h5>
-                    <div class="d-flex align-items-center gap-2 mb-2">
-                        <i class="ti ti-coin text-primary fs-4"></i>
-                        <span class="fw-semibold">{{ job_offre.salary|number_format(0, ',', ' ') }} € / an</span>
+                    <h5 class="mb-3">Informations complémentaires</h5>
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="ti ti-coin text-primary fs-4"></i>
+                                <span class="fw-semibold">{{ job_offre.salary|number_format(0, ',', ' ') }} € / an</span>
+                            </div>
+                            <p class="text-secondary small">
+                                Salaire <span class="badge bg-{{ job_offre.isSalaryNegotiable ? 'success' : 'secondary' }}-subtle text-{{ job_offre.isSalaryNegotiable ? 'success' : 'secondary' }}-emphasis">
+                                    {{ job_offre.isSalaryNegotiable ? 'négociable' : 'non négociable' }}
+                                </span>
+                            </p>
+                        </div>
+                        {% if job_offre.expiresAt %}
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="ti ti-alarm text-danger fs-4"></i>
+                                <span class="fw-semibold">Date d'expiration</span>
+                            </div>
+                            <p class="text-secondary small">Cette offre expire le {{ job_offre.expiresAt|date('d/m/Y à H:i') }}.</p>
+                        </div>
+                        {% endif %}
                     </div>
-                    <p class="text-secondary small">Salaire {{ job_offre.isSalaryNegotiable ? 'négociable' : 'non négociable' }}.</p>
+                    
+                    {% if job_offre.advantages %}
+                    <h5 class="mb-3">Avantages</h5>
+                    <div class="d-flex flex-wrap gap-2 mb-6">
+                        {% for advantage in job_offre.advantages|split(',') %}
+                            {% set advantage = advantage|trim %}
+                            {% if advantage %}
+                            <span class="badge bg-primary-subtle text-primary-emphasis px-3 py-2 rounded-pill fs-6">
+                                {{ advantage }}
+                            </span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

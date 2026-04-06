@@ -44,8 +44,8 @@
                             <td>{{ offre.salary|number_format(0, ',', ' ') }} €</td>
                             <td>{{ offre.employmentType }}</td>
                             <td>
-                                <span class="badge bg-{{ offre.status.value == 'published' ? 'success' : 'warning' }}-subtle text-{{ offre.status.value == 'published' ? 'success' : 'warning' }}-emphasis">
-                                    {{ offre.status.value|capitalize }}
+                                <span class="badge bg-{{ offre.status == 'PUBLISHED' ? 'success' : 'warning' }}-subtle text-{{ offre.status == 'PUBLISHED' ? 'success' : 'warning' }}-emphasis">
+                                    {{ offre.status|capitalize }}
                                 </span>
                             </td>
                             <td>{{ offre.createdAt|date('d/m/Y') }}</td>

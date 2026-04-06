@@ -1,0 +1,96 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Contrats | SyfonuRH{% endblock %}
+{% block page_title %}Gestion des Contrats{% endblock %}
+
+{% block content %}
+<div class="row g-6 mt-2">
+    <div class="col-12">
+        <div class="card h-100">
+            <div class="card-header border-bottom-0 d-md-flex align-items-center justify-content-between">
+                <h5 class="mb-0">Liste des contrats</h5>
+                <a href="{{ path('app_contract_new') }}" class="btn btn-primary btn-sm">
+                    <i class="ti ti-plus me-1"></i> Nouveau contrat
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover table-centered mb-0 text-nowrap">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Candidat</th>
+                            <th>Type</th>
+                            <th>Offre liée</th>
+                            <th>Salaire Net</th>
+                            <th>Statut</th>
+                            <th>Date début</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for contract in contracts %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="avatar avatar-sm rounded-circle bg-info-subtle text-info">
+                                        {{ contract.candidate.firstName|first }}{{ contract.candidate.lastName|first }}
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">{{ contract.candidate.firstName }} {{ contract.candidate.lastName }}</h6>
+                                        <span class="small text-secondary">{{ contract.candidate.email }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary-subtle text-secondary-emphasis">
+                                    {{ contract.typeContrat.name|default('N/A') }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="text-truncate" style="max-width: 150px;">
+                                    <span class="small fw-semibold">{{ contract.jobOffre.title|default('N/A') }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-success">{{ contract.salaireNet|number_format(2, ',', ' ') }} €</span>
+                            </td>
+                            <td>
+                                {% set badge_class = 'warning' %}
+                                {% if contract.status == 'Actif' %}{% set badge_class = 'success' %}{% endif %}
+                                {% if contract.status == 'Terminé' %}{% set badge_class = 'dark' %}{% endif %}
+                                <span class="badge bg-{{ badge_class }}-subtle text-{{ badge_class }}-emphasis">
+                                    {{ contract.status }}
+                                </span>
+                            </td>
+                            <td>{{ contract.startDate|date('d/m/Y') }}</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-ghost btn-icon btn-sm rounded-circle" type="button" data-bs-toggle="dropdown">
+                                        <i class="ti ti-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><a class="dropdown-item" href="{{ path('app_contract_show', {id: contract.id}) }}">Voir détails</a></li>
+                                        <li><a class="dropdown-item" href="{{ path('app_contract_edit', {id: contract.id}) }}">Modifier</a></li>
+                                        <li>
+                                            <form method="post" action="{{ path('app_contract_delete', {id: contract.id}) }}" onsubmit="return confirm('Confirmer la suppression ?');">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ contract.id) }}">
+                                                <button class="dropdown-item text-danger">Supprimer</button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-8">
+                                <p class="text-secondary mb-0">Aucun contrat trouvé.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
