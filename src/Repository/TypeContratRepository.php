@@ -15,4 +15,18 @@ class TypeContratRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, TypeContrat::class);
     }
+
+    public function findBySearch(?string $search): array
+    {
+        $qb = $this->createQueryBuilder('t');
+
+        if ($search) {
+            $qb->andWhere('t.name LIKE :search OR t.description LIKE :search')
+                ->setParameter('search', '%' . $search . '%');
+        }
+
+        return $qb->orderBy('t.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
 }

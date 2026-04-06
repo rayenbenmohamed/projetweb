@@ -1,0 +1,52 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}{{ contract.id ? 'Modifier' : 'Nouveau' }} Contrat | SyfonuRH{% endblock %}
+{% block page_title %}{{ contract.id ? 'Modifier' : 'Nouveau' }} Contrat{% endblock %}
+
+{% block content %}
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 15px;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+    }
+    .hero-gradient {
+        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        color: white;
+        padding: 3rem;
+        border-radius: 15px;
+        margin-bottom: -2rem;
+        position: relative;
+        z-index: 1;
+    }
+    .btn-premium {
+        border-radius: 10px;
+        padding: 0.6rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="hero-gradient shadow-lg">
+                <h1 class="display-6 fw-bold mb-1">{{ contract.id ? 'Modifier le Contrat #' ~ contract.id : 'Nouveau Contrat' }}</h1>
+                <p class="opacity-75 mb-0">Remplissez les informations ci-dessous pour {{ contract.id ? 'mettre à jour' : 'créer' }} le contrat.</p>
+            </div>
+            
+            <div class="glass-card p-5 pt-7 mt-n4">
+                {{ include('contract/_form.html.twig', {'button_label': contract.id ? 'Mettre à jour' : 'Créer le contrat'}) }}
+            </div>
+
+            <div class="mt-4 text-center">
+                <a href="{{ path('app_contract_index') }}" class="text-muted text-decoration-none small">
+                    <i class="fas fa-chevron-left me-1"></i>Retour à la liste des contrats
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

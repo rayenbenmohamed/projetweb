@@ -32,8 +32,8 @@ class JobOffre
     #[ORM\Column(name: 'publishedAt', type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $publishedAt = null;
 
-    #[ORM\Column(length: 20)]
-    private ?string $status = 'DRAFT';
+    #[ORM\Column(length: 20, type: 'string', enumType: OfferStatus::class)]
+    private OfferStatus $status = OfferStatus::DRAFT;
 
     #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $createdAt = null;
@@ -126,12 +126,12 @@ class JobOffre
         return $this;
     }
 
-    public function getStatus(): ?string
+    public function getStatus(): OfferStatus
     {
         return $this->status;
     }
 
-    public function setStatus(string $status): self
+    public function setStatus(OfferStatus $status): self
     {
         $this->status = $status;
         return $this;

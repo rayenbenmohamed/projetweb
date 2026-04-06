@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\ContractRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ContractRepository::class)]
 class Contract
@@ -14,18 +15,24 @@ class Contract
     private ?int $id = null;
 
     #[ORM\Column(type: 'date')]
+    #[Assert\NotBlank(message: "La date de début est obligatoire")]
+    #[Assert\Type("\DateTimeInterface")]
     private ?\DateTimeInterface $startDate = null;
 
     #[ORM\Column(type: 'date', nullable: true)]
+    #[Assert\GreaterThan(propertyPath: "startDate", message: "La date de fin doit être après la date de début")]
     private ?\DateTimeInterface $endDate = null;
 
     #[ORM\Column]
+    #[Assert\NotBlank(message: "Le salaire est obligatoire")]
+    #[Assert\Positive(message: "Le salaire doit être positif")]
     private ?int $salary = null;
 
     #[ORM\Column(nullable: true)]
     private ?float $salaireNet = null;
 
     #[ORM\Column(length: 50)]
+    #[Assert\Choice(choices: ["En Attente", "Valide", "Refuse"], message: "Statut invalide")]
     private ?string $status = 'En Attente';
 
     #[ORM\Column]
@@ -48,6 +55,7 @@ class Contract
 
     #[ORM\ManyToOne(targetEntity: TypeContrat::class, inversedBy: 'contracts')]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    #[Assert\NotBlank(message: "Le type de contrat est obligatoire")]
     private ?TypeContrat $typeContrat = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]

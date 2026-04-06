@@ -1,0 +1,43 @@
+<style>
+    .form-glass {
+        background: rgba(255, 255, 255, 0.4);
+        padding: 2rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .form-label {
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+    }
+    .form-control {
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        border: 1px solid #e5e7eb;
+        transition: all 0.3s ease;
+    }
+    .form-control:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+    }
+</style>
+
+{{ form_start(form, {'attr': {'class': 'form-glass'}}) }}
+    <div class="mb-4">
+        {{ form_label(form.name, 'Nom du Type') }}
+        {{ form_widget(form.name, {'attr': {'class': 'form-control', 'placeholder': 'Ex: CDI, CDD, Stage...'}}) }}
+        {{ form_errors(form.name) }}
+    </div>
+    <div class="mb-4">
+        {{ form_label(form.description, 'Description') }}
+        {{ form_widget(form.description, {'attr': {'class': 'form-control', 'rows': 4, 'placeholder': 'Décrivez brièvement ce type de contrat...'}}) }}
+        {{ form_errors(form.description) }}
+    </div>
+
+    <div class="mt-5 d-flex gap-2">
+        <button class="btn btn-success btn-premium px-5 shadow-sm">
+            <i class="fas fa-check-circle me-2"></i>{{ button_label|default('Enregistrer') }}
+        </button>
+        <a href="{{ path('app_type_contrat_index') }}" class="btn btn-link text-secondary text-decoration-none">Annuler</a>
+    </div>
+{{ form_end(form) }}

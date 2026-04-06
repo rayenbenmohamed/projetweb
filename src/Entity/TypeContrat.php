@@ -6,6 +6,7 @@ use App\Repository\TypeContratRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: TypeContratRepository::class)]
 class TypeContrat
@@ -16,6 +17,8 @@ class TypeContrat
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: "Le nom du type de contrat est obligatoire")]
+    #[Assert\Length(max: 255, maxMessage: "Le nom ne peut pas dépasser 255 caractères")]
     private ?string $name = null;
 
     #[ORM\Column(type: 'text', nullable: true)]

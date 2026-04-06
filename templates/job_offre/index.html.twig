@@ -36,7 +36,7 @@
                                     </div>
                                     <div>
                                         <h6 class="mb-0">{{ offre.title }}</h6>
-                                        <span class="small text-secondary">{{ offre.user.firstName }}</span>
+                                        <span class="small text-secondary">{{ offre.user ? offre.user.firstName : 'Système' }}</span>
                                     </div>
                                 </div>
                             </td>

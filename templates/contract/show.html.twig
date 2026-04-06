@@ -1,0 +1,148 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Détails du Contrat | SyfonuRH{% endblock %}
+{% block page_title %}Détails du contrat{% endblock %}
+
+{% block content %}
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 15px;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+    }
+    .hero-gradient {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        padding: 3rem;
+        border-radius: 15px;
+        margin-bottom: -2rem;
+        position: relative;
+        z-index: 1;
+    }
+    .info-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05rem;
+        color: #6b7280;
+        margin-bottom: 0.25rem;
+        font-weight: 700;
+    }
+    .info-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #111827;
+    }
+    .section-title {
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: #3b82f6;
+        text-transform: uppercase;
+        border-bottom: 2px solid #eff6ff;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="hero-gradient shadow-lg d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold mb-1">Détails du Contrat #{{ contract.id }}</h1>
+                    <p class="opacity-75 mb-0">Revue complète des termes et informations du contrat.</p>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-white text-primary fs-6 px-3 py-2 rounded-pill">
+                        {{ contract.status }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="glass-card p-5 pt-7 mt-n4">
+                <div class="row g-5">
+                    {# Section 1: Parties #}
+                    <div class="col-md-12">
+                        <h2 class="section-title"><i class="fas fa-users me-2"></i>Parties au Contrat</h2>
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <div class="info-label">Candidat / Salarié</div>
+                                <div class="info-value d-flex align-items-center">
+                                    <div class="bg-primary-subtle p-2 rounded-circle me-3">
+                                        <i class="fas fa-user text-primary"></i>
+                                    </div>
+                                    <div>
+                                        {{ contract.candidate ? contract.candidate.email : 'Non assigné' }}
+                                        <div class="small text-muted fw-normal">ID: {{ contract.candidate ? contract.candidate.id : 'N/A' }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="info-label">Recruteur / Gestionnaire</div>
+                                <div class="info-value d-flex align-items-center">
+                                    <div class="bg-secondary-subtle p-2 rounded-circle me-3">
+                                        <i class="fas fa-user-tie text-secondary"></i>
+                                    </div>
+                                    <div>
+                                        {{ contract.recruiter ? contract.recruiter.email : 'Non assigné' }}
+                                        <div class="small text-muted fw-normal">ID: {{ contract.recruiter ? contract.recruiter.id : 'N/A' }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Section 2: Poste #}
+                    <div class="col-md-12">
+                        <h2 class="section-title"><i class="fas fa-briefcase me-2"></i>Poste & Offre</h2>
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <div class="info-label">Titre du Poste</div>
+                                <div class="info-value">{{ contract.jobOffre ? contract.jobOffre.title : 'N/A' }}</div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="info-label">Type de Contrat</div>
+                                <div class="info-value">
+                                    <span class="badge bg-info text-white">{{ contract.typeContrat ? contract.typeContrat.name : 'N/A' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Section 3: Conditions #}
+                    <div class="col-md-12">
+                        <h2 class="section-title"><i class="fas fa-file-invoice-dollar me-2"></i>Conditions Financières & Dates</h2>
+                        <div class="row">
+                            <div class="col-md-4 mb-4">
+                                <div class="info-label">Salaire Brut</div>
+                                <div class="info-value text-primary fs-4">{{ contract.salary|number_format(0, ',', ' ') }} DT</div>
+                            </div>
+                            <div class="col-md-4 mb-4">
+                                <div class="info-label">Date de Début</div>
+                                <div class="info-value">{{ contract.startDate ? contract.startDate|date('d F Y') : 'Non définie' }}</div>
+                            </div>
+                            <div class="col-md-4 mb-4">
+                                <div class="info-label">Date de Fin</div>
+                                <div class="info-value">{{ contract.endDate ? contract.endDate|date('d F Y') : 'Contrat à durée indéterminée' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-5 pt-4 d-flex justify-content-between">
+                    <a href="{{ path('app_contract_index') }}" class="btn btn-outline-secondary btn-premium">
+                        <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+                    </a>
+                    <div class="gap-2 d-flex">
+                        <a href="{{ path('app_contract_edit', {'id': contract.id}) }}" class="btn btn-warning btn-premium text-white">
+                            <i class="fas fa-edit me-2"></i>Modifier
+                        </a>
+                        {{ include('contract/_delete_form.html.twig') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

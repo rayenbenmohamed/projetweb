@@ -1,0 +1,6 @@
+<form method="post" action="{{ path('app_type_contrat_delete', {'id': type_contrat.id}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce type de contrat ?');" style="display:inline-block;">
+    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ type_contrat.id) }}">
+    <button class="btn btn-outline-danger btn-sm btn-premium border-0 bg-danger-subtle text-danger-emphasis">
+        <i class="fas fa-trash"></i>
+    </button>
+</form>
