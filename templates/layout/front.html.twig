@@ -1,0 +1,124 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+{% set sn = social_notifications() %}
+<div id="miniSidebar">
+    <div class="brand-logo">
+        <a class="d-none d-md-flex align-items-center gap-2" href="{{ path('app_app_dashboard') }}">
+            <img src="{{ asset('dasher/images/brand/logo/logo-icon.svg') }}" alt="Logo"/>
+            <span class="fw-bold fs-4 site-logo-text">SyfonuRH</span>
+        </a>
+    </div>
+    <ul class="navbar-nav flex-column">
+        <li class="nav-item">
+            <a class="nav-link" href="{{ path('app_home') }}">
+                <span class="nav-icon"><i class="ti ti-home"></i></span>
+                <span class="text">Accueil public</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ app.request.attributes.get('_route') == 'app_app_dashboard' ? 'active' }}"
+               href="{{ path('app_app_dashboard') }}">
+                <span class="nav-icon"><i class="ti ti-layout-dashboard"></i></span>
+                <span class="text">Mon espace</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ path('app_job_offre_index') }}">
+                <span class="nav-icon"><i class="ti ti-briefcase"></i></span>
+                <span class="text">Offres d'emploi</span>
+            </a>
+        </li>
+        {% if is_granted('ROLE_RECRUTEUR') %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ path('app_job_offre_new') }}">
+                    <span class="nav-icon"><i class="ti ti-plus"></i></span>
+                    <span class="text">Nouvelle offre</span>
+                </a>
+            </li>
+        {% endif %}
+        <li class="nav-item">
+            <a class="nav-link" href="{{ path('app_job_application_index') }}">
+                <span class="nav-icon"><i class="ti ti-users"></i></span>
+                <span class="text">Candidatures</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_friends' or app.request.attributes.get('_route') starts with 'app_chat' ? 'active' }}"
+               href="{{ path('app_friends_index') }}">
+                <span class="nav-icon"><i class="ti ti-users-group"></i></span>
+                <span class="text">Amis</span>
+                <span class="badge bg-danger rounded-pill ms-1 {{ sn.total > 0 ? '' : 'd-none' }}" data-sidebar-social-total>{{ sn.total > 99 ? '99+' : sn.total }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ path('app_forum_index') }}">
+                <span class="nav-icon"><i class="ti ti-message-2"></i></span>
+                <span class="text">Forum</span>
+            </a>
+        </li>
+        {% if is_granted('ROLE_CANDIDAT') %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ path('app_cv_index') }}">
+                    <span class="nav-icon"><i class="ti ti-id-badge"></i></span>
+                    <span class="text">CV</span>
+                </a>
+            </li>
+        {% endif %}
+        {% if is_granted('ROLE_ADMIN') %}
+            <li class="nav-item">
+                <div class="nav-heading">Admin</div>
+                <hr class="mx-5 nav-line mb-1"/>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ path('admin_dashboard') }}">
+                    <span class="nav-icon"><i class="ti ti-shield-lock"></i></span>
+                    <span class="text">Back-office</span>
+                </a>
+            </li>
+        {% endif %}
+        <li class="nav-item">
+            <div class="nav-heading">Compte</div>
+            <hr class="mx-5 nav-line mb-1"/>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ app.request.attributes.get('_route') == 'app_profile' ? 'active' }}"
+               href="{{ path('app_profile') }}">
+                <span class="nav-icon"><i class="ti ti-user"></i></span>
+                <span class="text">Mon profil</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ path('app_logout') }}">
+                <span class="nav-icon"><i class="ti ti-logout"></i></span>
+                <span class="text">Déconnexion</span>
+            </a>
+        </li>
+    </ul>
+</div>
+
+<div id="content" class="position-relative h-100">
+    <nav class="navbar navbar-expand-md bg-body-tertiary px-4 py-3 border-bottom">
+        <button class="btn d-md-none me-2" id="sidebarToggle" type="button">
+            <i class="ti ti-menu-2"></i>
+        </button>
+        <span class="navbar-brand fw-semibold">{% block page_title 'Mon espace' %}</span>
+        <div class="ms-auto d-flex align-items-center gap-2">
+            {% include '_social_notifications_nav.html.twig' with { sn: sn } only %}
+            <span class="text-secondary small text-truncate" style="max-width: 12rem;">{{ app.user.userIdentifier }}</span>
+        </div>
+    </nav>
+
+    <div class="custom-container mt-3">
+        {% include '_flashes.html.twig' %}
+    </div>
+
+    <div class="custom-container">
+        {% block content %}{% endblock %}
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {% include '_social_notifications_script.html.twig' %}
+{% endblock %}

@@ -1,7 +1,6 @@
-{% extends 'layout/admin.html.twig' %}
+{% extends 'layout/public.html.twig' %}
 
 {% block title %}Offres d'emploi | SyfonuRH{% endblock %}
-{% block page_title %}Gestion des offres d'emploi{% endblock %}
 
 {% block content %}
 <div class="row g-6 mt-2">
@@ -9,9 +8,11 @@
         <div class="card h-100">
             <div class="card-header border-bottom-0 d-md-flex align-items-center justify-content-between">
                 <h5 class="mb-0">Liste des offres</h5>
+                {% if is_granted('ROLE_RECRUTEUR') or is_granted('ROLE_ADMIN') %}
                 <a href="{{ path('app_job_offre_new') }}" class="btn btn-primary btn-sm">
                     <i class="ti ti-plus me-1"></i> Nouvelle offre
                 </a>
+                {% endif %}
             </div>
             <div class="table-responsive">
                 <table class="table table-hover table-centered mb-0 text-nowrap">
@@ -36,7 +37,7 @@
                                     </div>
                                     <div>
                                         <h6 class="mb-0">{{ offre.title }}</h6>
-                                        <span class="small text-secondary">{{ offre.user.firstName }}</span>
+                                        <span class="small text-secondary">{{ offre.user ? offre.user.firstName : '—' }}</span>
                                     </div>
                                 </div>
                             </td>
@@ -56,7 +57,10 @@
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
                                         <li><a class="dropdown-item" href="{{ path('app_job_offre_show', {id: offre.id}) }}">Voir l'offre</a></li>
+                                        {% if is_granted('ROLE_CANDIDAT') %}
                                         <li><a class="dropdown-item" href="{{ path('app_job_application_new', {id: offre.id}) }}">Postuler</a></li>
+                                        {% endif %}
+                                        {% if is_granted('ROLE_RECRUTEUR') or is_granted('ROLE_ADMIN') %}
                                         <li><a class="dropdown-item" href="{{ path('app_job_offre_edit', {id: offre.id}) }}">Modifier</a></li>
                                         <li>
                                             <form method="post" action="{{ path('app_job_offre_delete', {id: offre.id}) }}" onsubmit="return confirm('Confirmer la suppression ?');">
@@ -64,6 +68,7 @@
                                                 <button class="dropdown-item text-danger">Supprimer</button>
                                             </form>
                                         </li>
+                                        {% endif %}
                                     </ul>
                                 </div>
                             </td>

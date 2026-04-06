@@ -54,7 +54,7 @@ class JobOffre
     private ?string $advantages = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'user_id', nullable: true)]
     private ?User $user = null;
 
     #[ORM\OneToMany(mappedBy: 'jobOffre', targetEntity: JobApplication::class, orphanRemoval: true)]

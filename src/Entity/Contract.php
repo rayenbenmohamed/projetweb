@@ -47,19 +47,19 @@ class Contract
     private ?string $googleEventIdTrial = null;
 
     #[ORM\ManyToOne(targetEntity: TypeContrat::class, inversedBy: 'contracts')]
-    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    #[ORM\JoinColumn(name: 'contract_type_id', nullable: true, onDelete: 'SET NULL')]
     private ?TypeContrat $typeContrat = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(name: 'candidate_id', nullable: false, onDelete: 'CASCADE')]
     private ?User $candidate = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    #[ORM\JoinColumn(name: 'recruiter_id', nullable: true, onDelete: 'SET NULL')]
     private ?User $recruiter = null;
 
     #[ORM\ManyToOne(targetEntity: JobOffre::class)]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(name: 'job_offer_id', nullable: false, onDelete: 'CASCADE')]
     private ?JobOffre $jobOffre = null;
 
     public function getId(): ?int

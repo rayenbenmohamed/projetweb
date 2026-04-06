@@ -12,6 +12,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/job/application')]
 class JobApplicationController extends AbstractController
@@ -27,6 +28,7 @@ class JobApplicationController extends AbstractController
     }
 
     #[Route('/new/{id}', name: 'app_job_application_new', methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_CANDIDAT')]
     public function new(
         Request $request, 
         JobOffre $jobOffre, 

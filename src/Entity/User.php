@@ -22,10 +22,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 180, unique: true)]
     private ?string $email = null;
 
-    #[ORM\Column(length: 50)]
+    #[ORM\Column(length: 80)]
     private ?string $role = null;
 
-    #[ORM\Column]
+    #[ORM\Column(length: 255)]
     private ?string $password = null;
 
     #[ORM\Column(name: "firstName", length: 255, nullable: true)]
@@ -72,7 +72,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getRoles(): array
     {
-        return [$this->role ?: 'ROLE_USER'];
+        $stored = (string) ($this->role ?? '');
+        $primary = match (true) {
+            $stored !== '' && str_starts_with($stored, 'ROLE_') => $stored,
+            $stored === 'Candidat' => 'ROLE_CANDIDAT',
+            $stored === 'Recruteur' => 'ROLE_RECRUTEUR',
+            $stored === 'Admin', strcasecmp($stored, 'admin') === 0 => 'ROLE_ADMIN',
+            default => 'ROLE_USER',
+        };
+
+        return array_values(array_unique(array_merge([$primary, 'ROLE_USER'])));
     }
 
     public function setRoles(array $roles): self
