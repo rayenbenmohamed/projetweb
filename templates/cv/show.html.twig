@@ -1,0 +1,53 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block page_title %}Détails du CV{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Détails du CV</h1>
+        <div>
+            <a href="{{ path('app_cv_index') }}" class="btn btn-outline-secondary me-2">
+                <i class="ti ti-list"></i> Retour à la liste
+            </a>
+            <a href="{{ path('app_cv_edit', {'id': cv.id}) }}" class="btn btn-primary">
+                <i class="ti ti-edit"></i> Modifier
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow border-0 border-top border-info border-3 mb-4">
+        <div class="card-body p-4">
+            <div class="row">
+                <div class="col-md-4 border-end">
+                    <h4 class="text-primary mb-3">{{ cv.fullName }}</h4>
+                    <p class="text-muted"><i class="ti ti-briefcase me-2"></i> {{ cv.title ?: 'Titre non défini' }}</p>
+                    <p><i class="ti ti-mail me-2"></i> {{ cv.email ?: 'Non renseigné' }}</p>
+                    <p><i class="ti ti-phone me-2"></i> {{ cv.phone ?: 'Non renseigné' }}</p>
+                    <p><i class="ti ti-map-pin me-2"></i> {{ cv.address ?: 'Non renseigné' }}</p>
+                    <p><i class="ti ti-calendar me-2"></i> {{ cv.birthDate ? cv.birthDate|date('d/m/Y') : 'Non renseigné' }}</p>
+                    <div class="mt-4">
+                        {{ include('cv/_delete_form.html.twig') }}
+                    </div>
+                </div>
+                <div class="col-md-8 ps-md-4">
+                    <h5 class="mb-3 text-secondary border-bottom pb-2">Résumé</h5>
+                    <p>{{ cv.summary|nl2br ?: 'Aucun résumé.' }}</p>
+
+                    <h5 class="mb-3 mt-4 text-secondary border-bottom pb-2">Formation</h5>
+                    <p>{{ cv.education|nl2br ?: 'Aucune formation.' }}</p>
+
+                    <h5 class="mb-3 mt-4 text-secondary border-bottom pb-2">Expérience</h5>
+                    <p>{{ cv.experience|nl2br ?: 'Aucune expérience.' }}</p>
+
+                    <h5 class="mb-3 mt-4 text-secondary border-bottom pb-2">Compétences</h5>
+                    <p>{{ cv.skills|nl2br ?: 'Aucune compétence listée.' }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer bg-light text-muted small">
+            Créé le : {{ cv.createdAt ? cv.createdAt|date('d/m/Y H:i') : '' }} | Dernière modification : {{ cv.updatedAt ? cv.updatedAt|date('d/m/Y H:i') : '' }} | Visibilité : {{ cv.isPublic ? 'Public' : 'Privé' }}
+        </div>
+    </div>
+</div>
+{% endblock %}
