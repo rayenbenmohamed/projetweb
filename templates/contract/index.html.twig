@@ -1,96 +1,251 @@
 {% extends 'layout/admin.html.twig' %}
 
 {% block title %}Contrats | SyfonuRH{% endblock %}
-{% block page_title %}Gestion des Contrats{% endblock %}
+{% block page_title %}Gestion des contrats{% endblock %}
 
 {% block content %}
-<div class="row g-6 mt-2">
-    <div class="col-12">
-        <div class="card h-100">
-            <div class="card-header border-bottom-0 d-md-flex align-items-center justify-content-between">
-                <h5 class="mb-0">Liste des contrats</h5>
-                <a href="{{ path('app_contract_new') }}" class="btn btn-primary btn-sm">
-                    <i class="ti ti-plus me-1"></i> Nouveau contrat
-                </a>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover table-centered mb-0 text-nowrap">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Candidat</th>
-                            <th>Type</th>
-                            <th>Offre liée</th>
-                            <th>Salaire Net</th>
-                            <th>Statut</th>
-                            <th>Date début</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for contract in contracts %}
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="avatar avatar-sm rounded-circle bg-info-subtle text-info">
-                                        {{ contract.candidate.firstName|first }}{{ contract.candidate.lastName|first }}
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-0">{{ contract.candidate.firstName }} {{ contract.candidate.lastName }}</h6>
-                                        <span class="small text-secondary">{{ contract.candidate.email }}</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="badge bg-secondary-subtle text-secondary-emphasis">
-                                    {{ contract.typeContrat.name|default('N/A') }}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="text-truncate" style="max-width: 150px;">
-                                    <span class="small fw-semibold">{{ contract.jobOffre.title|default('N/A') }}</span>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="fw-bold text-success">{{ contract.salaireNet|number_format(2, ',', ' ') }} €</span>
-                            </td>
-                            <td>
-                                {% set badge_class = 'warning' %}
-                                {% if contract.status == 'Actif' %}{% set badge_class = 'success' %}{% endif %}
-                                {% if contract.status == 'Terminé' %}{% set badge_class = 'dark' %}{% endif %}
-                                <span class="badge bg-{{ badge_class }}-subtle text-{{ badge_class }}-emphasis">
-                                    {{ contract.status }}
-                                </span>
-                            </td>
-                            <td>{{ contract.startDate|date('d/m/Y') }}</td>
-                            <td>
-                                <div class="dropdown">
-                                    <button class="btn btn-ghost btn-icon btn-sm rounded-circle" type="button" data-bs-toggle="dropdown">
-                                        <i class="ti ti-dots-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <li><a class="dropdown-item" href="{{ path('app_contract_show', {id: contract.id}) }}">Voir détails</a></li>
-                                        <li><a class="dropdown-item" href="{{ path('app_contract_edit', {id: contract.id}) }}">Modifier</a></li>
-                                        <li>
-                                            <form method="post" action="{{ path('app_contract_delete', {id: contract.id}) }}" onsubmit="return confirm('Confirmer la suppression ?');">
-                                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ contract.id) }}">
-                                                <button class="dropdown-item text-danger">Supprimer</button>
-                                            </form>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="7" class="text-center py-8">
-                                <p class="text-secondary mb-0">Aucun contrat trouvé.</p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+<div class="row g-4 mt-2">
+  {# Stats Dashboard #}
+  <div class="col-xl-4">
+    <div class="card bg-primary text-white shadow-sm h-100 border-0 overflow-hidden" style="border-radius: 12px;">
+       <div class="card-body p-4 position-relative z-1">
+          <div class="small opacity-75 text-uppercase fw-bold mb-1">Masse Salariale Annuelle</div>
+          <div class="h2 fw-bold mb-0">{{ stats.total_payroll|number_format(0) }} TND</div>
+       </div>
     </div>
+  </div>
+  <div class="col-xl-4">
+    <div class="card bg-warning text-dark shadow-sm h-100 border-0" style="border-radius: 12px; border-left: 5px solid #ffaa00 !important;">
+       <div class="card-body p-4">
+          <div class="small opacity-75 text-uppercase fw-bold mb-1">Signatures en Attente</div>
+          <div class="h2 fw-bold mb-0">{{ stats.pending_signatures }} <small class="fs-6 fw-normal text-muted">Contrats</small></div>
+       </div>
+    </div>
+  </div>
+  <div class="col-xl-4">
+    <div class="card bg-danger text-white shadow-sm h-100 border-0" style="border-radius: 12px; border-left: 5px solid #ff4d4d !important;">
+       <div class="card-body p-4">
+          <div class="small opacity-75 text-uppercase fw-bold mb-1">Urgences 30 Jours</div>
+          <div class="h2 fw-bold mb-0">{{ stats.expiring_soon }} <small class="fs-6 fw-normal text-white-50">Alertes</small></div>
+       </div>
+    </div>
+  </div>
+
+  {# Charts Section #}
+  <div class="col-xl-8">
+     <div class="card shadow-sm border-0" style="border-radius: 12px;">
+        <div class="card-header bg-white border-0 pt-4 px-4 pb-0 fw-bold">Hiring Pulse (Tendances {{ "now"|date('Y') }})</div>
+        <div class="card-body p-4">
+           <canvas id="hiringTrendChart" style="height: 250px;"></canvas>
+        </div>
+     </div>
+  </div>
+  <div class="col-xl-4">
+     <div class="card shadow-sm border-0 h-100" style="border-radius: 12px;">
+        <div class="card-header bg-white border-0 pt-4 px-4 pb-0 fw-bold">Répartition Contrats</div>
+        <div class="card-body p-4 d-flex align-items-center justify-content-center">
+           <canvas id="contractTypeChart" style="height: 200px;"></canvas>
+        </div>
+     </div>
+  </div>
+
+  {# Table Card #}
+  <div class="col-12 mt-4">
+    <div class="card shadow-sm border-0" style="border-radius: 12px;">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center p-4 border-bottom-0">
+        <h5 class="mb-0 fw-bold">Gestion des Contrats</h5>
+        <a href="{{ path('app_contract_new') }}" class="btn btn-primary btn-sm px-4">Nouveau contrat</a>
+      </div>
+      <div class="card-body pt-0">
+        {# Hidden Data for JS #}
+        <div id="contractsChartData" style="display:none" data-json="{{ chartData|json_encode }}"></div>
+        
+        <form method="get" class="row g-3 align-items-end mb-4" id="contractFilters">
+          <div class="col-xl-3 col-md-6">
+            <label class="form-label">Recherche</label>
+            <input class="form-control" type="text" name="q" value="{{ filters.q }}" placeholder="Global (nom, email, offre...)" data-autosubmit>
+          </div>
+          <div class="col-xl-3 col-md-6">
+            <label class="form-label">Candidat</label>
+            <select class="form-select" name="candidate_id" data-autosubmit data-choices>
+              <option value="">Tous les candidats</option>
+              {% for c in all_candidates %}
+                <option value="{{ c.id }}" {{ filters.candidate_id == c.id ? 'selected' : '' }}>{{ c.firstName }} {{ c.lastName }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-xl-3 col-md-6">
+            <label class="form-label">Recruteur</label>
+            <select class="form-select" name="recruiter_id" data-autosubmit data-choices>
+              <option value="">Tous les recruteurs</option>
+              {% for r in all_recruiters %}
+                <option value="{{ r.id }}" {{ filters.recruiter_id == r.id ? 'selected' : '' }}>{{ r.firstName }} {{ r.lastName }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-xl-3 col-md-6">
+            <label class="form-label">Salaire Min (TND)</label>
+            <input class="form-control" type="number" name="salary_min" value="{{ filters.salary_min }}" placeholder="Ex: 2000" data-autosubmit>
+          </div>
+
+          <div class="col-xl-3 col-md-6">
+            <label class="form-label">Type de contrat</label>
+            <select class="form-select" name="type" data-autosubmit data-choices>
+              <option value="">Tous les types</option>
+              {% for t in types %}
+                <option value="{{ t.id }}" {{ filters.type == t.id ? 'selected' : '' }}>{{ t.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-xl-3 col-md-6">
+            <label class="form-label">Statut</label>
+            <select class="form-select" name="status" data-autosubmit data-choices>
+              <option value="">Tous les statuts</option>
+              {% for s in ['En Attente','Actif','Suspendu','Terminé'] %}
+                <option value="{{ s }}" {{ filters.status == s ? 'selected' : '' }}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-xl-3 col-md-6">
+            <label class="form-label">Signé</label>
+            <select class="form-select" name="signed" data-autosubmit data-choices>
+              <option value="">Tous</option>
+              <option value="1" {{ filters.signed == '1' ? 'selected' : '' }}>Oui</option>
+              <option value="0" {{ filters.signed == '0' ? 'selected' : '' }}>Non</option>
+            </select>
+          </div>
+          <div class="col-xl-3 col-md-6 d-flex gap-2">
+            <input type="hidden" name="limit" value="{{ limit }}">
+            <button class="btn btn-outline-primary w-100 d-none" type="submit">Filtrer</button>
+            <a class="btn btn-outline-secondary w-100" href="{{ path('app_contract_index') }}">
+              <i class="ti ti-refresh me-1"></i> Réinitialiser
+            </a>
+          </div>
+        </form>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover table-centered mb-0 text-nowrap">
+          <thead class="table-light">
+            <tr>
+              <th>Candidat</th>
+              <th>Type</th>
+              <th>Offre</th>
+              <th>Début</th>
+              <th>Fin</th>
+              <th>Salaire</th>
+              <th>Statut</th>
+              <th>Signé</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for contract in contracts %}
+              <tr>
+                <td>
+                  {{ contract.candidate.firstName ?? '' }} {{ contract.candidate.lastName ?? '' }}
+                </td>
+                <td>{{ contract.typeContrat ? contract.typeContrat.name : '—' }}</td>
+                <td class="text-secondary">{{ contract.jobOffre ? contract.jobOffre.title : '—' }}</td>
+                <td>{{ contract.startDate ? contract.startDate|date('d/m/Y') : '—' }}</td>
+                <td>{{ contract.endDate ? contract.endDate|date('d/m/Y') : '—' }}</td>
+                <td>{{ contract.salary is not null ? (contract.salary|number_format(0, ',', ' ') ~ ' DT') : '—' }}</td>
+                <td>
+                  <span class="badge bg-secondary-subtle text-secondary-emphasis">
+                    {{ contract.status ?? '—' }}
+                  </span>
+                </td>
+                <td>
+                  {% if contract.signed %}
+                    <span class="badge bg-success-subtle text-success-emphasis">Oui</span>
+                  {% else %}
+                    <span class="badge bg-warning-subtle text-warning-emphasis">Non</span>
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  <div class="dropdown">
+                    <button class="btn btn-ghost btn-icon btn-sm rounded-circle" type="button" data-bs-toggle="dropdown">
+                      <i class="ti ti-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      <li><a class="dropdown-item" href="{{ path('app_contract_show', {id: contract.id}) }}">Voir</a></li>
+                      <li><a class="dropdown-item" href="{{ path('app_contract_edit', {id: contract.id}) }}">Modifier</a></li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li>
+                        {% set full_url = url('app_contract_show', {id: contract.id}) %}
+                        <a class="dropdown-item text-success d-flex align-items-center gap-2" 
+                           href="https://wa.me/?text={{ 'Bonjour ' ~ (contract.candidate ? contract.candidate.firstName : '') ~ ', voici le lien de votre contrat : '|url_encode }}{{ full_url|url_encode }}" 
+                           target="_blank">
+                          <i class="ti ti-brand-whatsapp fs-5"></i> Rappel WhatsApp
+                        </a>
+                      </li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li>
+                        <form method="post" action="{{ path('app_contract_delete', {id: contract.id}) }}"
+                              onsubmit="return confirm('Confirmer la suppression ?');">
+                          <input type="hidden" name="_token" value="{{ csrf_token('delete_contract_' ~ contract.id) }}">
+                          <button class="dropdown-item text-danger">Supprimer</button>
+                        </form>
+                      </li>
+                    </ul>
+                  </div>
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="9" class="text-center py-8">
+                  <p class="text-secondary mb-0">Aucun contrat trouvé.</p>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if pages > 1 %}
+        <div class="card-footer d-flex align-items-center justify-content-between">
+          <div class="small text-secondary">
+            Page {{ page }} / {{ pages }}
+          </div>
+          <nav aria-label="Pagination">
+            <ul class="pagination pagination-sm mb-0">
+              {% set prev = page - 1 %}
+              {% set next = page + 1 %}
+              <li class="page-item {{ page <= 1 ? 'disabled' : '' }}">
+                <a class="page-link" href="{{ path('app_contract_index', filters|merge({page: prev, limit: limit})) }}">Précédent</a>
+              </li>
+              {% for p in 1..pages %}
+                {% if p == 1 or p == pages or (p >= page-1 and p <= page+1) %}
+                  <li class="page-item {{ p == page ? 'active' : '' }}">
+                    <a class="page-link" href="{{ path('app_contract_index', filters|merge({page: p, limit: limit})) }}">{{ p }}</a>
+                  </li>
+                {% elseif p == 2 and page > 4 %}
+                  <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% elseif p == pages-1 and page < pages-3 %}
+                  <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% endif %}
+              {% endfor %}
+              <li class="page-item {{ page >= pages ? 'disabled' : '' }}">
+                <a class="page-link" href="{{ path('app_contract_index', filters|merge({page: next, limit: limit})) }}">Suivant</a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="{{ asset('dasher/js/vendors/choice.js') }}"></script>
+  <script src="{{ asset('dasher/js/contracts.js') }}?v={{ 'now'|date('U') }}"></script>
+{% endblock %}
+

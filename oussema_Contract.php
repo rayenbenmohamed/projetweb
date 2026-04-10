@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Entity;
 
@@ -47,23 +47,20 @@ class Contract
     private ?string $googleEventIdTrial = null;
 
     #[ORM\ManyToOne(targetEntity: TypeContrat::class, inversedBy: 'contracts')]
-    #[ORM\JoinColumn(name: 'contract_type_id', nullable: true, onDelete: 'SET NULL')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?TypeContrat $typeContrat = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(name: 'candidate_id', nullable: false, onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?User $candidate = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(name: 'recruiter_id', nullable: true, onDelete: 'SET NULL')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?User $recruiter = null;
 
     #[ORM\ManyToOne(targetEntity: JobOffre::class)]
-    #[ORM\JoinColumn(name: 'job_offer_id', nullable: false, onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?JobOffre $jobOffre = null;
-
-    #[ORM\Column(type: 'text', nullable: true)]
-    private ?string $content = null;
 
     public function getId(): ?int
     {
@@ -100,8 +97,7 @@ class Contract
     public function setSalary(int $salary): self
     {
         $this->salary = $salary;
-        // Approximation réaliste tunisienne (CNSS + IRPP) basée sur les données utilisateur
-        $this->salaireNet = $salary * 0.82;
+        $this->salaireNet = $salary * 0.77;
         return $this;
     }
 
@@ -195,17 +191,6 @@ class Contract
     public function setJobOffre(?JobOffre $jobOffre): self
     {
         $this->jobOffre = $jobOffre;
-        return $this;
-    }
-
-    public function getContent(): ?string
-    {
-        return $this->content;
-    }
-
-    public function setContent(?string $content): self
-    {
-        $this->content = $content;
         return $this;
     }
 }

@@ -16,14 +16,20 @@
         <div class="card card-lg h-100">
             <div class="card-body d-flex flex-column justify-content-center gap-3">
                 <h5 class="mb-0">Raccourcis</h5>
-                {% if is_granted('ROLE_RECRUTEUR') %}
-                    <a href="{{ path('app_job_offre_new') }}" class="btn btn-outline-primary btn-sm">Nouvelle offre</a>
-                    <a href="{{ path('app_job_application_index') }}" class="btn btn-outline-success btn-sm">Candidatures</a>
-                {% endif %}
-                {% if is_granted('ROLE_CANDIDAT') %}
-                    <a href="{{ path('app_job_application_index') }}" class="btn btn-outline-primary btn-sm">Mes candidatures</a>
-                    <a href="{{ path('app_cv_index') }}" class="btn btn-outline-secondary btn-sm">Mon CV</a>
-                {% endif %}
+                <div class="d-grid gap-2">
+                    <a href="{{ path('app_job_offre_new') }}" class="btn btn-outline-primary btn-sm text-start">
+                        <i class="ti ti-plus me-2"></i>Publier une offre
+                    </a>
+                    <a href="{{ path('app_job_offre_my') }}" class="btn btn-outline-info btn-sm text-start">
+                        <i class="ti ti-briefcase me-2"></i>Mes offres
+                    </a>
+                    <a href="{{ path('app_job_application_index') }}" class="btn btn-outline-success btn-sm text-start">
+                        <i class="ti ti-send me-2"></i>Mes candidatures / Reçues
+                    </a>
+                    <a href="{{ path('app_cv_index') }}" class="btn btn-outline-secondary btn-sm text-start">
+                        <i class="ti ti-id-badge me-2"></i>Mon CV
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -31,18 +37,41 @@
 
 <div class="row row-cols-1 row-cols-xl-3 row-cols-md-2 mb-6 g-6">
     <div class="col">
-        <div class="card card-lg">
+        <div class="card card-lg border-0 shadow-sm">
             <div class="card-body">
-                <h6 class="text-secondary">Offres publiées</h6>
-                <div class="fs-2 fw-bold">{{ count_offres }}</div>
+                <h6 class="text-secondary small text-uppercase fw-bold mb-3">Mes offres publiées</h6>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="fs-2 fw-bold text-primary">{{ count_my_offres }}</div>
+                    <div class="icon-shape icon-md rounded-circle bg-primary-subtle text-primary">
+                        <i class="ti ti-briefcase fs-3"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     <div class="col">
-        <div class="card card-lg">
+        <div class="card card-lg border-0 shadow-sm">
             <div class="card-body">
-                <h6 class="text-secondary">{% if is_granted('ROLE_RECRUTEUR') %}Candidatures (toutes){% else %}Mes candidatures{% endif %}</h6>
-                <div class="fs-2 fw-bold">{{ count_applications }}</div>
+                <h6 class="text-secondary small text-uppercase fw-bold mb-3">Candidatures reçues</h6>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="fs-2 fw-bold text-success">{{ count_received_apps }}</div>
+                    <div class="icon-shape icon-md rounded-circle bg-success-subtle text-success">
+                        <i class="ti ti-inbox fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card card-lg border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="text-secondary small text-uppercase fw-bold mb-3">Mes candidatures envoyées</h6>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="fs-2 fw-bold text-info">{{ count_my_apps }}</div>
+                    <div class="icon-shape icon-md rounded-circle bg-info-subtle text-info">
+                        <i class="ti ti-send fs-3"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

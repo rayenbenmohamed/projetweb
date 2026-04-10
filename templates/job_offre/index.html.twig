@@ -1,54 +1,21 @@
-{% extends 'layout/public.html.twig' %}
+{% extends 'layout/admin.html.twig' %}
 
 {% block title %}Offres d'emploi | SyfonuRH{% endblock %}
+{% block page_title %}Toutes les offres d'emploi{% endblock %}
 
 {% block content %}
-
-{# Flash messages #}
-{% for type, messages in app.flashes %}
-    {% for message in messages %}
-        <div class="alert alert-{{ type == 'success' ? 'success' : 'danger' }} alert-dismissible fade show mt-2" role="alert">
-            <i class="ti ti-{{ type == 'success' ? 'circle-check' : 'alert-circle' }} me-2"></i>
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    {% endfor %}
-{% endfor %}
-
-{# Modals de confirmation de suppression (en dehors du tableau) #}
-{% for offre in job_offres %}
-<div class="modal fade" id="deleteModal{{ offre.id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header border-0">
-                <h5 class="modal-title text-danger"><i class="ti ti-alert-triangle me-2"></i>Confirmer la suppression</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                Êtes-vous sûr de vouloir supprimer l'offre <strong>{{ offre.title }}</strong> ? Cette action est irréversible.
-            </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
-                <form method="post" action="{{ path('app_job_offre_delete', {id: offre.id}) }}">
-                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ offre.id) }}">
-                    <button type="submit" class="btn btn-danger">
-                        <i class="ti ti-trash me-1"></i>Supprimer
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-{% endfor %}
 
 <div class="row g-6 mt-2">
     <div class="col-12">
         <div class="card h-100">
             <div class="card-header border-bottom-0 d-md-flex align-items-center justify-content-between">
-                <h5 class="mb-0">Liste des offres</h5>
-                {% if is_granted('ROLE_RECRUTEUR') or is_granted('ROLE_ADMIN') %}
-                <a href="{{ path('app_job_offre_new') }}" class="btn btn-primary btn-sm">
-                    <i class="ti ti-plus me-1"></i> Nouvelle offre
+                <div>
+                    <h5 class="mb-0">Offres disponibles</h5>
+                    <small class="text-secondary">Toutes les offres publiées — postulez directement depuis cette liste.</small>
+                </div>
+                {% if app.user %}
+                <a href="{{ path('app_job_offre_my') }}" class="btn btn-outline-primary btn-sm mt-2 mt-md-0">
+                    <i class="ti ti-briefcase me-1"></i> Gérer mes offres
                 </a>
                 {% endif %}
             </div>
@@ -57,12 +24,13 @@
                     <thead class="table-light">
                         <tr>
                             <th>Titre</th>
+                            <th>Recruteur</th>
                             <th>Lieu</th>
                             <th>Salaire</th>
                             <th>Type</th>
                             <th>Statut</th>
                             <th>Date</th>
-                            <th class="text-center">Actions</th>
+                            <th class="text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -77,10 +45,11 @@
                                         <a href="{{ path('app_job_offre_show', {id: offre.id}) }}" class="text-body text-decoration-none">
                                             <h6 class="mb-0">{{ offre.title }}</h6>
                                         </a>
-                                        <span class="small text-secondary">{{ offre.user ? offre.user.firstName : '—' }}</span>
+                                        <span class="small text-secondary">{{ offre.location ?: '—' }}</span>
                                     </div>
                                 </div>
                             </td>
+                            <td>{{ offre.user ? (offre.user.firstName ~ ' ' ~ offre.user.lastName) : '—' }}</td>
                             <td>{{ offre.location ?: '—' }}</td>
                             <td>{{ offre.salary ? offre.salary|number_format(0, ',', ' ') ~ ' €' : '—' }}</td>
                             <td>{{ offre.employmentType ?: '—' }}</td>
@@ -88,55 +57,55 @@
                                 {% set statusClass = offre.status == 'PUBLISHED' ? 'success' : (offre.status == 'DRAFT' ? 'warning' : 'secondary') %}
                                 {% set statusLabel = offre.status == 'PUBLISHED' ? 'Publiée' : (offre.status == 'DRAFT' ? 'Brouillon' : offre.status) %}
                                 <span class="badge bg-{{ statusClass }}-subtle text-{{ statusClass }}-emphasis">{{ statusLabel }}</span>
+                                
+                                {% if user_applications[offre.id] is defined %}
+                                    <span class="badge bg-info-subtle text-info-emphasis ms-1"><i class="ti ti-check me-1"></i>Postulé</span>
+                                {% endif %}
                             </td>
                             <td>{{ offre.createdAt|date('d/m/Y') }}</td>
                             <td class="text-center">
                                 <div class="d-flex gap-1 justify-content-center">
-                                    {# Voir #}
+                                    {# Voir le détail #}
                                     <a href="{{ path('app_job_offre_show', {id: offre.id}) }}"
                                        class="btn btn-icon btn-sm btn-outline-info rounded-circle"
                                        title="Voir les détails">
                                         <i class="ti ti-eye"></i>
                                     </a>
-                                    {# Modifier #}
-                                    <a href="{{ path('app_job_offre_edit', {id: offre.id}) }}"
-                                       class="btn btn-icon btn-sm btn-outline-warning rounded-circle"
-                                       title="Modifier">
-                                        <i class="ti ti-pencil"></i>
-                                    </a>
-                                    {# Dupliquer #}
-                                    <form method="post" action="{{ path('app_job_offre_duplicate', {id: offre.id}) }}" class="d-inline">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('duplicate' ~ offre.id) }}">
-                                        <button type="submit" class="btn btn-icon btn-sm btn-outline-primary rounded-circle" title="Dupliquer">
-                                            <i class="ti ti-copy"></i>
-                                        </button>
-                                    </form>
-                                    {# Supprimer (ouvre modal) #}
-                                    <button type="button"
-                                            class="btn btn-icon btn-sm btn-outline-danger rounded-circle"
-                                            title="Supprimer"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#deleteModal{{ offre.id }}">
-                                        <i class="ti ti-trash"></i>
-                                    </button>
-                                    {% if is_granted('ROLE_CANDIDAT') %}
-                                    <a href="{{ path('app_job_application_new', {id: offre.id}) }}"
-                                       class="btn btn-icon btn-sm btn-outline-success rounded-circle"
-                                       title="Postuler">
-                                        <i class="ti ti-send"></i>
-                                    </a>
+                                    {# Postuler #}
+                                    {% if app.user %}
+                                        {% if app.user != offre.user %}
+                                            {% if user_applications[offre.id] is defined %}
+                                                {% set user_app = user_applications[offre.id] %}
+                                                <form method="post" action="{{ path('app_job_application_delete', {id: user_app.id}) }}" 
+                                                      onsubmit="return confirm('Voulez-vous vraiment retirer votre candidature ?');" class="d-inline">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user_app.id) }}">
+                                                    <button type="submit" class="btn btn-icon btn-sm btn-outline-danger rounded-circle" title="Retirer ma candidature">
+                                                        <i class="ti ti-trash"></i>
+                                                    </button>
+                                                </form>
+                                            {% else %}
+                                                <a href="{{ path('app_job_application_new', {id: offre.id}) }}"
+                                                   class="btn btn-icon btn-sm btn-outline-success rounded-circle"
+                                                   title="Postuler">
+                                                    <i class="ti ti-send"></i>
+                                                </a>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% else %}
+                                        <a href="{{ path('app_login') }}"
+                                           class="btn btn-icon btn-sm btn-outline-secondary rounded-circle"
+                                           title="Se connecter pour postuler">
+                                            <i class="ti ti-login"></i>
+                                        </a>
                                     {% endif %}
                                 </div>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="7" class="text-center py-8">
+                            <td colspan="8" class="text-center py-8">
                                 <i class="ti ti-briefcase-off fs-1 text-secondary d-block mb-2"></i>
-                                <p class="text-secondary mb-0">Aucune offre trouvée.</p>
-                                <a href="{{ path('app_job_offre_new') }}" class="btn btn-primary btn-sm mt-3">
-                                    <i class="ti ti-plus me-1"></i> Créer une offre
-                                </a>
+                                <p class="text-secondary mb-0">Aucune offre disponible pour le moment.</p>
                             </td>
                         </tr>
                         {% endfor %}

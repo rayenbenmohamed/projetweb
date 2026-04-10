@@ -57,7 +57,7 @@ class JobOffre
     #[ORM\JoinColumn(name: 'user_id', nullable: true)]
     private ?User $user = null;
 
-    #[ORM\OneToMany(mappedBy: 'jobOffre', targetEntity: JobApplication::class, orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'jobOffre', targetEntity: JobApplication::class, cascade: ['remove'], orphanRemoval: true)]
     private Collection $jobApplications;
 
     public function __construct()

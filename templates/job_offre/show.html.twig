@@ -1,4 +1,4 @@
-{% extends 'layout/public.html.twig' %}
+{% extends 'layout/admin.html.twig' %}
 
 {% block title %}{{ job_offre.title }} | SyfonuRH{% endblock %}
 
@@ -148,15 +148,9 @@
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
-                    {% if is_granted('ROLE_CANDIDAT') %}
-                    <a href="{{ path('app_job_application_new', {id: job_offre.id}) }}" class="btn btn-primary">
-                        <i class="ti ti-send me-1"></i> Postuler maintenant
-                    </a>
-                    {% elseif not app.user %}
-                    <a href="{{ path('app_login') }}" class="btn btn-primary">Connectez-vous pour postuler</a>
-                    {% endif %}
 
-                    {% if is_granted('ROLE_RECRUTEUR') or is_granted('ROLE_ADMIN') %}
+                    {# Actions réservées à l'auteur de l'offre #}
+                    {% if app.user and job_offre.user == app.user %}
                     <a href="{{ path('app_job_offre_edit', {id: job_offre.id}) }}" class="btn btn-warning">
                         <i class="ti ti-pencil me-2"></i>Modifier l'offre
                     </a>
@@ -167,11 +161,44 @@
                         </button>
                     </form>
                     {% endif %}
+                    
+                    {# Postuler button #}
+                    {% if app.user %}
+                        {% if app.user != job_offre.user %}
+                            {% if user_application %}
+                                <form method="post" action="{{ path('app_job_application_delete', {id: user_application.id}) }}" 
+                                      onsubmit="return confirm('Voulez-vous vraiment retirer votre candidature ?');">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user_application.id) }}">
+                                    <button type="submit" class="btn btn-outline-danger w-100">
+                                        <i class="ti ti-trash me-2"></i>Retirer ma candidature
+                                    </button>
+                                </form>
+                            {% else %}
+                                <a href="{{ path('app_job_application_new', {id: job_offre.id}) }}" class="btn btn-success w-100">
+                                    <i class="ti ti-send me-2"></i>Postuler
+                                </a>
+                            {% endif %}
+                            <hr class="my-1">
+                        {% endif %}
+                    {% else %}
+                        <a href="{{ path('app_login') }}" class="btn btn-outline-secondary w-100">
+                            <i class="ti ti-login me-2"></i>Se connecter pour postuler
+                        </a>
+                        <hr class="my-1">
+                    {% endif %}
+                    
                     <hr class="my-1">
+                    {# Retour adapté : si on est connecté, on peut retourner à ses offres #}
+                    {% if app.user %}
+                    <a href="{{ path('app_job_offre_my') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="ti ti-arrow-left me-2"></i>Mes offres
+                    </a>
+                    {% else %}
                     <a href="{{ path('app_job_offre_index') }}" class="btn btn-outline-secondary btn-sm">
                         <i class="ti ti-arrow-left me-2"></i>Retour à la liste
                     </a>
-                    {% if is_granted('ROLE_RECRUTEUR') or is_granted('ROLE_ADMIN') %}
+                    {% endif %}
+                    {% if app.user and job_offre.user == app.user %}
                     <form method="post" action="{{ path('app_job_offre_delete', {id: job_offre.id}) }}"
                           onsubmit="return confirm('Confirmer la suppression de cette offre ?');">
                         <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ job_offre.id) }}">

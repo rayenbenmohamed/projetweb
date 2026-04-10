@@ -69,24 +69,64 @@
     <div class="col-xl-4">
         <div class="card card-lg mb-6">
             <div class="card-body p-6">
-                <h5 class="mb-4">Actions de recrutement</h5>
+                <h5 class="mb-4">Actions</h5>
                 <div class="d-grid gap-3">
-                    <form method="post" action="{{ path('app_job_application_status', {id: job_application.id}) }}">
-                        <input type="hidden" name="status" value="ACCEPTED">
-                        <button type="submit" class="btn btn-success w-100">
-                            <i class="ti ti-check me-1"></i> Accepter la candidature
-                        </button>
-                    </form>
-                    <form method="post" action="{{ path('app_job_application_status', {id: job_application.id}) }}">
-                        <input type="hidden" name="status" value="REJECTED">
-                        <button type="submit" class="btn btn-danger w-100">
-                            <i class="ti ti-x me-1"></i> Refuser la candidature
-                        </button>
-                    </form>
-                    <hr class="my-2">
-                    <a href="{{ path('app_job_application_edit', {id: job_application.id}) }}" class="btn btn-outline-secondary w-100">
-                        <i class="ti ti-pencil me-1"></i> Modifier / Annoter
-                    </a>
+
+                    {# Actions réservées au recruteur propriétaire de l'offre ou l'admin #}
+                    {% if app.user and job_application.jobOffre.user and job_application.jobOffre.user.id == app.user.id %}
+                        {% if job_application.status != 'ACCEPTED' %}
+                        <form method="post" action="{{ path('app_job_application_status', {id: job_application.id}) }}">
+                            <input type="hidden" name="status" value="ACCEPTED">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="ti ti-check me-1"></i> Accepter la candidature
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        {% if job_application.status == 'ACCEPTED' %}
+                            {% set interview = job_application.interviews|first %}
+                            {% if interview %}
+                                <a href="{{ path('app_interview_edit', {id: interview.id}) }}" class="btn btn-primary w-100">
+                                    <i class="ti ti-calendar me-1"></i> Gérer l'entretien
+                                </a>
+                            {% else %}
+                            <a href="{{ path('app_interview_new', {jobApplication: job_application.id}) }}" class="btn btn-primary w-100">
+                                <i class="ti ti-calendar-plus me-1"></i> Planifier l'entretien
+                            </a>
+                        {% endif %}
+                        {% endif %}
+
+                        {% if job_application.status != 'REJECTED' %}
+                        <form method="post" action="{{ path('app_job_application_status', {id: job_application.id}) }}">
+                            <input type="hidden" name="status" value="REJECTED">
+                            <button type="submit" class="btn btn-danger w-100">
+                                <i class="ti ti-x me-1"></i> Refuser la candidature
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        <hr class="my-2">
+                        <a href="{{ path('app_job_application_edit', {id: job_application.id}) }}" class="btn btn-outline-secondary w-100">
+                            <i class="ti ti-pencil me-1"></i> Modifier / Annoter
+                        </a>
+                        <form method="post" action="{{ path('app_job_application_delete', {id: job_application.id}) }}"
+                              onsubmit="return confirm('Confirmer la suppression ?');" class="mt-2">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ job_application.id) }}">
+                            <button type="submit" class="btn btn-outline-danger w-100">
+                                <i class="ti ti-trash me-1" style="pointer-events: none;"></i> Supprimer
+                            </button>
+                        </form>
+                    {% elseif app.user and job_application.candidat and job_application.candidat.id == app.user.id %}
+                        {# Bouton Supprimer pour le candidat (retrait de candidature) #}
+                        <form method="post" action="{{ path('app_job_application_delete', {id: job_application.id}) }}"
+                              onsubmit="return confirm('Voulez-vous vraiment retirer votre candidature ?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ job_application.id) }}">
+                            <button type="submit" class="btn btn-danger w-100">
+                                <i class="ti ti-trash me-1" style="pointer-events: none;"></i> Retirer ma candidature
+                            </button>
+                        </form>
+                    {% endif %}
+
                     <a href="{{ path('app_job_application_index') }}" class="btn btn-link btn-sm text-secondary w-100 text-center">
                         <i class="ti ti-arrow-left me-1"></i> Retour à la liste
                     </a>

@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\JobApplicationRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -20,7 +22,7 @@ class JobApplication
     private ?User $candidat = null;
 
     #[ORM\ManyToOne(targetEntity: JobOffre::class, inversedBy: 'jobApplications')]
-    #[ORM\JoinColumn(name: 'job_offre_id', nullable: false)]
+    #[ORM\JoinColumn(name: 'job_offre_id', nullable: false, onDelete: 'CASCADE')]
     private ?JobOffre $jobOffre = null;
 
     #[ORM\Column(name: 'application_status', length: 50)]
@@ -35,9 +37,13 @@ class JobApplication
     #[ORM\Column(name: 'cv_path', length: 255, nullable: true)]
     private ?string $cvPath = null;
 
+    #[ORM\OneToMany(mappedBy: 'application', targetEntity: Interview::class, cascade: ['remove'], orphanRemoval: true)]
+    private Collection $interviews;
+
     public function __construct()
     {
         $this->applyDate = new \DateTime();
+        $this->interviews = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -109,5 +115,13 @@ class JobApplication
     {
         $this->cvPath = $cvPath;
         return $this;
+    }
+
+    /**
+     * @return Collection<int, Interview>
+     */
+    public function getInterviews(): Collection
+    {
+        return $this->interviews;
     }
 }

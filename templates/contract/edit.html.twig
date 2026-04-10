@@ -1,190 +1,37 @@
 {% extends 'layout/admin.html.twig' %}
 
-{% block title %}Modifier Contrat #{{ contract.id }} | SyfonuRH{% endblock %}
-{% block page_title %}Modifier le Contrat{% endblock %}
+{% block title %}Modifier le contrat {{ contract.candidate ? (contract.candidate.firstName ~ ' ' ~ contract.candidate.lastName) : '' }} | SyfonuRH{% endblock %}
+{% block page_title %}Modifier le contrat{% endblock %}
 
 {% block content %}
-<div class="row g-6 mt-2 justify-content-center">
-    <div class="col-xl-9">
-        <div class="card shadow-sm">
-            <div class="card-header d-flex align-items-center justify-content-between py-4" style="background: linear-gradient(135deg, #fff8e7, #fff);">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="icon-shape icon-md rounded-3 bg-warning text-white">
-                        <i class="ti ti-pencil fs-4"></i>
-                    </div>
-                    <div>
-                        <h5 class="mb-0">Contrat #{{ contract.id }}</h5>
-                        <p class="mb-0 small text-secondary">{{ contract.candidate.firstName }} {{ contract.candidate.lastName }} — {{ contract.typeContrat.name|default('N/A') }}</p>
-                    </div>
-                </div>
-                {% set badge_class = 'warning' %}
-                {% if contract.status == 'Actif' %}{% set badge_class = 'success' %}{% endif %}
-                {% if contract.status == 'Signé' %}{% set badge_class = 'info' %}{% endif %}
-                {% if contract.status == 'Terminé' %}{% set badge_class = 'dark' %}{% endif %}
-                {% if contract.status == 'Annulé' %}{% set badge_class = 'danger' %}{% endif %}
-                <span class="badge bg-{{ badge_class }}-subtle text-{{ badge_class }}-emphasis px-3 py-2 fs-6">{{ contract.status }}</span>
-            </div>
-
-            <div class="card-body p-6">
-                <form method="post" id="contractForm" class="needs-validation" novalidate>
-
-                    {# --- PARTIES --- #}
-                    <div class="mb-6">
-                        <h6 class="text-uppercase text-secondary small fw-bold mb-3 border-bottom pb-2">️ Parties contractantes</h6>
-                        <div class="row g-4">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Candidat (Employé) <span class="text-danger">*</span></label>
-                                <select name="candidate_id" class="form-select" required>
-                                    {% for candidate in candidates %}
-                                        <option value="{{ candidate.id }}" {{ contract.candidate and contract.candidate.id == candidate.id ? 'selected' }}>
-                                            {{ candidate.firstName }} {{ candidate.lastName }} &lt;{{ candidate.email }}&gt;
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Recruteur (Signataire) <span class="text-danger">*</span></label>
-                                <select name="recruiter_id" class="form-select" required>
-                                    {% for recruiter in recruiters %}
-                                        <option value="{{ recruiter.id }}" {{ contract.recruiter and contract.recruiter.id == recruiter.id ? 'selected' }}>
-                                            {{ recruiter.firstName }} {{ recruiter.lastName }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    {# --- CONTRAT --- #}
-                    <div class="mb-6">
-                        <h6 class="text-uppercase text-secondary small fw-bold mb-3 border-bottom pb-2"> Détails du contrat</h6>
-                        <div class="row g-4">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Type de contrat <span class="text-danger">*</span></label>
-                                <select name="type_contrat_id" class="form-select" required>
-                                    {% for type in types %}
-                                        <option value="{{ type.id }}" {{ contract.typeContrat and contract.typeContrat.id == type.id ? 'selected' }}>{{ type.name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Offre d'emploi associée <span class="text-danger">*</span></label>
-                                <select name="job_offre_id" class="form-select" required>
-                                    {% for offre in offres %}
-                                        <option value="{{ offre.id }}" {{ contract.jobOffre and contract.jobOffre.id == offre.id ? 'selected' }}>{{ offre.title }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    {# --- DATES & SALAIRE --- #}
-                    <div class="mb-6">
-                        <h6 class="text-uppercase text-secondary small fw-bold mb-3 border-bottom pb-2"> Période et rémunération</h6>
-                        <div class="row g-4">
-                            <div class="col-md-4">
-                                <label class="form-label fw-semibold">Date de début <span class="text-danger">*</span></label>
-                                <input type="date" id="startDate" name="start_date" class="form-control" value="{{ contract.startDate|date('Y-m-d') }}" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-semibold">Date de fin</label>
-                                <input type="date" id="endDate" name="end_date" class="form-control" value="{{ contract.endDate ? contract.endDate|date('Y-m-d') : '' }}">
-                                <div class="invalid-feedback">La date de fin doit être postérieure à la date de début.</div>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-semibold">Salaire Brut / an (€) <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="ti ti-coin-euro"></i></span>
-                                    <input type="number" name="salary" id="salaryInput" class="form-control" value="{{ contract.salary }}" min="0" step="100" max="1000000" required>
-                                </div>
-                                <div class="mt-1 small text-secondary">Net estimé : <span id="netSalaryPreviewEdit" class="fw-bold text-success">{{ (contract.salaireNet / 12)|number_format(2, ',', ' ') }} € / mois</span></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {# --- STATUT & SIGNATURE --- #}
-                    <div class="mb-6">
-                        <h6 class="text-uppercase text-secondary small fw-bold mb-3 border-bottom pb-2"> Statut & Signature</h6>
-                        <div class="row g-4 align-items-center">
-                            <div class="col-md-4">
-                                <label class="form-label fw-semibold">Statut <span class="text-danger">*</span></label>
-                                <select name="status" class="form-select" required>
-                                    <option value="En Attente" {{ contract.status == 'En Attente' ? 'selected' }}>⏳ En Attente</option>
-                                    <option value="Signé" {{ contract.status == 'Signé' ? 'selected' }}>✅ Signé</option>
-                                    <option value="Actif" {{ contract.status == 'Actif' ? 'selected' }}> Actif</option>
-                                    <option value="Terminé" {{ contract.status == 'Terminé' ? 'selected' }}> Terminé</option>
-                                    <option value="Annulé" {{ contract.status == 'Annulé' ? 'selected' }}>❌ Annulé</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-semibold">Date de signature</label>
-                                <input type="date" name="signed_at" class="form-control" value="{{ contract.signedAt ? contract.signedAt|date('Y-m-d') : '' }}">
-                            </div>
-                            <div class="col-md-4 pt-md-4">
-                                <div class="form-check form-switch mt-2">
-                                    <input class="form-check-input" type="checkbox" name="is_signed" id="isSignedEdit" {{ contract.isSigned ? 'checked' }}>
-                                    <label class="form-check-label fw-semibold" for="isSignedEdit">Contrat signé</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-end gap-3 mt-4">
-                        <a href="{{ path('app_contract_show', {id: contract.id}) }}" class="btn btn-light px-5">Annuler</a>
-                        <button type="submit" class="btn btn-primary px-5">
-                            <i class="ti ti-device-floppy me-1"></i> Enregistrer les modifications
-                        </button>
-                    </div>
-                </form>
-            </div>
+<div class="row g-6 mt-2">
+  <div class="col-12">
+    <div class="card card-lg">
+      <div class="card-body p-6">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-5">
+          <h5 class="mb-0">Contrat : {{ contract.candidate ? (contract.candidate.firstName ~ ' ' ~ contract.candidate.lastName) : 'Détails' }}</h5>
+          <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_contract_show', {id: contract.id}) }}">
+            Retour
+          </a>
         </div>
+        {% include 'contract/_form.html.twig' with {
+          contract: contract,
+          candidates: candidates,
+          recruiters: recruiters,
+          job_offres: job_offres,
+          types: types,
+          form: form,
+          is_edit: true
+        } %}
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}
 
 {% block javascripts %}
-{{ parent() }}
-<script>
-const salaryInput = document.getElementById('salaryInput');
-const preview = document.getElementById('netSalaryPreviewEdit');
-salaryInput.addEventListener('input', function() {
-    const brut = parseFloat(this.value);
-    if (!isNaN(brut) && brut > 0) {
-        const net = (brut * 0.77 / 12).toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        preview.textContent = net + ' € / mois';
-    } else {
-        preview.textContent = '—';
-    }
-});
-document.getElementById('salaryInput').dispatchEvent(new Event('input'));
-
-// Date validation
-const startDateInput = document.getElementById('startDate');
-const endDateInput = document.getElementById('endDate');
-
-function checkContractDates() {
-    if (endDateInput.value && startDateInput.value && endDateInput.value <= startDateInput.value) {
-        endDateInput.setCustomValidity('La date de fin doit être après la date de début.');
-        endDateInput.classList.add('is-invalid');
-    } else {
-        endDateInput.setCustomValidity('');
-        endDateInput.classList.remove('is-invalid');
-    }
-}
-
-if(startDateInput && endDateInput) {
-    startDateInput.addEventListener('change', checkContractDates);
-    endDateInput.addEventListener('change', checkContractDates);
-}
-
-// HTML5 Form validation feedback
-const form = document.getElementById('contractForm');
-form.addEventListener('submit', function (event) {
-    if (!form.checkValidity()) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-    form.classList.add('was-validated');
-}, false);
-</script>
+  {{ parent() }}
+  <script src="{{ asset('dasher/js/vendors/choice.js') }}"></script>
+  <script src="{{ asset('dasher/js/contracts.js') }}?v={{ 'now'|date('U') }}"></script>
 {% endblock %}
+

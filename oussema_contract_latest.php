@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Entity;
 
@@ -100,7 +100,7 @@ class Contract
     public function setSalary(int $salary): self
     {
         $this->salary = $salary;
-        // Approximation réaliste tunisienne (CNSS + IRPP) basée sur les données utilisateur
+        // Approximation r├®aliste tunisienne (CNSS + IRPP) bas├®e sur les donn├®es utilisateur
         $this->salaireNet = $salary * 0.82;
         return $this;
     }

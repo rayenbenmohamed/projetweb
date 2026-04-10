@@ -37,30 +37,48 @@
                                 </span>
                             </td>
                             <td>
-                                {% if interview.meetingLink %}
-                                    {% if 'http' in interview.meetingLink %}
-                                        <a href="{{ interview.meetingLink }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="ti ti-video"></i> Rejoindre</a>
-                                    {% else %}
-                                        {{ interview.meetingLink }}
-                                    {% endif %}
-                                {% else %}
-                                    <span class="text-secondary">-</span>
-                                {% endif %}
+                                <a href="{{ path('app_interview_video', {id: interview.id}) }}" class="btn btn-sm btn-primary">
+                                    <i class="ti ti-video"></i> Rejoindre Appel
+                                </a>
                             </td>
                             <td>
                                 {{ interview.notes|default('-')|slice(0, 30) }}{% if interview.notes|length > 30 %}...{% endif %}
                             </td>
                             <td>
-                                {% if interview.status == 'Prévue' %}
-                                    <form method="post" action="{{ path('app_interview_confirm', {id: interview.id}) }}" class="d-inline" onsubmit="return confirm('Confirmer votre présence à cet entretien ?');">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('confirm' ~ interview.id) }}">
-                                        <button type="submit" class="btn btn-sm btn-success">
-                                            <i class="ti ti-check me-1"></i> Confirmer
-                                        </button>
-                                    </form>
-                                {% else %}
-                                    <span class="text-secondary small">Aucune action</span>
-                                {% endif %}
+                                <div class="d-flex align-items-center gap-1">
+                                    {# Bouton de confirmation pour le candidat #}
+                                    {% if interview.status == 'Prévue' and interview.application.candidat == app.user %}
+                                        <form method="post" action="{{ path('app_interview_confirm', {id: interview.id}) }}" class="d-inline" onsubmit="return confirm('Confirmer votre présence à cet entretien ?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('confirm' ~ interview.id) }}">
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                <i class="ti ti-check me-1"></i> Confirmer
+                                            </button>
+                                        </form>
+                                    {% endif %}
+
+                                    {% if interview.application.jobOffre.user.id == app.user.id %}
+                                        <a href="{{ path('app_interview_show', {id: interview.id}) }}" class="btn btn-sm btn-ghost btn-icon rounded-circle text-info" title="Voir détails">
+                                            <i class="ti ti-eye fs-4"></i>
+                                        </a>
+                                        <a href="{{ path('app_interview_edit', {id: interview.id}) }}" class="btn btn-sm btn-ghost btn-icon rounded-circle text-warning" title="Modifier">
+                                            <i class="ti ti-pencil fs-4"></i>
+                                        </a>
+                                        <form method="post" action="{{ path('app_interview_delete', {id: interview.id}) }}" class="d-inline" onsubmit="return confirm('Voulez-vous vraiment annuler cet entretien ?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ interview.id) }}">
+                                            <button type="submit" class="btn btn-sm btn-ghost btn-icon rounded-circle text-danger" title="Supprimer">
+                                                <i class="ti ti-trash fs-4"></i>
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <a href="{{ path('app_interview_show', {id: interview.id}) }}" class="btn btn-sm btn-ghost btn-icon rounded-circle text-info" title="Voir détails">
+                                            <i class="ti ti-eye fs-4"></i>
+                                        </a>
+                                    {% endif %}
+
+                                    {% if not (interview.status == 'Prévue' and interview.application.candidat == app.user) and interview.application.jobOffre.user != app.user %}
+                                        <span class="text-secondary small">Aucune action</span>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                         {% else %}

@@ -1,0 +1,18 @@
+[
+    "id",
+    "start_date",
+    "end_date",
+    "salary",
+    "salaire_net",
+    "status",
+    "is_signed",
+    "signed_at",
+    "signature_base64",
+    "google_event_id_start",
+    "google_event_id_end",
+    "google_event_id_trial",
+    "type_contrat_id",
+    "candidate_id",
+    "recruiter_id",
+    "job_offre_id"
+]

@@ -82,8 +82,9 @@
                 <span class="text">Contrats</span>
             </a>
             <ul class="dropdown-menu flex-column">
-                <li class="nav-item"><a class="nav-link" href="#">Liste</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">Types</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ path('app_contract_index') }}">Liste des contrats</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ path('app_type_contrat_index') }}">Type de contrats</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ path('app_contract_new') }}">Nouveau contrat</a></li>
             </ul>
         </li>
 
@@ -103,7 +104,8 @@
                 <span class="text">Recrutement</span>
             </a>
             <ul class="dropdown-menu flex-column">
-                <li class="nav-item"><a class="nav-link" href="{{ path('app_job_offre_index') }}">Liste des offres</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ path('app_job_offre_index') }}">Toutes les offres</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ path('app_job_offre_my') }}">Mes offres</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ path('app_job_offre_new') }}">Nouvelle offre</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ path('app_job_application_index') }}">Candidatures reçues</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ path('app_interview_index') }}">Mes Entretiens</a></li>
