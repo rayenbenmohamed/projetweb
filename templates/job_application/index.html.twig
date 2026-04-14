@@ -1,0 +1,190 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Candidatures | SyfonuRH{% endblock %}
+{% block page_title %}Candidatures{% endblock %}
+
+{% block content %}
+<div class="row g-6 mt-2">
+
+    {# === Candidatures reçues sur mes offres === #}
+    {% if applications_by_offer is not empty %}
+    <div class="col-12">
+        <div class="card h-100">
+            <div class="card-header border-bottom-0">
+                <h5 class="mb-0"><i class="ti ti-inbox me-2"></i>Candidatures reçues sur mes offres</h5>
+                <small class="text-secondary">Candidats ayant postulé à vos offres d'emploi.</small>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover table-centered mb-0 text-nowrap">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Candidat</th>
+                            <th>Offre</th>
+                            <th>Date</th>
+                            <th>Statut</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for offerTitle, apps in applications_by_offer %}
+                            <tr class="table-secondary">
+                                <td colspan="5" class="fw-bold text-primary">
+                                    <i class="ti ti-briefcase me-2"></i>{{ offerTitle }}
+                                    <span class="badge bg-primary rounded-pill ms-2">{{ apps|length }}</span>
+                                </td>
+                            </tr>
+                            {% for job_app in apps %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="avatar avatar-sm rounded-circle bg-secondary-subtle d-flex align-items-center justify-content-center" style="width:36px;height:36px;">
+                                            <i class="ti ti-user fs-5"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">{{ job_app.candidat.firstName }} {{ job_app.candidat.lastName }}</h6>
+                                            <span class="small text-secondary">{{ job_app.candidat.email }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ job_app.jobOffre.title }}</td>
+                                <td>{{ job_app.applyDate|date('d/m/Y') }}</td>
+                                <td>
+                                    {% set sc = job_app.status == 'ACCEPTED' ? 'success' : (job_app.status == 'REJECTED' ? 'danger' : 'info') %}
+                                    {% set sl = job_app.status == 'ACCEPTED' ? 'Acceptée' : (job_app.status == 'REJECTED' ? 'Refusée' : 'En attente') %}
+                                    <span class="badge bg-{{ sc }}-subtle text-{{ sc }}-emphasis px-2 py-1">{{ sl }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-flex align-items-center gap-1 justify-content-center">
+                                        <a href="{{ path('app_job_application_show', {id: job_app.id}) }}"
+                                           class="btn btn-ghost btn-icon btn-sm rounded-circle text-primary" title="Voir">
+                                            <i class="ti ti-eye fs-4"></i>
+                                        </a>
+                                        
+                                        {% if job_app.status == 'ACCEPTED' %}
+                                            {% set interview = job_app.interviews|first %}
+                                            {% if interview %}
+                                                <a href="{{ path('app_interview_show', {id: interview.id}) }}" 
+                                                   class="btn btn-ghost btn-icon btn-sm rounded-circle text-info" title="Consulter l'entretien">
+                                                    <i class="ti ti-calendar fs-4"></i>
+                                                </a>
+                                            {% else %}
+                                                <a href="{{ path('app_interview_new', {jobApplication: job_app.id}) }}" 
+                                                   class="btn btn-ghost btn-icon btn-sm rounded-circle text-info" title="Planifier l'entretien">
+                                                    <i class="ti ti-calendar-plus fs-4"></i>
+                                                </a>
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if job_app.status != 'ACCEPTED' %}
+                                        <form method="post" action="{{ path('app_job_application_status', {id: job_app.id}) }}" class="d-inline">
+                                            <input type="hidden" name="status" value="ACCEPTED">
+                                            <button type="submit" class="btn btn-ghost btn-icon btn-sm rounded-circle text-success" title="Accepter la candidature">
+                                                <i class="ti ti-check fs-4" style="pointer-events: none;"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        {% if job_app.status != 'REJECTED' %}
+                                        <form method="post" action="{{ path('app_job_application_status', {id: job_app.id}) }}" class="d-inline">
+                                            <input type="hidden" name="status" value="REJECTED">
+                                            <button type="submit" class="btn btn-ghost btn-icon btn-sm rounded-circle text-danger" title="Refuser la candidature">
+                                                <i class="ti ti-x fs-4" style="pointer-events: none;"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        <form method="post" action="{{ path('app_job_application_delete', {id: job_app.id}) }}"
+                                              onsubmit="return confirm('Confirmer la suppression ?');" class="d-inline">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ job_app.id) }}">
+                                            <button type="submit" class="btn btn-ghost btn-icon btn-sm rounded-circle text-danger" title="Supprimer la candidature">
+                                                <i class="ti ti-trash fs-4" style="pointer-events: none;"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# === Mes propres candidatures envoyées === #}
+    <div class="col-12">
+        <div class="card h-100">
+            <div class="card-header border-bottom-0 d-md-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="mb-0"><i class="ti ti-send me-2"></i>Mes candidatures envoyées</h5>
+                    <small class="text-secondary">Offres auxquelles vous avez postulé.</small>
+                </div>
+                <a href="{{ path('app_job_offre_index') }}" class="btn btn-outline-primary btn-sm mt-2 mt-md-0">
+                    <i class="ti ti-briefcase me-1"></i>Voir les offres
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover table-centered mb-0 text-nowrap">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Offre</th>
+                            <th>Recruteur</th>
+                            <th>Date</th>
+                            <th>Statut</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job_app in my_applications %}
+                        <tr>
+                            <td>{{ job_app.jobOffre ? job_app.jobOffre.title : '—' }}</td>
+                            <td>{{ job_app.jobOffre and job_app.jobOffre.user ? (job_app.jobOffre.user.firstName ~ ' ' ~ job_app.jobOffre.user.lastName) : '—' }}</td>
+                            <td>{{ job_app.applyDate|date('d/m/Y') }}</td>
+                            <td>
+                                {% set sc = job_app.status == 'ACCEPTED' ? 'success' : (job_app.status == 'REJECTED' ? 'danger' : 'info') %}
+                                {% set sl = job_app.status == 'ACCEPTED' ? 'Acceptée' : (job_app.status == 'REJECTED' ? 'Refusée' : 'En attente') %}
+                                <span class="badge bg-{{ sc }}-subtle text-{{ sc }}-emphasis px-2 py-1">{{ sl }}</span>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex align-items-center gap-1 justify-content-center">
+                                    <a href="{{ path('app_job_application_show', {id: job_app.id}) }}"
+                                       class="btn btn-ghost btn-icon btn-sm rounded-circle text-primary" title="Voir">
+                                        <i class="ti ti-eye fs-4"></i>
+                                    </a>
+                                    
+                                    {% if job_app.status == 'ACCEPTED' %}
+                                        {% set interview = job_app.interviews|first %}
+                                        {% if interview %}
+                                            <a href="{{ path('app_interview_show', {id: interview.id}) }}" 
+                                               class="btn btn-ghost btn-icon btn-sm rounded-circle text-info" title="Consulter l'entretien">
+                                                <i class="ti ti-calendar fs-4"></i>
+                                            </a>
+                                        {% endif %}
+                                    {% endif %}
+                                    <form method="post" action="{{ path('app_job_application_delete', {id: job_app.id}) }}"
+                                          onsubmit="return confirm('Voulez-vous vraiment supprimer votre candidature ?');" class="d-inline">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ job_app.id) }}">
+                                        <button type="submit" class="btn btn-ghost btn-icon btn-sm rounded-circle text-danger" title="Retirer ma candidature">
+                                            <i class="ti ti-trash fs-4" style="pointer-events: none;"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <i class="ti ti-inbox fs-1 text-secondary d-block mb-2"></i>
+                                <p class="text-secondary mb-0">Vous n'avez pas encore postulé à une offre.</p>
+                                <a href="{{ path('app_job_offre_index') }}" class="btn btn-primary btn-sm mt-3">
+                                    <i class="ti ti-briefcase me-1"></i>Voir les offres disponibles
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

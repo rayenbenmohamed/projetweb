@@ -1,0 +1,21 @@
+{# Erreur d’authentification Symfony (formulaire de connexion) #}
+{% if error is defined and error %}
+    {% set key = error.messageKey %}
+    {% set custom = {
+        'Invalid credentials.': 'Les identifiants ne correspondent à aucun compte, ou le mot de passe est incorrect. Vérifiez votre adresse e-mail (pas d’espace en trop) et votre mot de passe.',
+        'Username could not be found.': 'Aucun compte n’est enregistré avec cette adresse e-mail.',
+        'User account is disabled.': 'Ce compte a été désactivé. Contactez un administrateur si vous pensez qu’il s’agit d’une erreur.',
+        'User account is locked.': 'Ce compte est temporairement verrouillé après plusieurs tentatives. Réessayez plus tard.',
+        'Authentication request could not be processed due to a system problem.': 'La connexion a échoué à cause d’un problème technique. Réessayez dans quelques instants.',
+    } %}
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+        <div class="d-flex gap-3 align-items-start">
+            <span class="fs-3 lh-1 text-danger" aria-hidden="true"><i class="ti ti-lock-exclamation"></i></span>
+            <div class="flex-grow-1 pt-1">
+                <strong class="d-block mb-2">Connexion impossible</strong>
+                <p class="mb-0 small">{{ custom[key]|default('La connexion a échoué. Réessayez ou contactez le support si le problème continue.') }}</p>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+        </div>
+    </div>
+{% endif %}

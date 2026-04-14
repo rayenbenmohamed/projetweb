@@ -1,0 +1,37 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Modifier le contrat {{ contract.candidate ? (contract.candidate.firstName ~ ' ' ~ contract.candidate.lastName) : '' }} | SyfonuRH{% endblock %}
+{% block page_title %}Modifier le contrat{% endblock %}
+
+{% block content %}
+<div class="row g-6 mt-2">
+  <div class="col-12">
+    <div class="card card-lg">
+      <div class="card-body p-6">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-5">
+          <h5 class="mb-0">Contrat : {{ contract.candidate ? (contract.candidate.firstName ~ ' ' ~ contract.candidate.lastName) : 'Détails' }}</h5>
+          <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_contract_show', {id: contract.id}) }}">
+            Retour
+          </a>
+        </div>
+        {% include 'contract/_form.html.twig' with {
+          contract: contract,
+          candidates: candidates,
+          recruiters: recruiters,
+          job_offres: job_offres,
+          types: types,
+          form: form,
+          is_edit: true
+        } %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script src="{{ asset('dasher/js/vendors/choice.js') }}"></script>
+  <script src="{{ asset('dasher/js/contracts.js') }}?v={{ 'now'|date('U') }}"></script>
+{% endblock %}
+

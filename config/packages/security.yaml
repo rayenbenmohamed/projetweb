@@ -1,0 +1,51 @@
+security:
+    role_hierarchy:
+        ROLE_ADMIN: [ROLE_USER, ROLE_RECRUTEUR, ROLE_CANDIDAT]
+        ROLE_RECRUTEUR: [ROLE_USER]
+        ROLE_CANDIDAT: [ROLE_USER]
+
+    # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
+    password_hashers:
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+
+    # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
+    providers:
+        # used to reload user from session & support architectural features like "switch_user"
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+                property: email
+
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+        main:
+            lazy: true
+            provider: app_user_provider
+            form_login:
+                login_path: app_login
+                check_path: app_login
+                enable_csrf: true
+                success_handler: App\Security\AuthenticationSuccessHandler
+            logout:
+                path: app_logout
+                target: app_home
+
+    access_control:
+        - { path: ^/admin, roles: ROLE_ADMIN }
+        - { path: ^/login, roles: PUBLIC_ACCESS }
+        - { path: ^/register, roles: PUBLIC_ACCESS }
+        - { path: ^/$, roles: PUBLIC_ACCESS }
+        - { path: ^/job/offre$, roles: PUBLIC_ACCESS }
+        - { path: '^/job/offre/[0-9]+$', roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/job/offre/new, roles: IS_AUTHENTICATED_FULLY }
+        - { path: '^/job/offre/[0-9]+/edit$', roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/app, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/cv, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/job/application, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/interview, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/contract, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/notification, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/forum, roles: IS_AUTHENTICATED_FULLY }
+        - { path: '^/job/offre/[0-9]+$', roles: IS_AUTHENTICATED_FULLY, methods: [POST] }

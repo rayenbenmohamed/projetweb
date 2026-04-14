@@ -1,0 +1,38 @@
+ Updating database schema...
+
+[critical] Error thrown while running command "doctrine:schema:update --force". Message: "An exception occurred while executing a query: SQLSTATE[23000]: Integrity constraint violation: 1451 Cannot delete or update a parent row: a foreign key constraint fails"
+
+In ExceptionConverter.php line 45:
+                          
+  An exception occurred   
+  while executing a quer  
+  y: SQLSTATE[23000]: In  
+  tegrity constraint vio  
+  lation: 1451 Cannot de  
+  lete or update a paren  
+  t row: a foreign key c  
+  onstraint fails         
+                          
+
+In Exception.php line 24:
+                          
+  SQLSTATE[23000]: Integ  
+  rity constraint violat  
+  ion: 1451 Cannot delet  
+  e or update a parent r  
+  ow: a foreign key cons  
+  traint fails            
+                          
+
+In Connection.php line 27:
+                          
+  SQLSTATE[23000]: Integ  
+  rity constraint violat  
+  ion: 1451 Cannot delet  
+  e or update a parent r  
+  ow: a foreign key cons  
+  traint fails            
+                          
+
+doctrine:schema:update [--em EM] [--complete] [--dump-sql] [-f|--force]
+

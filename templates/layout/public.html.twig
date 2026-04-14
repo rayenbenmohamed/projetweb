@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<nav class="navbar navbar-expand-lg border-bottom bg-body-tertiary px-4 py-3">
+    <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="{{ path('app_home') }}">
+        <img src="{{ asset('dasher/images/brand/logo/logo-icon.svg') }}" alt="" width="28" height="28"/>
+        SyfonuRH
+    </a>
+    <div class="ms-auto d-flex flex-wrap gap-2 align-items-center">
+        <a href="{{ path('app_job_offre_index') }}" class="btn btn-sm btn-outline-primary">Offres</a>
+        {% if app.user %}
+            {% if is_granted('ROLE_ADMIN') %}
+                <a href="{{ path('admin_dashboard') }}" class="btn btn-sm btn-dark">Admin</a>
+            {% endif %}
+            <a href="{{ path('app_friends_index') }}" class="btn btn-sm btn-outline-secondary">Amis</a>
+            <a href="{{ path('app_profile') }}" class="btn btn-sm btn-outline-secondary">Profil</a>
+            <a href="{{ path('app_app_dashboard') }}" class="btn btn-sm btn-primary">Mon espace</a>
+            <a href="{{ path('app_logout') }}" class="btn btn-sm btn-link">Déconnexion</a>
+        {% else %}
+            <a href="{{ path('app_login') }}" class="btn btn-sm btn-outline-secondary">Connexion</a>
+            <a href="{{ path('app_register') }}" class="btn btn-sm btn-primary">Inscription</a>
+        {% endif %}
+    </div>
+</nav>
+<div class="custom-container py-4">
+    {% include '_flashes.html.twig' %}
+    {% block content %}{% endblock %}
+</div>
+{% endblock %}

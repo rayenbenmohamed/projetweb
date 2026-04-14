@@ -1,0 +1,23 @@
+{% set is_edit = is_edit ?? false %}
+
+<form method="post" class="needs-validation" novalidate>
+  <div class="row g-4">
+    <div class="col-md-6">
+      <label class="form-label">Nom *</label>
+      <input class="form-control" name="name" required value="{{ type.name ?? '' }}" placeholder="CDI, CDD, Stage…">
+      <div class="invalid-feedback">Nom obligatoire.</div>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Description</label>
+      <textarea class="form-control" rows="4" name="description" placeholder="Détails…">{{ type.description ?? '' }}</textarea>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2 mt-6">
+    <a href="{{ path('app_type_contrat_index') }}" class="btn btn-outline-secondary">Annuler</a>
+    <button type="submit" class="btn btn-primary">
+      {{ is_edit ? 'Enregistrer' : 'Créer le type' }}
+    </button>
+  </div>
+</form>
+

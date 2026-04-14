@@ -1,0 +1,117 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Connexion | SyfonuRH{% endblock %}
+
+{% block body %}
+<main class="d-flex flex-column justify-content-center vh-100">
+
+    <section>
+        <div class="container">
+            <div class="row mb-8">
+                <div class="col-xl-4 offset-xl-4 col-md-12 col-12">
+                    <div class="text-center">
+                        <a href="{{ path('app_home') }}"
+                           class="fs-2 fw-bold d-flex align-items-center gap-2 justify-content-center mb-6">
+                            <img src="{{ asset('dasher/images/brand/logo/logo-icon.svg') }}" alt="Logo"/>
+                            <span>SyfonuRH</span>
+                        </a>
+                        <h1 class="mb-1">Bienvenue</h1>
+                        <p class="mb-0">
+                            Pas encore de compte ?
+                            <a href="{{ path('app_register') }}" class="text-primary">S'inscrire ici</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-xl-5 col-lg-6 col-md-8 col-12">
+
+                    {% include '_login_error.html.twig' %}
+                    <div class="mb-4">{% include '_flashes.html.twig' %}</div>
+
+                    <div class="card card-lg mb-6">
+                        <div class="card-body p-6">
+                            <form class="needs-validation mb-6" method="post" action="{{ path('app_login') }}" novalidate>
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                                <div class="mb-3">
+                                    <label for="inputEmail" class="form-label">
+                                        Email <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="email" class="form-control" id="inputEmail"
+                                           name="_username" value="{{ last_username ?? '' }}" required
+                                           autocomplete="email"/>
+                                    <div class="invalid-feedback">Veuillez entrer votre email.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="inputPassword" class="form-label">Mot de passe</label>
+                                    <div class="password-field position-relative">
+                                        <input type="password" class="form-control" id="inputPassword"
+                                               name="_password" required autocomplete="current-password"/>
+                                        <span><i class="ti ti-eye-off passwordToggler"></i></span>
+                                        <div class="invalid-feedback">Veuillez entrer votre mot de passe.</div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4 d-flex align-items-center justify-content-between">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="_remember_me"
+                                               id="rememberMeCheckbox"/>
+                                        <label class="form-check-label" for="rememberMeCheckbox">
+                                            Se souvenir de moi
+                                        </label>
+                                    </div>
+                                    <div>
+                                        <a href="#" class="text-primary">Mot de passe oublié ?</a>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button class="btn btn-primary" type="submit">Se connecter</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# Theme toggle #}
+    <div class="position-absolute end-0 bottom-0 m-4">
+        <div class="dropdown">
+            <button class="btn btn-light btn-icon rounded-circle d-flex align-items-center" type="button"
+                    data-bs-toggle="dropdown" aria-label="Basculer le thème">
+                <i class="bi bi-sun-fill"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow">
+                <li>
+                    <button type="button" class="dropdown-item d-flex align-items-center active"
+                            data-bs-theme-value="light">
+                        <i class="ti ti-sun me-2"></i> Clair
+                    </button>
+                </li>
+                <li>
+                    <button type="button" class="dropdown-item d-flex align-items-center"
+                            data-bs-theme-value="dark">
+                        <i class="ti ti-moon-stars me-2"></i> Sombre
+                    </button>
+                </li>
+                <li>
+                    <button type="button" class="dropdown-item d-flex align-items-center"
+                            data-bs-theme-value="auto">
+                        <i class="ti ti-circle-half-2 me-2"></i> Auto
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+</main>
+{% block javascripts %}
+    <script src="{{ asset('dasher/js/vendors/password.js') }}"></script>
+{% endblock %}
+{% endblock %}

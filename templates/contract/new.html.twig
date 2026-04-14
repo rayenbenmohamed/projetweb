@@ -1,0 +1,32 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Nouveau contrat | SyfonuRH{% endblock %}
+{% block page_title %}Nouveau contrat{% endblock %}
+
+{% block content %}
+<div class="row g-6 mt-2">
+  <div class="col-12">
+    <div class="card card-lg">
+      <div class="card-body p-6">
+        <h5 class="mb-5">Créer un contrat</h5>
+        {% include 'contract/_form.html.twig' with {
+          contract: contract,
+          candidates: candidates,
+          recruiters: recruiters,
+          job_offres: job_offres,
+          types: types,
+          form: form,
+          is_edit: false
+        } %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script src="{{ asset('dasher/js/vendors/choice.js') }}"></script>
+  <script src="{{ asset('dasher/js/contracts.js') }}?v={{ 'now'|date('U') }}"></script>
+{% endblock %}
+

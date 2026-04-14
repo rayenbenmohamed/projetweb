@@ -1,0 +1,88 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Inscription | SyfonuRH{% endblock %}
+
+{% block body %}
+<main class="d-flex flex-column justify-content-center vh-100">
+    <section>
+        <div class="container">
+            <div class="row mb-8">
+                <div class="col-xl-4 offset-xl-4 col-md-12 col-12">
+                    <div class="text-center">
+                        <a href="{{ path('app_home') }}"
+                           class="fs-2 fw-bold d-flex align-items-center gap-2 justify-content-center mb-6">
+                            <img src="{{ asset('dasher/images/brand/logo/logo-icon.svg') }}" alt="Logo"/>
+                            <span>SyfonuRH</span>
+                        </a>
+                        <h1 class="mb-1">Créer un compte</h1>
+                        <p class="mb-0">
+                            Déjà inscrit ?
+                            <a href="{{ path('app_login') }}" class="text-primary">Se connecter</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-xl-5 col-lg-6 col-md-8 col-12">
+                    <div class="mb-4">{% include '_flashes.html.twig' %}</div>
+                    <div class="card card-lg mb-6">
+                        <div class="card-body p-6">
+                            <form class="needs-validation" method="post" action="{{ path('app_register') }}" novalidate>
+                                <input type="hidden" name="_token" value="{{ csrf_token('register') }}">
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="inputFirstName" class="form-label">
+                                            Prénom <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" class="form-control" id="inputFirstName" name="firstName" required/>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="inputLastName" class="form-label">
+                                            Nom <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" class="form-control" id="inputLastName" name="lastName" required/>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="regEmail" class="form-label">
+                                        Email <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="email" class="form-control" id="regEmail" name="email" required/>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="regPhone" class="form-label">Téléphone</label>
+                                    <input type="text" class="form-control" id="regPhone" name="phone"/>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="regPassword" class="form-label">Mot de passe</label>
+                                    <input type="password" class="form-control" id="regPassword" name="password" required/>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="regRole" class="form-label">Rôle</label>
+                                    <select class="form-select" id="regRole" name="role">
+                                        <option value="Candidat">Candidat</option>
+                                        <option value="Recruteur">Recruteur</option>
+                                    </select>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button class="btn btn-primary" type="submit">S'inscrire</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+{% block javascripts %}
+    <script src="{{ asset('dasher/js/vendors/password.js') }}"></script>
+{% endblock %}
+{% endblock %}

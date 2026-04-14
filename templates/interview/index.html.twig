@@ -1,0 +1,97 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Mes Entretiens | SyfonuRH{% endblock %}
+{% block page_title %}Mes Entretiens{% endblock %}
+
+{% block content %}
+<div class="row g-6 mt-2">
+    <div class="col-12">
+        <div class="card h-100">
+            <div class="card-header border-bottom-0">
+                <h5 class="mb-0">Mes entretiens prévus et passés</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover table-centered mb-0 text-nowrap">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date & Heure</th>
+                            <th>Offre d'emploi</th>
+                            <th>Candidat</th>
+                            <th>Statut</th>
+                            <th>Lien Visio / Lieu</th>
+                            <th>Notes</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for interview in interviews %}
+                        <tr>
+                            <td>
+                                <strong>{{ interview.scheduledAt|date('d/m/Y') }}</strong> à {{ interview.scheduledAt|date('H:i') }}
+                            </td>
+                            <td>{{ interview.application.jobOffre.title }}</td>
+                            <td>{{ interview.application.candidat.firstName }} {{ interview.application.candidat.lastName }}</td>
+                            <td>
+                                <span class="badge bg-{{ interview.status == 'Prévue' ? 'primary' : (interview.status == 'Réalisée' ? 'success' : 'secondary') }}-subtle text-{{ interview.status == 'Prévue' ? 'primary' : (interview.status == 'Réalisée' ? 'success' : 'secondary') }}-emphasis px-2 py-1">
+                                    {{ interview.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ path('app_interview_video', {id: interview.id}) }}" class="btn btn-sm btn-primary">
+                                    <i class="ti ti-video"></i> Rejoindre Appel
+                                </a>
+                            </td>
+                            <td>
+                                {{ interview.notes|default('-')|slice(0, 30) }}{% if interview.notes|length > 30 %}...{% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-1">
+                                    {# Bouton de confirmation pour le candidat #}
+                                    {% if interview.status == 'Prévue' and interview.application.candidat == app.user %}
+                                        <form method="post" action="{{ path('app_interview_confirm', {id: interview.id}) }}" class="d-inline" onsubmit="return confirm('Confirmer votre présence à cet entretien ?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('confirm' ~ interview.id) }}">
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                <i class="ti ti-check me-1"></i> Confirmer
+                                            </button>
+                                        </form>
+                                    {% endif %}
+
+                                    {% if interview.application.jobOffre.user.id == app.user.id %}
+                                        <a href="{{ path('app_interview_show', {id: interview.id}) }}" class="btn btn-sm btn-ghost btn-icon rounded-circle text-info" title="Voir détails">
+                                            <i class="ti ti-eye fs-4"></i>
+                                        </a>
+                                        <a href="{{ path('app_interview_edit', {id: interview.id}) }}" class="btn btn-sm btn-ghost btn-icon rounded-circle text-warning" title="Modifier">
+                                            <i class="ti ti-pencil fs-4"></i>
+                                        </a>
+                                        <form method="post" action="{{ path('app_interview_delete', {id: interview.id}) }}" class="d-inline" onsubmit="return confirm('Voulez-vous vraiment annuler cet entretien ?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ interview.id) }}">
+                                            <button type="submit" class="btn btn-sm btn-ghost btn-icon rounded-circle text-danger" title="Supprimer">
+                                                <i class="ti ti-trash fs-4"></i>
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <a href="{{ path('app_interview_show', {id: interview.id}) }}" class="btn btn-sm btn-ghost btn-icon rounded-circle text-info" title="Voir détails">
+                                            <i class="ti ti-eye fs-4"></i>
+                                        </a>
+                                    {% endif %}
+
+                                    {% if not (interview.status == 'Prévue' and interview.application.candidat == app.user) and interview.application.jobOffre.user != app.user %}
+                                        <span class="text-secondary small">Aucune action</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-8">
+                                <p class="text-secondary mb-0">Aucun entretien prévu pour le moment.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

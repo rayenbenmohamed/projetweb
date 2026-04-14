@@ -1,0 +1,20 @@
+{# Affichage harmonisé des messages flash (success, error, warning, info) #}
+{% for type, messages in app.flashes %}
+    {% for message in messages %}
+        {% set is_error = type == 'error' %}
+        {% set is_success = type == 'success' %}
+        {% set is_warning = type == 'warning' %}
+        {% set alert_class = is_error ? 'danger' : (is_success ? 'success' : (is_warning ? 'warning' : (type == 'info' ? 'info' : 'secondary'))) %}
+        {% set icon = is_error ? 'ti-alert-circle' : (is_success ? 'ti-circle-check' : (is_warning ? 'ti-alert-triangle' : 'ti-info-circle')) %}
+        {% set icon_color = is_error ? 'text-danger' : (is_success ? 'text-success' : (is_warning ? 'text-warning' : 'text-body-secondary')) %}
+        <div class="alert alert-{{ alert_class }} alert-dismissible fade show shadow-sm" role="alert">
+            <div class="d-flex gap-3 align-items-start">
+                <span class="fs-3 lh-1 {{ icon_color }}" aria-hidden="true"><i class="ti {{ icon }}"></i></span>
+                <div class="flex-grow-1 pt-1">
+                    {{ message|nl2br }}
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer ce message"></button>
+            </div>
+        </div>
+    {% endfor %}
+{% endfor %}

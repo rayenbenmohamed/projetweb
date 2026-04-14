@@ -1,0 +1,118 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Types de contrat | SyfonuRH{% endblock %}
+{% block page_title %}Types de contrat{% endblock %}
+
+{% block content %}
+<div class="row g-6 mt-2">
+  <div class="col-12">
+    <div class="card h-100">
+      <div class="card-header border-bottom-0 d-md-flex align-items-center justify-content-between">
+        <div class="d-flex flex-column">
+          <h5 class="mb-0">Liste des types</h5>
+          <span class="small text-secondary">{{ total }} résultat(s)</span>
+        </div>
+        <a href="{{ path('app_type_contrat_new') }}" class="btn btn-primary btn-sm">
+          <i class="ti ti-plus me-1"></i> Nouveau type
+        </a>
+      </div>
+
+      <div class="card-body pt-0">
+        <form method="get" class="row g-3 align-items-end" id="typeContratFilters">
+          <div class="col-xl-8 col-md-8">
+            <label class="form-label">Recherche</label>
+            <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="Nom ou description…" data-autosubmit>
+          </div>
+          <div class="col-xl-2 col-md-2">
+            <input type="hidden" name="limit" value="{{ limit }}">
+            <button class="btn btn-outline-primary w-100" type="submit">Rechercher</button>
+          </div>
+          <div class="col-xl-2 col-md-2">
+            <a class="btn btn-outline-secondary w-100" href="{{ path('app_type_contrat_index') }}">Reset</a>
+          </div>
+        </form>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover table-centered mb-0 text-nowrap">
+          <thead class="table-light">
+            <tr>
+              <th>Nom</th>
+              <th>Description</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for type in types %}
+              <tr>
+                <td>{{ type.name }}</td>
+                <td class="text-secondary">{{ type.description ?? '—' }}</td>
+                <td class="text-end">
+                  <div class="dropdown">
+                    <button class="btn btn-ghost btn-icon btn-sm rounded-circle" type="button" data-bs-toggle="dropdown">
+                      <i class="ti ti-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      <li><a class="dropdown-item" href="{{ path('app_type_contrat_edit', {id: type.id}) }}">Modifier</a></li>
+                      <li>
+                        <form method="post" action="{{ path('app_type_contrat_delete', {id: type.id}) }}"
+                              onsubmit="return confirm('Confirmer la suppression ?');">
+                          <input type="hidden" name="_token" value="{{ csrf_token('delete_type_contrat_' ~ type.id) }}">
+                          <button class="dropdown-item text-danger">Supprimer</button>
+                        </form>
+                      </li>
+                    </ul>
+                  </div>
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="3" class="text-center py-8">
+                  <p class="text-secondary mb-0">Aucun type trouvé.</p>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if pages > 1 %}
+        <div class="card-footer d-flex align-items-center justify-content-between">
+          <div class="small text-secondary">
+            Page {{ page }} / {{ pages }}
+          </div>
+          <nav aria-label="Pagination">
+            <ul class="pagination pagination-sm mb-0">
+              {% set prev = page - 1 %}
+              {% set next = page + 1 %}
+              <li class="page-item {{ page <= 1 ? 'disabled' : '' }}">
+                <a class="page-link" href="{{ path('app_type_contrat_index', {q: q, page: prev, limit: limit}) }}">Précédent</a>
+              </li>
+              {% for p in 1..pages %}
+                {% if p == 1 or p == pages or (p >= page-1 and p <= page+1) %}
+                  <li class="page-item {{ p == page ? 'active' : '' }}">
+                    <a class="page-link" href="{{ path('app_type_contrat_index', {q: q, page: p, limit: limit}) }}">{{ p }}</a>
+                  </li>
+                {% elseif p == 2 and page > 4 %}
+                  <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% elseif p == pages-1 and page < pages-3 %}
+                  <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% endif %}
+              {% endfor %}
+              <li class="page-item {{ page >= pages ? 'disabled' : '' }}">
+                <a class="page-link" href="{{ path('app_type_contrat_index', {q: q, page: next, limit: limit}) }}">Suivant</a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script src="{{ asset('dasher/js/type-contrat.js') }}"></script>
+{% endblock %}
+
