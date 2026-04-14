@@ -116,6 +116,41 @@
 /* Empty */
 .empty-feed{text-align:center;padding:3.5rem 2rem;color:#9ca3af}
 .empty-feed i{font-size:2.5rem;margin-bottom:.6rem;display:block}
+/* ── Chat AI Widget ───────────────────────────── */
+.ai-chat-widget { position: fixed; bottom: 25px; right: 25px; z-index: 2000; font-family: 'Inter', sans-serif; }
+.ai-chat-bubble { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #5c67f5, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 15px rgba(92, 103, 245, 0.4); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
+.ai-chat-bubble:hover { transform: scale(1.1) rotate(10deg); }
+.ai-chat-bubble .ai-pulse { position: absolute; inset: -4px; border: 2px solid #5c67f5; border-radius: 50%; opacity: 0; animation: pulse 2s infinite; }
+@keyframes pulse { 0% { transform: scale(0.95); opacity: 0.5; } 100% { transform: scale(1.2); opacity: 0; } }
+
+.ai-chat-window { position: absolute; bottom: 70px; right: 0; width: 350px; height: 480px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); display: flex; flex-direction: column; transform: translateY(20px); opacity: 0; pointer-events: none; transition: all 0.3s ease; border: 1px solid rgba(0,0,0,0.05); }
+.ai-chat-window.active { transform: translateY(0); opacity: 1; pointer-events: auto; }
+.ai-chat-header { padding: 1.2rem; background: linear-gradient(135deg, #5c67f5, #7c3aed); color: #fff; border-radius: 20px 20px 0 0; display: flex; align-items: center; gap: 10px; }
+.ai-chat-header i { font-size: 1.4rem; }
+.ai-chat-header-title { font-weight: 700; font-size: 0.95rem; }
+.ai-chat-messages { flex: 1; overflow-y: auto; padding: 1.2rem; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+.ai-chat-messages::-webkit-scrollbar { width: 4px; }
+.ai-chat-messages::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+.msg { max-width: 85%; padding: 10px 14px; border-radius: 15px; font-size: 0.85rem; line-height: 1.4; position: relative; animation: msgIn 0.3s ease-out; }
+@keyframes msgIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.msg-ai { background: #f3f4f6; color: #1f2937; align-self: flex-start; border-bottom-left-radius: 4px; }
+.msg-user { background: #5c67f5; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; box-shadow: 0 4px 10px rgba(92, 103, 245, 0.2); }
+.msg-loading { display: flex; gap: 4px; padding: 12px 14px; }
+.msg-loading span { width: 6px; height: 6px; background: #9ca3af; border-radius: 50%; animation: loadingDot 1.4s infinite; }
+.msg-loading span:nth-child(2) { animation-delay: 0.2s; }
+.msg-loading span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes loadingDot { 0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+
+.ai-chat-input-area { padding: 1rem; border-top: 1px solid #f1f5f9; display: flex; gap: 8px; }
+.ai-chat-input { flex: 1; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 8px 12px; font-size: 0.85rem; transition: border-color 0.2s; outline: none; }
+.ai-chat-input:focus { border-color: #5c67f5; }
+.ai-chat-send { width: 38px; height: 38px; border-radius: 10px; background: #eef0ff; color: #5c67f5; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+.ai-chat-send:hover { background: #5c67f5; color: #fff; }
+
+@media (max-width: 576px) {
+    .ai-chat-window { width: calc(100vw - 40px); height: 400px; right: -10px; }
+}
 </style>
 {% endblock %}
 
@@ -228,8 +263,9 @@
         <div class="feed-wrapper" id="feedWrapper">
 
             {% for offre in job_offres %}
-            {% set statusCls = offre.status == 'PUBLISHED' ? 'published' : 'draft' %}
-            {% set statusLbl = offre.status == 'PUBLISHED' ? 'Publiée' : 'Brouillon' %}
+            {% set dStatus = offre.displayStatus %}
+            {% set statusCls = dStatus == 'PUBLISHED' ? 'published' : (dStatus == 'DRAFT' ? 'draft' : 'secondary') %}
+            {% set statusLbl = dStatus == 'PUBLISHED' ? 'Publiée' : (dStatus == 'DRAFT' ? 'Brouillon' : 'Archivée') %}
             {% set isApplied = user_applications[offre.id] is defined %}
 
             <div class="jcard"
@@ -372,6 +408,36 @@
     </div>
 
 </div>{# /split-wrapper #}
+
+{# ── Chat AI Widget HTML ───────────────────────────────────────── #}
+<div class="ai-chat-widget">
+    <div class="ai-chat-bubble" id="aiChatBubble" title="Assistant AI">
+        <div class="ai-pulse"></div>
+        <i class="ti ti-robot"></i>
+    </div>
+    <div class="ai-chat-window" id="aiChatWindow">
+        <div class="ai-chat-header">
+            <i class="ti ti-bolt text-warning"></i>
+            <div>
+                <div class="ai-chat-header-title">SyfonuRH AI</div>
+                <div style="font-size:0.7rem; opacity:0.8">Assistant de recherche intelligent</div>
+            </div>
+            <button type="button" class="btn-close btn-close-white ms-auto" style="font-size:0.7rem; box-shadow:none" id="aiChatClose"></button>
+        </div>
+        <div class="ai-chat-messages" id="aiChatMessages">
+            <div class="msg msg-ai">
+                Bonjour ! Je suis votre assistant AI. Dites-moi ce que vous recherchez ? (ex: "Offres CDI à Tunis", "Salaire > 2000DT")
+            </div>
+        </div>
+        <form class="ai-chat-input-area" id="aiChatForm">
+            <input type="text" class="ai-chat-input" id="aiChatInput" placeholder="Tapez votre recherche..." autocomplete="off">
+            <button type="submit" class="ai-chat-send">
+                <i class="ti ti-send"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
 
 {# Raw offer data for JS geocoding #}
 <script id="offersData" type="application/json">
@@ -757,6 +823,100 @@ window.resetTranslation = function(el, id) {
         dropdown.querySelectorAll('.back-to-original').forEach(i => i.classList.add('d-none'));
     }
 };
+
+// ─── AI Chat Interaction Logic ─────────────────────────────
+const aiChatBubble  = document.getElementById('aiChatBubble');
+const aiChatWindow  = document.getElementById('aiChatWindow');
+const aiChatClose   = document.getElementById('aiChatClose');
+const aiChatForm    = document.getElementById('aiChatForm');
+const aiChatInput   = document.getElementById('aiChatInput');
+const aiChatMsgs    = document.getElementById('aiChatMessages');
+
+const toggleChat = () => {
+    aiChatWindow.classList.toggle('active');
+    if (aiChatWindow.classList.contains('active')) {
+        aiChatInput.focus();
+    }
+};
+
+aiChatBubble.addEventListener('click', toggleChat);
+aiChatClose.addEventListener('click', () => aiChatWindow.classList.remove('active'));
+
+const addMessage = (text, type = 'ai') => {
+    const div = document.createElement('div');
+    div.className = `msg msg-${type}`;
+    div.innerText = text;
+    aiChatMsgs.appendChild(div);
+    aiChatMsgs.scrollTop = aiChatMsgs.scrollHeight;
+    return div;
+};
+
+const showLoading = () => {
+    const div = document.createElement('div');
+    div.className = 'msg msg-ai msg-loading';
+    div.innerHTML = '<span></span><span></span><span></span>';
+    aiChatMsgs.appendChild(div);
+    aiChatMsgs.scrollTop = aiChatMsgs.scrollHeight;
+    return div;
+};
+
+aiChatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = aiChatInput.value.trim();
+    if (!msg) return;
+
+    aiChatInput.value = '';
+    addMessage(msg, 'user');
+
+    const loader = showLoading();
+
+    try {
+        const response = await fetch('{{ path("app_job_offre_ai_chat") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg })
+        });
+        
+        const data = await response.json();
+        loader.remove();
+
+        if (data.reply) {
+            addMessage(data.reply, 'ai');
+        }
+
+        if (data.filters) {
+            const f = data.filters;
+            // Apply filters to UI inputs to keep them in sync
+            if (f.q !== undefined) {
+                fsQ.value = f.q || '';
+            }
+            if (f.location !== undefined) {
+                fsLoc.value = f.location || '';
+            }
+            if (f.type !== undefined) {
+                fsType.value = (f.type || '').toLowerCase();
+                // Update pills
+                pills.forEach(p => {
+                    p.classList.toggle('active', p.dataset.type === fsType.value);
+                });
+            }
+            if (f.salary_min !== undefined) {
+                fsSalMin.value = f.salary_min || '';
+            }
+            if (f.salary_max !== undefined) {
+                fsSalMax.value = f.salary_max || '';
+            }
+            
+            // Trigger the existing filtering logic
+            filterCards();
+        }
+
+    } catch (err) {
+        loader.remove();
+        addMessage("Désolé, une erreur est survenue lors de la communication avec l'assistant.", 'ai');
+        console.error(err);
+    }
+});
 
 })();
 </script>

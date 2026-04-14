@@ -187,6 +187,7 @@
                         <select name="status" class="form-select {% if errors.status is defined %}is-invalid{% endif %}">
                             <option value="DRAFT"      {{ job_offre.status == 'DRAFT'      ? 'selected' }}>Brouillon (DRAFT)</option>
                             <option value="PUBLISHED"  {{ job_offre.status == 'PUBLISHED' or job_offre.status is null ? 'selected' }}>Publiée (PUBLISHED)</option>
+                            <option value="ARCHIVED"   {{ job_offre.status == 'ARCHIVED'   ? 'selected' }} class="text-danger">Archivée (Expirée)</option>
                         </select>
                         {% if errors.status is defined %}
                             <div class="invalid-feedback">{{ errors.status }}</div>
@@ -222,9 +223,24 @@
                         {% endif %}
                     </div>
 
-                    <div class="mb-4">
-                        <label class="form-label">Description détaillée <span class="text-danger">*</span></label>
-                        <textarea name="description"
+                    <div class="row g-4 mb-4">
+                        <div class="col-12">
+                            <label class="form-label">Compétences / Skills (Pour Matching)</label>
+                            <input type="text" name="skills" class="form-control {% if errors.skills is defined %}is-invalid{% endif %}" placeholder="Ex: PHP, Symfony, React..." value="{{ job_offre.skills|default('') }}">
+                            {% if errors.skills is defined %}
+                                <div class="invalid-feedback">{{ errors.skills }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4 position-relative">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label mb-0">Description détaillée <span class="text-danger">*</span></label>
+                            <button type="button" class="btn btn-sm btn-light text-primary fw-semibold bg-primary-subtle border-0" id="btn-generate-ai">
+                                <i class="ti ti-sparkles me-1 text-warning"></i>Générer avec l'IA
+                            </button>
+                        </div>
+                        <textarea name="description" id="description_field"
                                   class="form-control {% if errors.description is defined %}is-invalid{% endif %}"
                                   rows="8"
                                   placeholder="Décrivez les missions, le profil recherché...">{{ job_offre.description }}</textarea>
@@ -247,6 +263,45 @@
 {% block javascripts %}
 {{ parent() }}
 <script>
+document.addEventListener('DOMContentLoaded', () => {
+    const btnGenerate = document.getElementById('btn-generate-ai');
+    if (btnGenerate) {
+        btnGenerate.addEventListener('click', async () => {
+            const btnOriginalText = btnGenerate.innerHTML;
+            btnGenerate.innerHTML = '<i class="ti ti-loader ti-spin me-1"></i>Génération...';
+            btnGenerate.disabled = true;
+
+            const data = {
+                title: document.querySelector('input[name="title"]').value,
+                location: document.querySelector('input[name="location"]').value,
+                salary: document.querySelector('input[name="salary"]').value,
+                employment_type: document.querySelector('select[name="employment_type"]').value,
+                skills: document.querySelector('input[name="skills"]').value,
+                advantages: document.querySelector('input[name="advantages"]').value
+            };
+
+            try {
+                const res = await fetch('{{ path('app_job_offre_ai_generate') }}', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (result.description) {
+                    document.querySelector('textarea[name="description"]').value = result.description;
+                } else if (result.error) {
+                    alert('Erreur: ' + result.error);
+                }
+            } catch (err) {
+                alert('Erreur lors de la communication avec le serveur.');
+            } finally {
+                btnGenerate.innerHTML = btnOriginalText;
+                btnGenerate.disabled = false;
+            }
+        });
+    }
+});
+
 function previewLogo(input) {
     const preview = document.getElementById('logoPreview');
     if (input.files && input.files[0]) {

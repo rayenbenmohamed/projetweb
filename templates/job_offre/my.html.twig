@@ -197,8 +197,9 @@
 {% else %}
 <div class="feed-wrapper" id="feedWrapper">
   {% for offre in job_offres %}
-  {% set statusClass = offre.status == 'PUBLISHED' ? 'published' : 'draft' %}
-  {% set statusLabel = offre.status == 'PUBLISHED' ? 'Publiée' : 'Brouillon' %}
+  {% set dStatus = offre.displayStatus %}
+  {% set statusClass = dStatus == 'PUBLISHED' ? 'published' : (dStatus == 'DRAFT' ? 'draft' : 'secondary') %}
+  {% set statusLabel = dStatus == 'PUBLISHED' ? 'Publiée' : (dStatus == 'DRAFT' ? 'Brouillon' : 'Archivée') %}
   <div class="jcard"
        id="card-{{ offre.id }}"
        data-id="{{ offre.id }}"

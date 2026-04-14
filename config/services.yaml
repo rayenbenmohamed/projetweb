@@ -26,3 +26,7 @@ services:
     App\Service\CloudinaryUploader:
         arguments:
             $cloudinaryUrl: '%env(CLOUDINARY_URL)%'
+
+    App\Service\JobOffreAiService:
+        arguments:
+            $groqApiKey: '%env(GROQ_API_KEY)%'

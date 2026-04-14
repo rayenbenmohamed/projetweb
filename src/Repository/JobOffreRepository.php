@@ -54,6 +54,12 @@ class JobOffreRepository extends ServiceEntityRepository
             $qb->andWhere('j.status = :status')->setParameter('status', $criteria['status']);
         }
 
+        // Always filter out expired offers for public listing (when status is PUBLISHED and no user is specified)
+        if (empty($criteria['user']) && (empty($criteria['status']) || $criteria['status'] === 'PUBLISHED')) {
+            $qb->andWhere('j.expiresAt IS NULL OR j.expiresAt > :now')
+               ->setParameter('now', new \DateTime());
+        }
+
         if (!empty($criteria['location'])) {
             $qb->andWhere('j.location LIKE :location')->setParameter('location', '%' . $criteria['location'] . '%');
         }
@@ -91,8 +97,10 @@ class JobOffreRepository extends ServiceEntityRepository
         $types      = [];
 
         foreach ($offres as $o) {
-            if ($o->getStatus() === 'PUBLISHED') $published++;
-            elseif ($o->getStatus() === 'DRAFT') $draft++;
+            $dStatus = $o->getDisplayStatus();
+            if ($dStatus === 'PUBLISHED') $published++;
+            elseif ($dStatus === 'DRAFT') $draft++;
+            elseif ($dStatus === 'ARCHIVED') $archivedCount = ($archivedCount ?? 0) + 1; // Note: stats array doesn't have archived yet but we could add it
             $applications += $o->getJobApplications()->count();
             $type = $o->getEmploymentType() ?: 'Autre';
             $types[$type] = ($types[$type] ?? 0) + 1;

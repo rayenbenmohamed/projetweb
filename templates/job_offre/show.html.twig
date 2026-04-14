@@ -36,8 +36,9 @@
                             </div>
                         </div>
                     </div>
-                    {% set statusClass = job_offre.status == 'PUBLISHED' ? 'success' : (job_offre.status == 'DRAFT' ? 'warning' : 'secondary') %}
-                    {% set statusLabel = job_offre.status == 'PUBLISHED' ? 'Publiée' : (job_offre.status == 'DRAFT' ? 'Brouillon' : job_offre.status) %}
+                    {% set dStatus = job_offre.displayStatus %}
+                    {% set statusClass = dStatus == 'PUBLISHED' ? 'success' : (dStatus == 'DRAFT' ? 'warning' : 'secondary') %}
+                    {% set statusLabel = dStatus == 'PUBLISHED' ? 'Publiée' : (dStatus == 'DRAFT' ? 'Brouillon' : 'Archivée') %}
                     <span class="badge bg-{{ statusClass }}-subtle text-{{ statusClass }}-emphasis px-3 py-2 fs-6">
                         {{ statusLabel }}
                     </span>
@@ -131,6 +132,27 @@
                         {% if advantage %}
                         <span class="badge bg-secondary-subtle text-secondary-emphasis px-3 py-2 rounded-pill fs-6">
                             <i class="ti ti-plus me-1"></i>{{ advantage }}
+                        </span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {# Compétences #}
+        {% if job_offre.skills %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="ti ti-bulb me-2"></i>Compétences attendues (Skills)</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    {% for skill in job_offre.skills|split(',') %}
+                        {% set skill = skill|trim %}
+                        {% if skill %}
+                        <span class="badge bg-info-subtle text-info-emphasis px-3 py-2 rounded-pill fs-6">
+                            {{ skill }}
                         </span>
                         {% endif %}
                     {% endfor %}

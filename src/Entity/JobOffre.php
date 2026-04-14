@@ -54,8 +54,8 @@ class JobOffre
     #[ORM\Column(length: 20)]
     #[Assert\NotBlank(message: 'Le statut est obligatoire.')]
     #[Assert\Choice(
-        choices: ['DRAFT', 'PUBLISHED'],
-        message: 'Le statut doit être "DRAFT" ou "PUBLISHED".'
+        choices: ['DRAFT', 'PUBLISHED', 'ARCHIVED'],
+        message: 'Le statut doit être "DRAFT", "PUBLISHED" ou "ARCHIVED".'
     )]
     private ?string $status = 'DRAFT';
 
@@ -89,6 +89,9 @@ class JobOffre
 
     #[ORM\Column(name: 'company_logo_public_id', length: 255, nullable: true)]
     private ?string $companyLogoPublicId = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $skills = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(name: 'user_id', nullable: true)]
@@ -171,6 +174,19 @@ class JobOffre
     public function getStatus(): ?string
     {
         return $this->status;
+    }
+
+    public function isExpired(): bool
+    {
+        return $this->expiresAt !== null && $this->expiresAt < new \DateTime();
+    }
+
+    public function getDisplayStatus(): string
+    {
+        if ($this->status === 'PUBLISHED' && $this->isExpired()) {
+            return 'ARCHIVED';
+        }
+        return $this->status ?? 'DRAFT';
     }
 
     public function setStatus(string $status): self
@@ -305,6 +321,17 @@ class JobOffre
     public function removeLinkedAvantage(Avantage $avantage): self
     {
         $this->linkedAvantages->removeElement($avantage);
+        return $this;
+    }
+
+    public function getSkills(): ?string
+    {
+        return $this->skills;
+    }
+
+    public function setSkills(?string $skills): self
+    {
+        $this->skills = $skills;
         return $this;
     }
 }

@@ -9,6 +9,7 @@ use App\Repository\JobOffreRepository;
 use App\Repository\AvantageRepository;
 use App\Repository\JobApplicationRepository;
 use App\Service\CloudinaryUploader;
+use App\Service\JobOffreAiService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -93,6 +94,7 @@ class JobOffreController extends AbstractController
             $jobOffre->setStatus((string) $request->request->get('status', 'PUBLISHED'));
             $jobOffre->setAdvantages($request->request->get('advantages') ?: null);
             $jobOffre->setSalaryNegotiable($request->request->get('is_salary_negotiable') === 'on');
+            $jobOffre->setSkills($request->request->get('skills') ?: null);
 
             // Dates
             $publishedAtRaw = $request->request->get('published_at');
@@ -135,6 +137,15 @@ class JobOffreController extends AbstractController
                 $errors[$violation->getPropertyPath()] = $violation->getMessage();
             }
 
+            // Auto-publish/archive logic based on date
+            if ($jobOffre->getStatus() !== 'DRAFT') {
+                if ($jobOffre->isExpired()) {
+                    $jobOffre->setStatus('ARCHIVED');
+                } elseif ($jobOffre->getStatus() === 'ARCHIVED' && !$jobOffre->isExpired()) {
+                    $jobOffre->setStatus('PUBLISHED');
+                }
+            }
+
             if (empty($errors)) {
                 $entityManager->persist($jobOffre);
                 $entityManager->flush();
@@ -148,6 +159,44 @@ class JobOffreController extends AbstractController
             'avantages' => $avantages,
             'errors'    => $errors,
         ]);
+    }
+
+    /**
+     * AI Chat: parse a natural-language query and return job-offer filter criteria.
+     */
+    #[Route('/ai-chat', name: 'app_job_offre_ai_chat', methods: ['POST'])]
+    public function aiChat(Request $request, JobOffreAiService $aiService): JsonResponse
+    {
+        $data    = json_decode($request->getContent(), true);
+        $message = trim($data['message'] ?? '');
+
+        if ($message === '') {
+            return new JsonResponse(['error' => 'Message vide.'], 400);
+        }
+
+        try {
+            $result = $aiService->parseQuery($message);
+            return new JsonResponse($result);
+        } catch (\Throwable $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[Route('/ai-generate-description', name: 'app_job_offre_ai_generate', methods: ['POST'])]
+    public function aiGenerateDescription(Request $request, JobOffreAiService $aiService): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        if (!$data) {
+            return new JsonResponse(['error' => 'Données invalides.'], 400);
+        }
+
+        try {
+            $description = $aiService->generateDescription($data);
+            return new JsonResponse(['description' => $description]);
+        } catch (\Throwable $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
     }
 
     #[Route('/translate', name: 'app_job_offre_translate', methods: ['POST'])]
@@ -219,6 +268,7 @@ class JobOffreController extends AbstractController
             $jobOffre->setStatus((string) $request->request->get('status', 'DRAFT'));
             $jobOffre->setAdvantages($request->request->get('advantages') ?: null);
             $jobOffre->setSalaryNegotiable($request->request->get('is_salary_negotiable') === 'on');
+            $jobOffre->setSkills($request->request->get('skills') ?: null);
 
             // Dates
             if ($request->request->get('published_at')) {
@@ -278,6 +328,15 @@ class JobOffreController extends AbstractController
                 $errors[$violation->getPropertyPath()] = $violation->getMessage();
             }
 
+            // Auto-publish/archive logic based on date
+            if ($jobOffre->getStatus() !== 'DRAFT') {
+                if ($jobOffre->isExpired()) {
+                    $jobOffre->setStatus('ARCHIVED');
+                } elseif ($jobOffre->getStatus() === 'ARCHIVED' && !$jobOffre->isExpired()) {
+                    $jobOffre->setStatus('PUBLISHED');
+                }
+            }
+
             if (empty($errors)) {
                 $entityManager->flush();
                 $this->addFlash('success', 'Offre modifiée avec succès.');
@@ -315,6 +374,7 @@ class JobOffreController extends AbstractController
         $copy->setEmploymentType($jobOffre->getEmploymentType());
         $copy->setSalaryNegotiable($jobOffre->isSalaryNegotiable());
         $copy->setAdvantages($jobOffre->getAdvantages());
+        $copy->setSkills($jobOffre->getSkills());
         // Ne pas copier le logo (public_id lié à l'original)
         $copy->setCompanyLogo($jobOffre->getCompanyLogo());
         $copy->setStatus('DRAFT');
