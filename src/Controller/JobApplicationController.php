@@ -313,26 +313,25 @@ class JobApplicationController extends AbstractController
     private function assertCanAccess(JobApplication $app): void
     {
         $user = $this->getUser();
-        if (!$user) throw $this->createAccessDeniedException();
+        if (!$user) throw $this->createAccessDeniedException("Veuillez vous connecter.");
 
-        $isCandidat   = $app->getCandidat() && $app->getCandidat()->getId() === $user->getId();
-        $isOfferOwner = $app->getJobOffre() && $app->getJobOffre()->getUser() && $app->getJobOffre()->getUser()->getId() === $user->getId();
+        $currentUserId = $user->getId();
+        $isCandidat   = $app->getCandidat() && $app->getCandidat()->getId() == $currentUserId;
+        $isOfferOwner = $app->getJobOffre() && $app->getJobOffre()->getUser() && $app->getJobOffre()->getUser()->getId() == $currentUserId;
 
         if (!$isCandidat && !$isOfferOwner) {
-            $this->addFlash('danger', "Accès refusé.");
+            $this->addFlash('danger', "Accès refusé à cette candidature (ID: " . $app->getId() . ").");
             throw $this->createAccessDeniedException();
         }
     }
 
-    /**
-     * Seul le propriétaire de l'offre peut gérer la candidature.
-     */
     private function assertIsOfferOwner(JobApplication $app): void
     {
         $user = $this->getUser();
-        if (!$user) throw $this->createAccessDeniedException();
+        if (!$user) throw $this->createAccessDeniedException("Veuillez vous connecter.");
 
-        $isOfferOwner = $app->getJobOffre() && $app->getJobOffre()->getUser() && $app->getJobOffre()->getUser()->getId() === $user->getId();
+        $currentUserId = $user->getId();
+        $isOfferOwner = $app->getJobOffre() && $app->getJobOffre()->getUser() && $app->getJobOffre()->getUser()->getId() == $currentUserId;
 
         if (!$isOfferOwner) {
             $this->addFlash('danger', "Action réservée au recruteur de cette offre.");
@@ -340,27 +339,17 @@ class JobApplicationController extends AbstractController
         }
     }
 
-    /**
-     * L'utilisateur peut supprimer s'il est :
-     * 1. Le candidat (auteur)
-     * 2. Le propriétaire de l'offre (recruteur)
-     */
     private function assertCanDelete(JobApplication $app): void
     {
-        /** @var \App\Entity\User $user */
         $user = $this->getUser();
-        if (!$user) {
-            throw $this->createAccessDeniedException("Vous devez être connecté.");
-        }
+        if (!$user) throw $this->createAccessDeniedException("Veuillez vous connecter.");
 
-        $appUser = $app->getCandidat();
-        $offerOwner = $app->getJobOffre() ? $app->getJobOffre()->getUser() : null;
-
-        $isCandidat = ($appUser && $appUser->getId() === $user->getId());
-        $isOfferOwner = ($offerOwner && $offerOwner->getId() === $user->getId());
+        $currentUserId = $user->getId();
+        $isCandidat   = $app->getCandidat() && $app->getCandidat()->getId() == $currentUserId;
+        $isOfferOwner = $app->getJobOffre() && $app->getJobOffre()->getUser() && $app->getJobOffre()->getUser()->getId() == $currentUserId;
 
         if (!$isCandidat && !$isOfferOwner) {
-            $this->addFlash('danger', "Action refusée. Vous ne pouvez supprimer que vos propres candidatures ou celles reçues sur vos offres.");
+            $this->addFlash('danger', "Vous n'avez pas le droit de supprimer cette candidature.");
             throw $this->createAccessDeniedException();
         }
     }

@@ -24,7 +24,7 @@ class CVAnalyzerService
      */
     public function analyze(string $jobDescription, string $cvText): ?array
     {
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . $this->apiKey;
+        $url = "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=" . $this->apiKey;
 
         $prompt = <<<PROMPT
 Tu es un expert en recrutement RH senior hautement analytique. Analyse le CV suivant par rapport à la description du poste fournie.
@@ -143,6 +143,8 @@ PROMPT;
                 return json_decode($jsonMatches[0], true);
             }
             return null;
+        } catch (\Exception $e) {
+            return ['error' => $e->getMessage()];
         }
     }
     /**
@@ -151,7 +153,7 @@ PROMPT;
      */
     public function analyzeDocument(string $jobDescription, string $documentUrl): ?array
     {
-        $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . $this->apiKey;
+        $apiUrl = "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=" . $this->apiKey;
 
         try {
             // 1. Télécharger le document
