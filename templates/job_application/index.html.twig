@@ -1,102 +1,154 @@
 {% extends 'layout/admin.html.twig' %}
 
 {% block title %}Candidatures | SyfonuRH{% endblock %}
-{% block page_title %}Candidatures{% endblock %}
+{% block page_title %}Gestion des candidatures{% endblock %}
 
 {% block content %}
 <div class="row g-6 mt-2">
-
-    {# === Candidatures reçues sur mes offres === #}
-    {% if applications_by_offer is not empty %}
-    <div class="col-12">
-        <div class="card h-100">
-            <div class="card-header border-bottom-0">
-                <h5 class="mb-0"><i class="ti ti-inbox me-2"></i>Candidatures reçues sur mes offres</h5>
-                <small class="text-secondary">Candidats ayant postulé à vos offres d'emploi.</small>
+    {# === SECTION 1: Candidatures reçues sur mes offres (Recruteur) === #}
+    <div class="col-12 mb-8">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-header bg-white border-bottom d-md-flex align-items-center justify-content-between py-3">
+                <div>
+                    <h5 class="mb-0 fw-bold text-dark"><i class="ti ti-users me-2 text-primary"></i>Pipeline des Candidatures Reçues</h5>
+                    <p class="text-muted small mb-0">Gérez le flux de recrutement de vos offres.</p>
+                </div>
+                <div class="d-flex gap-2 mt-2 mt-md-0">
+                     <form method="get" action="{{ path('app_job_application_index') }}" class="d-flex gap-2">
+                        <div class="input-group input-group-sm" style="width: 250px;">
+                            <span class="input-group-text bg-light border-end-0"><i class="ti ti-search text-muted"></i></span>
+                            <input type="text" class="form-control border-start-0 ps-0" name="recv_offer" value="{{ recvOffer }}" placeholder="Filtrer par offre...">
+                        </div>
+                        <select class="form-select form-select-sm" name="recv_status" onchange="this.form.submit()" style="width: 180px;">
+                            <option value="">Tous les statuts</option>
+                            <option value="PENDING" {% if recvStatus == 'PENDING' %}selected{% endif %}>Nouveau</option>
+                            <option value="HR_SCREENING" {% if recvStatus == 'HR_SCREENING' %}selected{% endif %}>Tri RH</option>
+                            <option value="INTERVIEW_SCHEDULED" {% if recvStatus == 'INTERVIEW_SCHEDULED' %}selected{% endif %}>Entretien</option>
+                            <option value="TECHNICAL_TEST" {% if recvStatus == 'TECHNICAL_TEST' %}selected{% endif %}>Test Technique</option>
+                            <option value="FINAL_REVIEW" {% if recvStatus == 'FINAL_REVIEW' %}selected{% endif %}>Revue Finale</option>
+                            <option value="ACCEPTED" {% if recvStatus == 'ACCEPTED' %}selected{% endif %}>Embauché</option>
+                            <option value="REJECTED" {% if recvStatus == 'REJECTED' %}selected{% endif %}>Refusé</option>
+                        </select>
+                    </form>
+                </div>
             </div>
+            
+            {% if applications_by_offer is not empty %}
             <div class="table-responsive">
-                <table class="table table-hover table-centered mb-0 text-nowrap">
-                    <thead class="table-light">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light-subtle">
                         <tr>
-                            <th>Candidat</th>
-                            <th>Offre</th>
-                            <th>Date</th>
-                            <th>Statut</th>
-                            <th class="text-center">Actions</th>
+                            <th class="ps-4" style="width: 25%;">Candidat</th>
+                            <th style="width: 40%;">Progression du Pipeline</th>
+                            <th class="text-center">Score Match</th>
+                            <th class="text-center">Dernière Action</th>
+                            <th class="text-end pe-4">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for offerTitle, apps in applications_by_offer %}
-                            <tr class="table-secondary">
-                                <td colspan="5" class="fw-bold text-primary">
-                                    <i class="ti ti-briefcase me-2"></i>{{ offerTitle }}
-                                    <span class="badge bg-primary rounded-pill ms-2">{{ apps|length }}</span>
+                            <tr class="bg-light">
+                                <td colspan="5" class="py-2 ps-4">
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1">
+                                        <i class="ti ti-briefcase me-1"></i> {{ offerTitle }}
+                                    </span>
                                 </td>
                             </tr>
                             {% for job_app in apps %}
                             <tr>
-                                <td>
+                                <td class="ps-4">
                                     <div class="d-flex align-items-center gap-3">
-                                        <div class="avatar avatar-sm rounded-circle bg-secondary-subtle d-flex align-items-center justify-content-center" style="width:36px;height:36px;">
-                                            <i class="ti ti-user fs-5"></i>
+                                        <div class="avatar avatar-md rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold shadow-sm">
+                                            {{ job_app.candidat.firstName|first }}{{ job_app.candidat.lastName|first }}
                                         </div>
                                         <div>
-                                            <h6 class="mb-0">{{ job_app.candidat.firstName }} {{ job_app.candidat.lastName }}</h6>
-                                            <span class="small text-secondary">{{ job_app.candidat.email }}</span>
+                                            <h6 class="mb-0 fw-bold">{{ job_app.candidat.firstName }} {{ job_app.candidat.lastName }}</h6>
+                                            <span class="text-muted small"><i class="ti ti-mail me-1"></i>{{ job_app.candidat.email }}</span>
                                         </div>
                                     </div>
                                 </td>
-                                <td>{{ job_app.jobOffre.title }}</td>
-                                <td>{{ job_app.applyDate|date('d/m/Y') }}</td>
                                 <td>
-                                    {% set sc = job_app.status == 'ACCEPTED' ? 'success' : (job_app.status == 'REJECTED' ? 'danger' : 'info') %}
-                                    {% set sl = job_app.status == 'ACCEPTED' ? 'Acceptée' : (job_app.status == 'REJECTED' ? 'Refusée' : 'En attente') %}
-                                    <span class="badge bg-{{ sc }}-subtle text-{{ sc }}-emphasis px-2 py-1">{{ sl }}</span>
+                                    {# Pipeline Stepper #}
+                                    <div class="d-flex justify-content-between position-relative pipeline-stepper mb-2">
+                                        {% set stages = {
+                                            'PENDING': {'label': 'Initial', 'icon': 'ti-star'},
+                                            'HR_SCREENING': {'label': 'RH', 'icon': 'ti-shield-check'},
+                                            'INTERVIEW_SCHEDULED': {'label': 'Entretien', 'icon': 'ti-calendar'},
+                                            'TECHNICAL_TEST': {'label': 'Test', 'icon': 'ti-code'},
+                                            'FINAL_REVIEW': {'label': 'Review', 'icon': 'ti-clipboard-check'},
+                                            'ACCEPTED': {'label': 'Success', 'icon': 'ti-circle-check'}
+                                        } %}
+                                        
+                                        {% set current_found = false %}
+                                        {% set keys = stages|keys %}
+                                        
+                                        {% for key in keys %}
+                                            {% set is_active = (job_app.status == key) %}
+                                            {% set is_past = (not is_active and not current_found and job_app.status != 'REJECTED') %}
+                                            {% if is_active %}{% set current_found = true %}{% endif %}
+                                            
+                                            <div class="text-center step-item {% if is_active %}active{% elseif is_past %}past{% endif %} {% if job_app.status == 'REJECTED' %}rejected{% endif %}" title="{{ stages[key].label }}">
+                                                <div class="step-circle mx-auto mb-1 shadow-sm">
+                                                    <i class="ti {{ stages[key].icon }}"></i>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="progress" style="height: 4px; background: #eee;">
+                                        {% set progress_map = {'PENDING': 16, 'HR_SCREENING': 33, 'INTERVIEW_SCHEDULED': 50, 'TECHNICAL_TEST': 66, 'FINAL_REVIEW': 83, 'ACCEPTED': 100, 'REJECTED': 100} %}
+                                        {% set p_color = job_app.status == 'REJECTED' ? 'danger' : (job_app.status == 'ACCEPTED' ? 'success' : 'primary') %}
+                                        <div class="progress-bar bg-{{ p_color }}" style="width: {{ progress_map[job_app.status] ?? 0 }}%"></div>
+                                    </div>
                                 </td>
                                 <td class="text-center">
-                                    <div class="d-flex align-items-center gap-1 justify-content-center">
-                                        <a href="{{ path('app_job_application_show', {id: job_app.id}) }}"
-                                           class="btn btn-ghost btn-icon btn-sm rounded-circle text-primary" title="Voir">
-                                            <i class="ti ti-eye fs-4"></i>
-                                        </a>
-                                        
-                                        {% if job_app.status == 'ACCEPTED' %}
-                                            {% set interview = job_app.interviews|first %}
-                                            {% if interview %}
-                                                <a href="{{ path('app_interview_show', {id: interview.id}) }}" 
-                                                   class="btn btn-ghost btn-icon btn-sm rounded-circle text-info" title="Consulter l'entretien">
-                                                    <i class="ti ti-calendar fs-4"></i>
-                                                </a>
-                                            {% else %}
-                                                <a href="{{ path('app_interview_new', {jobApplication: job_app.id}) }}" 
-                                                   class="btn btn-ghost btn-icon btn-sm rounded-circle text-info" title="Planifier l'entretien">
-                                                    <i class="ti ti-calendar-plus fs-4"></i>
-                                                </a>
-                                            {% endif %}
-                                        {% endif %}
-                                        {% if job_app.status != 'ACCEPTED' %}
-                                        <form method="post" action="{{ path('app_job_application_status', {id: job_app.id}) }}" class="d-inline">
-                                            <input type="hidden" name="status" value="ACCEPTED">
-                                            <button type="submit" class="btn btn-ghost btn-icon btn-sm rounded-circle text-success" title="Accepter la candidature">
-                                                <i class="ti ti-check fs-4" style="pointer-events: none;"></i>
-                                            </button>
+                                    {% if job_app.aiScore is not null %}
+                                        <span class="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle fs-6 px-3 cursor-pointer" data-bs-toggle="modal" data-bs-target="#aiModal{{ job_app.id }}">
+                                            {{ job_app.aiScore }}%
+                                        </span>
+                                    {% else %}
+                                        <form method="post" action="{{ path('app_job_application_analyze', {id: job_app.id}) }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary rounded-pill small">Analyser</button>
                                         </form>
-                                        {% endif %}
-                                        {% if job_app.status != 'REJECTED' %}
-                                        <form method="post" action="{{ path('app_job_application_status', {id: job_app.id}) }}" class="d-inline">
-                                            <input type="hidden" name="status" value="REJECTED">
-                                            <button type="submit" class="btn btn-ghost btn-icon btn-sm rounded-circle text-danger" title="Refuser la candidature">
-                                                <i class="ti ti-x fs-4" style="pointer-events: none;"></i>
-                                            </button>
-                                        </form>
-                                        {% endif %}
-                                        <form method="post" action="{{ path('app_job_application_delete', {id: job_app.id}) }}"
-                                              onsubmit="return confirm('Confirmer la suppression ?');" class="d-inline">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ job_app.id) }}">
-                                            <button type="submit" class="btn btn-ghost btn-icon btn-sm rounded-circle text-danger" title="Supprimer la candidature">
-                                                <i class="ti ti-trash fs-4" style="pointer-events: none;"></i>
-                                            </button>
-                                        </form>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center small">
+                                    {% set latest_interview = job_app.interviews|last %}
+                                    {% if latest_interview %}
+                                        <div class="text-primary fw-bold">Entretien {{ latest_interview.status }}</div>
+                                        <div class="text-muted">{{ latest_interview.scheduledAt|date('d/m/Y') }}</div>
+                                    {% else %}
+                                        <div class="text-muted">Postulé le</div>
+                                        <div>{{ job_app.applyDate|date('d/m/Y') }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="dropdown">
+                                        <button class="btn btn-light btn-sm rounded-circle p-2" type="button" data-bs-toggle="dropdown">
+                                            <i class="ti ti-dots-vertical fs-5"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0">
+                                            <li><a href="{{ path('app_job_application_show', {id: job_app.id}) }}" class="dropdown-item"><i class="ti ti-eye me-2"></i>Détails / Gérer</a></li>
+                                            <li class="dropdown-divider"></li>
+                                            <li><h6 class="dropdown-header">Changer le statut</h6></li>
+                                            <li>
+                                                <form action="{{ path('app_job_application_status', {id: job_app.id}) }}" method="post">
+                                                    <input type="hidden" name="status" value="HR_SCREENING">
+                                                    <button type="submit" class="dropdown-item small">Tri RH</button>
+                                                </form>
+                                            </li>
+                                            <li>
+                                                <form action="{{ path('app_job_application_status', {id: job_app.id}) }}" method="post">
+                                                    <input type="hidden" name="status" value="ACCEPTED">
+                                                    <button type="submit" class="dropdown-item text-success fw-bold small">Accepter</button>
+                                                </form>
+                                            </li>
+                                            <li>
+                                                <form action="{{ path('app_job_application_status', {id: job_app.id}) }}" method="post">
+                                                    <input type="hidden" name="status" value="REJECTED">
+                                                    <button type="submit" class="dropdown-item text-danger small">Refuser</button>
+                                                </form>
+                                            </li>
+                                        </ul>
                                     </div>
                                 </td>
                             </tr>
@@ -105,77 +157,67 @@
                     </tbody>
                 </table>
             </div>
+            {% else %}
+            <div class="card-body text-center py-6">
+                <p class="text-muted mb-0">Aucune candidature reçue sur vos offres pour le moment.</p>
+            </div>
+            {% endif %}
         </div>
     </div>
-    {% endif %}
 
-    {# === Mes propres candidatures envoyées === #}
-    <div class="col-12">
-        <div class="card h-100">
-            <div class="card-header border-bottom-0 d-md-flex align-items-center justify-content-between">
-                <div>
-                    <h5 class="mb-0"><i class="ti ti-send me-2"></i>Mes candidatures envoyées</h5>
-                    <small class="text-secondary">Offres auxquelles vous avez postulé.</small>
-                </div>
-                <a href="{{ path('app_job_offre_index') }}" class="btn btn-outline-primary btn-sm mt-2 mt-md-0">
-                    <i class="ti ti-briefcase me-1"></i>Voir les offres
-                </a>
+    {# === SECTION 2: Mes candidatures envoyées (Candidat) === #}
+    <div class="col-12 mt-6">
+        <div class="card shadow-sm border-0 bg-light-subtle">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="mb-0 fw-bold text-dark"><i class="ti ti-send me-2 text-success"></i>Mes Candidatures Envoyées</h5>
+                <p class="text-muted small mb-0">Suivez l'état des offres auxquelles vous avez postulé.</p>
             </div>
+            
+            {% if my_applications is not empty %}
             <div class="table-responsive">
-                <table class="table table-hover table-centered mb-0 text-nowrap">
-                    <thead class="table-light">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
                         <tr>
-                            <th>Offre</th>
-                            <th>Recruteur</th>
-                            <th>Date</th>
-                            <th>Statut</th>
-                            <th class="text-center">Actions</th>
+                            <th class="ps-4">Offre d'emploi</th>
+                            <th>Entreprise / Recruteur</th>
+                            <th>Date d'envoi</th>
+                            <th class="text-center">Statut Actuel</th>
+                            <th class="text-end pe-4">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for job_app in my_applications %}
                         <tr>
-                            <td>{{ job_app.jobOffre ? job_app.jobOffre.title : '—' }}</td>
-                            <td>{{ job_app.jobOffre and job_app.jobOffre.user ? (job_app.jobOffre.user.firstName ~ ' ' ~ job_app.jobOffre.user.lastName) : '—' }}</td>
-                            <td>{{ job_app.applyDate|date('d/m/Y') }}</td>
-                            <td>
-                                {% set sc = job_app.status == 'ACCEPTED' ? 'success' : (job_app.status == 'REJECTED' ? 'danger' : 'info') %}
-                                {% set sl = job_app.status == 'ACCEPTED' ? 'Acceptée' : (job_app.status == 'REJECTED' ? 'Refusée' : 'En attente') %}
-                                <span class="badge bg-{{ sc }}-subtle text-{{ sc }}-emphasis px-2 py-1">{{ sl }}</span>
+                            <td class="ps-4">
+                                <h6 class="mb-0 fw-bold">{{ job_app.jobOffre.title }}</h6>
+                                <span class="text-muted small"><i class="ti ti-map-pin me-1"></i>{{ job_app.jobOffre.location }}</span>
                             </td>
-                            <td class="text-center">
-                                <div class="d-flex align-items-center gap-1 justify-content-center">
-                                    <a href="{{ path('app_job_application_show', {id: job_app.id}) }}"
-                                       class="btn btn-ghost btn-icon btn-sm rounded-circle text-primary" title="Voir">
-                                        <i class="ti ti-eye fs-4"></i>
-                                    </a>
-                                    
-                                    {% if job_app.status == 'ACCEPTED' %}
-                                        {% set interview = job_app.interviews|first %}
-                                        {% if interview %}
-                                            <a href="{{ path('app_interview_show', {id: interview.id}) }}" 
-                                               class="btn btn-ghost btn-icon btn-sm rounded-circle text-info" title="Consulter l'entretien">
-                                                <i class="ti ti-calendar fs-4"></i>
-                                            </a>
-                                        {% endif %}
-                                    {% endif %}
-                                    <form method="post" action="{{ path('app_job_application_delete', {id: job_app.id}) }}"
-                                          onsubmit="return confirm('Voulez-vous vraiment supprimer votre candidature ?');" class="d-inline">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ job_app.id) }}">
-                                        <button type="submit" class="btn btn-ghost btn-icon btn-sm rounded-circle text-danger" title="Retirer ma candidature">
-                                            <i class="ti ti-trash fs-4" style="pointer-events: none;"></i>
-                                        </button>
-                                    </form>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar avatar-xs rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center small">
+                                        {{ job_app.jobOffre.user.firstName|first }}
+                                    </div>
+                                    <span class="small">{{ job_app.jobOffre.user.firstName }} {{ job_app.jobOffre.user.lastName }}</span>
                                 </div>
                             </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="5" class="text-center py-5">
-                                <i class="ti ti-inbox fs-1 text-secondary d-block mb-2"></i>
-                                <p class="text-secondary mb-0">Vous n'avez pas encore postulé à une offre.</p>
-                                <a href="{{ path('app_job_offre_index') }}" class="btn btn-primary btn-sm mt-3">
-                                    <i class="ti ti-briefcase me-1"></i>Voir les offres disponibles
+                            <td class="small">{{ job_app.applyDate|date('d/m/Y') }}</td>
+                            <td class="text-center">
+                                {% set status_labels = {
+                                    'PENDING': {'text': 'Nouveau', 'class': 'info'},
+                                    'HR_SCREENING': {'text': 'En cours (RH)', 'class': 'primary'},
+                                    'INTERVIEW_SCHEDULED': {'text': 'Entretien prévu', 'class': 'warning'},
+                                    'TECHNICAL_TEST': {'text': 'Test technique', 'class': 'warning'},
+                                    'FINAL_REVIEW': {'text': 'Dernière étape', 'class': 'primary'},
+                                    'ACCEPTED': {'text': 'Candidature Acceptée', 'class': 'success'},
+                                    'REJECTED': {'text': 'Candidature Refusée', 'class': 'danger'}
+                                } %}
+                                <span class="badge bg-{{ status_labels[job_app.status].class }}-subtle text-{{ status_labels[job_app.status].class }}-emphasis px-3 py-2">
+                                    {{ status_labels[job_app.status].text }}
+                                </span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <a href="{{ path('app_job_application_show', {id: job_app.id}) }}" class="btn btn-sm btn-outline-secondary rounded-pill">
+                                    <i class="ti ti-eye me-1"></i> Consulter
                                 </a>
                             </td>
                         </tr>
@@ -183,8 +225,109 @@
                     </tbody>
                 </table>
             </div>
+            {% else %}
+            <div class="card-body text-center py-8">
+                <i class="ti ti-file-search fs-1 text-muted mb-3 d-block"></i>
+                <h6 class="text-muted">Vous n'avez pas encore postulé à des offres.</h6>
+                <a href="{{ path('app_job_offre_index') }}" class="btn btn-primary btn-sm mt-3 rounded-pill px-4">Parcourir les offres</a>
+            </div>
+            {% endif %}
         </div>
     </div>
-
 </div>
+
+<style>
+    .step-circle {
+        width: 32px; height: 32px; border-radius: 50%; background-color: #fff;
+        border: 2px solid #eee; display: flex; align-items: center; justify-content: center;
+        color: #bbb; font-size: 14px; z-index: 2; position: relative; transition: all 0.3s ease;
+    }
+    .step-item.active .step-circle { border-color: var(--bs-primary); color: var(--bs-primary); background-color: #f0f7ff; transform: scale(1.1); }
+    .step-item.past .step-circle { border-color: #4CAF50; background-color: #4CAF50; color: white; }
+    .step-item.rejected .step-circle { border-color: #f44336; color: #f44336; }
+    .pipeline-stepper::before { content: ''; position: absolute; width: 100%; height: 2px; background: #eee; top: 16px; left: 0; z-index: 1; }
+    .cursor-pointer { cursor: pointer; }
+
+    /* Custom Toast for Copy */
+    .copy-toast {
+        position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+        background: #333; color: white; padding: 10px 20px; border-radius: 8px;
+        display: none; animation: fadeIn 0.3s forwards;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<div id="copyToast" class="copy-toast"><i class="ti ti-check me-2 text-success"></i> Texte copié !</div>
+
+<script>
+function copyToClipboard(elementId) {
+    const text = document.getElementById(elementId).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        const toast = document.getElementById('copyToast');
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 2000);
+    });
+}
+</script>
+
+{% endblock %}
+
+{% block modals %}
+    {% if applications_by_offer is not empty %}
+        {% for offerTitle, apps in applications_by_offer %}
+            {% for job_app in apps %}
+                {% if job_app.aiAnalysis %}
+                    {% set analysis = job_app.aiAnalysis|json_decode %}
+                    <div class="modal fade" id="aiModal{{ job_app.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content border-0 shadow-lg" style="border-radius: 15px; overflow: hidden;">
+                                <div class="modal-header bg-primary text-white border-0 py-3">
+                                    <h5 class="modal-title d-flex align-items-center"><i class="ti ti-sparkles me-2"></i>Match Profil : {{ job_app.candidat.firstName }}</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body p-4">
+                                    <div class="text-center mb-4 p-3 bg-light rounded-4">
+                                        <div class="display-4 fw-bold text-primary mb-0">{{ analysis.score }}%</div>
+                                        <div class="text-uppercase tracking-wider small fw-bold text-secondary">Compatibilité Globale</div>
+                                        <div class="progress mt-2" style="height:8px;">
+                                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ analysis.score }}%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="fw-bold text-dark mb-0">Résumé de l'analyse</h6>
+                                            <button class="btn btn-sm btn-link p-0 text-primary d-flex align-items-center" onclick="copyToClipboard('summary{{ job_app.id }}')">
+                                                <i class="ti ti-copy me-1"></i> Copier
+                                            </button>
+                                        </div>
+                                        <p class="text-secondary small mb-0" id="summary{{ job_app.id }}">{{ analysis.summary }}</p>
+                                    </div>
+                                    <div class="p-3 bg-warning-subtle rounded-3 border-start border-4 border-warning mb-3">
+                                        <h6 class="fw-bold text-dark mb-1 small">💡 Recommandation Recruteur</h6>
+                                        <p class="mb-0 text-dark-emphasis small">{{ analysis.recommendation }}</p>
+                                    </div>
+                                    {% if analysis.raw_text_analyzed is defined %}
+                                    <div class="mt-4">
+                                        <div class="d-flex justify-content-between align-items-center mb-2 text-dark">
+                                            <h6 class="fw-bold mb-0 small d-flex align-items-center">
+                                                <i class="ti ti-file-description me-1"></i> Texte extrait du CV
+                                            </h6>
+                                            <button class="btn btn-sm btn-link p-0 text-primary small d-flex align-items-center" onclick="copyToClipboard('rawText{{ job_app.id }}')">
+                                                <i class="ti ti-copy me-1"></i> Copier
+                                            </button>
+                                        </div>
+                                        <div class="p-3 bg-light rounded-3 small text-muted overflow-auto" id="rawText{{ job_app.id }}" style="max-height: 150px; font-size: 0.75rem; white-space: pre-wrap;">{{ analysis.raw_text_analyzed }}</div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="modal-footer border-0 p-3 bg-light">
+                                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Fermer</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+    {% endif %}
 {% endblock %}

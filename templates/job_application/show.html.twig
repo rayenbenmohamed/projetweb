@@ -44,6 +44,9 @@
                             <a href="{{ job_application.cvPath }}" target="_blank" class="btn btn-outline-primary btn-sm">
                                 <i class="ti ti-eye me-1"></i> Consulter le CV
                             </a>
+                            <button type="button" class="btn btn-outline-warning btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#manualEntryModal">
+                                <i class="ti ti-edit me-1"></i> Saisir le texte manuellement
+                            </button>
                         </div>
                     {% else %}
                         <div class="alert alert-warning mb-0">Aucun CV n'a été téleversé pour cette candidature.</div>
@@ -83,17 +86,31 @@
                         </form>
                         {% endif %}
 
-                        {% if job_application.status == 'ACCEPTED' %}
-                            {% set interview = job_application.interviews|first %}
-                            {% if interview %}
-                                <a href="{{ path('app_interview_edit', {id: interview.id}) }}" class="btn btn-primary w-100">
-                                    <i class="ti ti-calendar me-1"></i> Gérer l'entretien
-                                </a>
-                            {% else %}
-                            <a href="{{ path('app_interview_new', {jobApplication: job_application.id}) }}" class="btn btn-primary w-100">
-                                <i class="ti ti-calendar-plus me-1"></i> Planifier l'entretien
-                            </a>
-                        {% endif %}
+                        {% if job_application.status in ['ACCEPTED', 'FINAL_REVIEW', 'HR_SCREENING', 'INTERVIEW_SCHEDULED'] %}
+                            <div class="mb-3">
+                                <h6 class="small text-uppercase fw-bold text-secondary mb-3">Entretiens</h6>
+                                <div class="d-grid gap-2">
+                                    {% for interview in job_application.interviews %}
+                                        <a href="{{ path('app_interview_show', {id: interview.id}) }}" class="btn btn-sm btn-outline-primary d-flex align-items-center justify-content-between px-3">
+                                            <span>
+                                                <i class="ti ti-calendar-event me-2"></i>
+                                                {{ interview.scheduledAt|date('d/m/Y') }}
+                                            </span>
+                                            {% if interview.outcome == 'ACCEPTED' %}
+                                                <span class="badge bg-success-subtle text-success small">OK</span>
+                                            {% elseif interview.outcome == 'REJECTED' %}
+                                                <span class="badge bg-danger-subtle text-danger small">KO</span>
+                                            {% else %}
+                                                <span class="badge bg-primary-subtle text-primary small">{{ interview.status }}</span>
+                                            {% endif %}
+                                        </a>
+                                    {% endfor %}
+                                    
+                                    <a href="{{ path('app_interview_new', {jobApplication: job_application.id}) }}" class="btn btn-primary w-100 mt-2">
+                                        <i class="ti ti-calendar-plus me-1"></i> Planifier un nouvel entretien
+                                    </a>
+                                </div>
+                            </div>
                         {% endif %}
 
                         {% if job_application.status != 'REJECTED' %}
@@ -134,6 +151,58 @@
             </div>
         </div>
 
+        {% if job_application.aiScore is not null %}
+        <div class="card card-lg mb-6 border-0 shadow-sm overflow-hidden" style="border-radius: 15px;">
+            {% set analysis = job_application.aiAnalysis|json_decode %}
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0 d-flex align-items-center"><i class="ti ti-sparkles me-2"></i>Analyse IA SyfonuMatch</h5>
+            </div>
+            <div class="card-body p-6">
+                <div class="text-center mb-4 p-4 bg-primary-subtle rounded-4">
+                    <div class="display-5 fw-bold text-primary mb-0">{{ job_application.aiScore }}%</div>
+                    <div class="text-uppercase tracking-wider small fw-bold text-secondary">Score de match professionnel</div>
+                    <div class="progress mt-3" style="height:10px; background: rgba(var(--bs-primary-rgb), 0.1);">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ job_application.aiScore }}%"></div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="fw-bold text-dark mb-3">Résumé de l'IA</h6>
+                    <div class="p-3 bg-light rounded-3 text-secondary small lh-lg">
+                        {{ analysis.summary|default('Analyse en attente...') }}
+                    </div>
+                </div>
+
+                <div class="p-4 bg-warning-subtle rounded-4 border-start border-4 border-warning">
+                    <h6 class="fw-bold text-dark mb-2 small"><i class="ti ti-bulb me-1"></i>Recommandation Recruteur</h6>
+                    <p class="mb-0 text-dark-emphasis small">
+                        {{ analysis.recommendation|default('Consultez les détails pour plus d\'infos.') }}
+                    </p>
+                </div>
+
+                {% if analysis.raw_text_analyzed is defined %}
+                <div class="mt-4 pt-4 border-top">
+                    <h6 class="small text-uppercase fw-bold text-secondary mb-3">Texte extrait du CV</h6>
+                    <div class="p-3 bg-light rounded-3 text-muted small" style="max-height: 100px; overflow-y: auto; font-size: 0.75rem; white-space: pre-wrap;">{{ analysis.raw_text_analyzed }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% elseif job_application.cvPath %}
+        <div class="card card-lg mb-6 border-dashed text-center p-6">
+            <div class="avatar avatar-lg bg-primary-subtle text-primary mb-3 mx-auto">
+                <i class="ti ti-brain fs-2"></i>
+            </div>
+            <h5>Analyse IA Disponible</h5>
+            <p class="text-secondary small">Utilisez notre IA pour obtenir un score de match et un résumé automatique du candidat.</p>
+            <form method="post" action="{{ path('app_job_application_analyze', {id: job_application.id}) }}">
+                <button type="submit" class="btn btn-primary rounded-pill px-6">
+                    Lancer l'analyse intelligente
+                </button>
+            </form>
+        </div>
+        {% endif %}
+
         <div class="card card-lg">
             <div class="card-body p-6 text-center">
                 <div class="avatar avatar-xl rounded-circle bg-primary-subtle text-primary mb-4 mx-auto">
@@ -147,6 +216,34 @@
                     </a>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Saisie Manuelle -->
+<div class="modal fade" id="manualEntryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <form action="{{ path('app_job_application_analyze_manual', {id: job_application.id}) }}" method="post">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title fw-bold"><i class="ti ti-edit me-2"></i>Saisie manuelle du texte du CV</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-info small mb-4">
+                        <i class="ti ti-info-circle me-1"></i>
+                        Si le PDF est une image (scanné) ou protégé, copiez-collez son texte ici pour permettre l'analyse par l'IA et le scoring.
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label fw-bold">Texte du CV</label>
+                        <textarea name="cv_text" class="form-control" rows="12" placeholder="Collez ici le contenu textuel du CV..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-warning px-4 fw-bold">Lancer l'analyse manuelle</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

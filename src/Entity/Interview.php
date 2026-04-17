@@ -37,6 +37,24 @@ class Interview
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?JobApplication $application = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?int $technicalRating = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $communicationRating = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $motivationRating = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $finalVerdict = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $outcome = null; // ACCEPTED, REJECTED, PENDING_DECISION
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $completedAt = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -94,6 +112,72 @@ class Interview
     public function setApplication(?JobApplication $application): self
     {
         $this->application = $application;
+        return $this;
+    }
+
+    public function getTechnicalRating(): ?int
+    {
+        return $this->technicalRating;
+    }
+
+    public function setTechnicalRating(?int $technicalRating): self
+    {
+        $this->technicalRating = $technicalRating;
+        return $this;
+    }
+
+    public function getCommunicationRating(): ?int
+    {
+        return $this->communicationRating;
+    }
+
+    public function setCommunicationRating(?int $communicationRating): self
+    {
+        $this->communicationRating = $communicationRating;
+        return $this;
+    }
+
+    public function getMotivationRating(): ?int
+    {
+        return $this->motivationRating;
+    }
+
+    public function setMotivationRating(?int $motivationRating): self
+    {
+        $this->motivationRating = $motivationRating;
+        return $this;
+    }
+
+    public function getFinalVerdict(): ?string
+    {
+        return $this->finalVerdict;
+    }
+
+    public function setFinalVerdict(?string $finalVerdict): self
+    {
+        $this->finalVerdict = $finalVerdict;
+        return $this;
+    }
+
+    public function getOutcome(): ?string
+    {
+        return $this->outcome;
+    }
+
+    public function setOutcome(?string $outcome): self
+    {
+        $this->outcome = $outcome;
+        return $this;
+    }
+
+    public function getCompletedAt(): ?\DateTimeInterface
+    {
+        return $this->completedAt;
+    }
+
+    public function setCompletedAt(?\DateTimeInterface $completedAt): self
+    {
+        $this->completedAt = $completedAt;
         return $this;
     }
 }

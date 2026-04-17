@@ -12,6 +12,14 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'job_application')]
 class JobApplication
 {
+    public const STATUS_PENDING = 'PENDING';
+    public const STATUS_HR_SCREENING = 'HR_SCREENING';
+    public const STATUS_INTERVIEW_SCHEDULED = 'INTERVIEW_SCHEDULED';
+    public const STATUS_TECHNICAL_TEST = 'TECHNICAL_TEST';
+    public const STATUS_FINAL_REVIEW = 'FINAL_REVIEW';
+    public const STATUS_ACCEPTED = 'ACCEPTED';
+    public const STATUS_REJECTED = 'REJECTED';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -39,6 +47,15 @@ class JobApplication
 
     #[ORM\OneToMany(mappedBy: 'application', targetEntity: Interview::class, cascade: ['remove'], orphanRemoval: true)]
     private Collection $interviews;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $aiScore = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $aiAnalysis = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $aiAnalyzedAt = null;
 
     public function __construct()
     {
@@ -123,5 +140,38 @@ class JobApplication
     public function getInterviews(): Collection
     {
         return $this->interviews;
+    }
+
+    public function getAiScore(): ?int
+    {
+        return $this->aiScore;
+    }
+
+    public function setAiScore(?int $aiScore): self
+    {
+        $this->aiScore = $aiScore;
+        return $this;
+    }
+
+    public function getAiAnalysis(): ?string
+    {
+        return $this->aiAnalysis;
+    }
+
+    public function setAiAnalysis(?string $aiAnalysis): self
+    {
+        $this->aiAnalysis = $aiAnalysis;
+        return $this;
+    }
+
+    public function getAiAnalyzedAt(): ?\DateTimeInterface
+    {
+        return $this->aiAnalyzedAt;
+    }
+
+    public function setAiAnalyzedAt(?\DateTimeInterface $aiAnalyzedAt): self
+    {
+        $this->aiAnalyzedAt = $aiAnalyzedAt;
+        return $this;
     }
 }

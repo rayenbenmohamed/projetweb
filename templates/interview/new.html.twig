@@ -4,41 +4,56 @@
 {% block page_title %}Planifier un entretien{% endblock %}
 
 {% block content %}
-<div class="row g-6 mt-2 justify-content-center">
-    <div class="col-xl-6">
-        <div class="card card-lg overflow-hidden">
-            <div class="bg-primary p-6 py-8">
-                <h4 class="text-white mb-2">Entretien pour : {{ job_application.jobOffre.title }}</h4>
-                <div class="d-flex gap-4 text-white-50 small">
-                    <span><i class="ti ti-user me-1"></i>{{ job_application.candidat.firstName }} {{ job_application.candidat.lastName }}</span>
-                </div>
+<div class="row g-6 mt-2">
+    <!-- Colonne de gauche : Calendrier des entretiens -->
+    <div class="col-xl-7">
+        <div class="card h-100 overflow-hidden">
+            <div class="card-header bg-light-subtle d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="ti ti-calendar-event me-2"></i>Mon Calendrier RH</h5>
+                <span class="badge bg-primary-subtle text-primary rounded-pill px-3">Visualisation des créneaux</span>
             </div>
-            <div class="card-body p-6">
+            <div class="card-body p-0">
+                <div id="calendar" style="height: 600px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Colonne de droite : Formulaire de planification -->
+    <div class="col-xl-5">
+        <div class="card card-lg h-100 overflow-hidden shadow-sm">
+            <div class="bg-primary p-5">
+                <h5 class="text-white mb-1"><i class="ti ti-clock-plus me-2"></i>Détails du rendez-vous</h5>
+                <p class="text-white-50 small mb-0">Candidat : {{ job_application.candidat.firstName }} {{ job_application.candidat.lastName }}</p>
+                <div class="badge bg-white text-primary mt-2">{{ job_application.jobOffre.title }}</div>
+            </div>
+            <div class="card-body p-5">
                 <form method="post" id="interviewForm" class="needs-validation" novalidate>
                     <div class="mb-4">
-                        <label class="form-label">Date et heure de l'entretien <span class="text-danger">*</span></label>
-                        <input type="datetime-local" id="scheduledAt" name="scheduledAt" class="form-control" required />
-                        <div class="invalid-feedback">La date doit être dans le futur.</div>
+                        <label class="form-label fw-bold">Date et heure choisie <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="ti ti-calendar"></i></span>
+                            <input type="datetime-local" id="scheduledAt" name="scheduledAt" class="form-control" required />
+                        </div>
+                        <div class="form-text small">Cliquez sur un créneau dans le calendrier pour remplir automatiquement ce champ.</div>
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label">Lien de la réunion (visio) ou lieu <span class="text-danger">*</span></label>
-                        <input type="text" name="meetingLink" class="form-control" placeholder="ex: https://meet.google.com/..." minlength="5" maxlength="255" required />
-                        <div class="invalid-feedback">Veuillez indiquer un lieu ou un lien valide (min 5 caractères).</div>
+                        <label class="form-label fw-bold">Lien ou Lieu <span class="text-danger">*</span></label>
+                        <input type="text" name="meetingLink" class="form-control" placeholder="Lien visio ou salle de réunion" minlength="5" maxlength="255" required />
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label">Notes supplémentaires <span class="text-danger">*</span></label>
-                        <textarea name="notes" class="form-control" rows="4" minlength="10" maxlength="500" required></textarea>
-                        <div class="invalid-feedback">Un minimum de 10 caractères est requis pour justifier l'entretien.</div>
-                        <div class="form-text">Maximum 500 caractères.</div>
+                        <label class="form-label fw-bold">Notes / Ordre du jour <span class="text-danger">*</span></label>
+                        <textarea name="notes" class="form-control" rows="5" minlength="10" maxlength="500" placeholder="Ex: Revue technique, discussion salaire..." required></textarea>
                     </div>
                     
-                    <div class="d-grid mt-6">
-                        <button type="submit" class="btn btn-primary">Planifier l'entretien</button>
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg shadow-sm">
+                            <i class="ti ti-device-floppy me-2"></i>Enregistrer l'entretien
+                        </button>
                     </div>
                     <div class="text-center mt-3">
-                        <a href="{{ path('app_job_application_index') }}" class="small text-secondary">Annuler</a>
+                        <a href="{{ path('app_job_application_index') }}" class="btn btn-link btn-sm text-secondary">Annuler</a>
                     </div>
                 </form>
             </div>
@@ -46,26 +61,84 @@
     </div>
 </div>
 
+<!-- Scripts FullCalendar -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/fr.js'></script>
+
+<style>
+    #calendar { padding: 10px; }
+    .fc-header-toolbar { padding: 5px; font-size: 0.9em; }
+    .fc-event { cursor: pointer; border: none; padding: 2px 5px; }
+    .fc-v-event { background-color: #5a5fee !important; }
+    .fc-daygrid-event { background-color: #5a5fee !important; }
+</style>
+
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // Validation: Date in future
         const dateInput = document.getElementById('scheduledAt');
         
-        // Add 1 hour to current time to enforce a small notice period
+        // Configuration de la date min (aujourd'hui)
         const now = new Date();
-        now.setHours(now.getHours() + 1);
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
         dateInput.min = now.toISOString().slice(0, 16);
 
-        dateInput.addEventListener('change', function() {
-            if (this.value < this.min) {
-                this.setCustomValidity('La date de l\'entretien doit être prévue au moins 1h à l\'avance.');
-            } else {
-                this.setCustomValidity('');
+        // Initialisation de FullCalendar
+        const calendarEl = document.getElementById('calendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'timeGridWeek',
+            locale: 'fr',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            slotMinTime: '08:00:00',
+            slotMaxTime: '20:00:00',
+            selectable: true,
+            allDaySlot: false,
+            events: [
+                {% for interview in existingInterviews %}
+                {
+                    title: "Rendez-vous ({{ interview.application.candidat.firstName }})",
+                    start: "{{ interview.scheduledAt|date('Y-m-d\\TH:i:s') }}",
+                    end: "{{ interview.scheduledAt|date_modify('+1 hour')|date('Y-m-d\\TH:i:s') }}",
+                    color: '#dc3545', // Rouge pour les rendez-vous existants
+                    display: 'block'
+                },
+                {% endfor %}
+            ],
+            dateClick: function(info) {
+                // Remplir le champ datetime-local quand on clique sur une case
+                const clickedDate = info.date;
+                clickedDate.setMinutes(clickedDate.getMinutes() - clickedDate.getTimezoneOffset());
+                dateInput.value = clickedDate.toISOString().slice(0, 16);
+                
+                // Effet visuel
+                dateInput.classList.add('is-valid');
+                setTimeout(() => dateInput.classList.remove('is-valid'), 1000);
             }
         });
-        
-        // Form generic validation logic
+        calendar.render();
+
+        dateInput.addEventListener('change', function() {
+            if (this.value) {
+                const selectedDate = new Date(this.value);
+                // Synchroniser le calendrier avec la date choisie
+                calendar.gotoDate(selectedDate);
+                // Basculer en vue "Jour" pour voir précisément les rendez-vous de ce jour
+                calendar.changeView('timeGridDay');
+                
+                // Validation simple
+                if (this.value < this.min) {
+                    this.setCustomValidity('La date de l\'entretien doit être dans le futur.');
+                } else {
+                    this.setCustomValidity('');
+                }
+            }
+        });
+
+        // Validation du formulaire
         const form = document.getElementById('interviewForm');
         form.addEventListener('submit', function (event) {
             if (!form.checkValidity()) {

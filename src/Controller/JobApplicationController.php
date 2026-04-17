@@ -6,10 +6,14 @@ use App\Entity\JobApplication;
 use App\Entity\JobOffre;
 use App\Repository\JobApplicationRepository;
 use App\Service\CloudinaryService;
+use App\Service\NotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Service\CVParserService;
+use App\Service\CVKeywordScorerService;
+use App\Service\CVAnalyzerService;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -23,15 +27,21 @@ class JobApplicationController extends AbstractController
      * - Sinon : voit ses propres candidatures (en tant que candidat)
      */
     #[Route('/', name: 'app_job_application_index', methods: ['GET'])]
-    public function index(JobApplicationRepository $jobApplicationRepository): Response
+    public function index(Request $request, JobApplicationRepository $jobApplicationRepository): Response
     {
         $user = $this->getUser();
 
+        $recvStatus = $request->query->get('recv_status');
+        $recvOffer = $request->query->get('recv_offer');
+
+        $sentStatus = $request->query->get('sent_status');
+        $sentOffer = $request->query->get('sent_offer');
+
         // Candidatures où l'utilisateur EST le propriétaire de l'offre
-        $asRecruiter = $jobApplicationRepository->findByRecruiter($user);
+        $asRecruiter = $jobApplicationRepository->findByRecruiter($user, $recvStatus, $recvOffer);
 
         // Candidatures où l'utilisateur a postulé
-        $asCandidat = $jobApplicationRepository->findBy(['candidat' => $user]);
+        $asCandidat = $jobApplicationRepository->findForCandidate($user, $sentStatus, $sentOffer);
 
         // Grouper les candidatures reçues (en tant que recruteur) par offre
         $applicationsByOffer = [];
@@ -43,6 +53,10 @@ class JobApplicationController extends AbstractController
         return $this->render('job_application/index.html.twig', [
             'applications_by_offer' => $applicationsByOffer,
             'my_applications'       => $asCandidat,
+            'recvStatus'            => $recvStatus,
+            'recvOffer'             => $recvOffer,
+            'sentStatus'            => $sentStatus,
+            'sentOffer'             => $sentOffer
         ]);
     }
 
@@ -53,7 +67,10 @@ class JobApplicationController extends AbstractController
         JobOffre $jobOffre,
         EntityManagerInterface $entityManager,
         CloudinaryService $cloudinaryService,
-        JobApplicationRepository $jobApplicationRepository
+        JobApplicationRepository $jobApplicationRepository,
+        CVParserService $cvParser,
+        CVKeywordScorerService $keywordScorer,
+        CVAnalyzerService $cvAnalyzer
     ): Response {
         $user = $this->getUser();
         
@@ -79,6 +96,29 @@ class JobApplicationController extends AbstractController
             if ($cvFile) {
                 $cvUrl = $cloudinaryService->uploadFile($cvFile, 'cvs');
                 $jobApplication->setCvPath($cvUrl);
+                
+                // --- ANALYSE AUTOMATIQUE IMMÉDIATE ---
+                try {
+                    $cvText = $cvParser->extractTextFromPdf($cvUrl);
+                    if ($cvText && !str_starts_with($cvText, 'Erreur')) {
+                        $jobDesc = $jobOffre->getDescription() ?? '';
+                        $result = $keywordScorer->analyze($jobDesc, $cvText);
+                        
+                        // Si score faible, Gemini analyse
+                        if ($result['score'] < 40) {
+                            $aiResult = $cvAnalyzer->analyze($jobDesc, $cvText);
+                            if (!isset($aiResult['error'])) {
+                                $result = $aiResult;
+                            }
+                        }
+                        
+                        $jobApplication->setAiScore($result['score']);
+                        $jobApplication->setAiAnalysis(json_encode($result, JSON_UNESCAPED_UNICODE));
+                        $jobApplication->setAiAnalyzedAt(new \DateTime());
+                    }
+                } catch (\Exception $e) {
+                    // Erreur silencieuse pour ne pas bloquer la candidature
+                }
             } else {
                 $jobApplication->setCvPath($request->request->get('cv_path'));
             }
@@ -86,7 +126,7 @@ class JobApplicationController extends AbstractController
             $entityManager->persist($jobApplication);
             $entityManager->flush();
 
-            $this->addFlash('success', 'Votre candidature a été envoyée avec succès !');
+            $this->addFlash('success', 'Votre candidature a été envoyée et analysée avec succès !');
             return $this->redirectToRoute('app_job_offre_index');
         }
 
@@ -151,24 +191,123 @@ class JobApplicationController extends AbstractController
 
     /** Changer le statut (propriétaire de l'offre seulement) */
     #[Route('/{id}/status', name: 'app_job_application_status', methods: ['POST'])]
-    public function updateStatus(Request $request, JobApplication $jobApplication, EntityManagerInterface $entityManager): Response
-    {
+    public function updateStatus(
+        Request $request,
+        JobApplication $jobApplication,
+        EntityManagerInterface $entityManager,
+        NotificationService $notificationService
+    ): Response {
         $this->assertIsOfferOwner($jobApplication);
 
         $status = $request->request->get('status');
         $jobApplication->setStatus($status);
         $entityManager->flush();
 
-        if ($status === 'ACCEPTED') {
-            // Check if an interview already exists
-            $existingInterview = $jobApplication->getInterviews()->first();
-            if ($existingInterview) {
-                return $this->redirectToRoute('app_interview_edit', ['id' => $existingInterview->getId()]);
-            }
+        // ── Notification au candidat ───────────────────────────────────────────
+        $candidate = $jobApplication->getCandidat();
+        $offreTitle = $jobApplication->getJobOffre()?->getTitle() ?? 'une offre';
+
+        $messages = [
+            JobApplication::STATUS_HR_SCREENING => '🔍 Votre candidature pour "' . $offreTitle . '" est en cours d\'examen RH.',
+            JobApplication::STATUS_TECHNICAL_TEST => '💻 Un test technique vous a été assigné pour "' . $offreTitle . '".',
+            JobApplication::STATUS_FINAL_REVIEW => '📝 Votre dossier pour "' . $offreTitle . '" est en cours de revue finale.',
+            JobApplication::STATUS_ACCEPTED => '✅ Félicitations ! Votre candidature pour "' . $offreTitle . '" a été acceptée !',
+            JobApplication::STATUS_REJECTED => '❌ Votre candidature pour "' . $offreTitle . '" n\'a pas été retenue.',
+        ];
+
+        if ($candidate && isset($messages[$status])) {
+            $notificationService->addNotification($candidate, $messages[$status]);
+        }
+
+        // Action auto : si on passe en INTERVIEW_SCHEDULED, on redirige vers la création d'entretien
+        if ($status === JobApplication::STATUS_INTERVIEW_SCHEDULED) {
             return $this->redirectToRoute('app_interview_new', ['jobApplication' => $jobApplication->getId()]);
         }
 
         return $this->redirectToRoute('app_job_application_index');
+    }
+
+    /** Score du CV par analyse automatique (PDF) */
+    #[Route('/{id}/analyze', name: 'app_job_application_analyze', methods: ['POST'])]
+    public function analyze(
+        JobApplication $jobApplication,
+        CVParserService $cvParser,
+        CVAnalyzerService $cvAnalyzer,
+        CVKeywordScorerService $keywordScorer,
+        EntityManagerInterface $entityManager
+    ): Response {
+        $this->assertIsOfferOwner($jobApplication);
+
+        if (!$jobApplication->getCvPath()) {
+            $this->addFlash('warning', 'Aucun CV n\'est associé à cette candidature.');
+            return $this->redirectToRoute('app_job_application_index');
+        }
+
+        $cvText = $cvParser->extractTextFromPdf($jobApplication->getCvPath());
+
+        if (str_starts_with($cvText, 'Erreur')) {
+            $this->addFlash('danger', $cvText);
+            return $this->redirectToRoute('app_job_application_index');
+        }
+
+        $jobDescription = $jobApplication->getJobOffre()?->getDescription() ?? '';
+        $result = $keywordScorer->analyze($jobDescription, $cvText);
+
+        if ($result['score'] < 40) {
+            $aiResult = $cvAnalyzer->analyze($jobDescription, $cvText);
+            if (!isset($aiResult['error'])) {
+                $result = $aiResult;
+            }
+        }
+
+        $jobApplication->setAiScore($result['score']);
+        $jobApplication->setAiAnalysis(json_encode($result, JSON_UNESCAPED_UNICODE));
+        $jobApplication->setAiAnalyzedAt(new \DateTime());
+
+        $entityManager->flush();
+
+        $this->addFlash('success', 'Analyse automatique terminée ! Score : ' . $result['score'] . '%');
+
+        return $this->redirectToRoute('app_job_application_show', ['id' => $jobApplication->getId()]);
+    }
+
+    /** Score du CV par analyse manuelle de texte (si PDF illisible) */
+    #[Route('/{id}/analyze/manual', name: 'app_job_application_analyze_manual', methods: ['POST'])]
+    public function analyzeManual(
+        Request $request,
+        JobApplication $jobApplication,
+        CVAnalyzerService $cvAnalyzer,
+        CVKeywordScorerService $keywordScorer,
+        EntityManagerInterface $entityManager
+    ): Response {
+        $this->assertIsOfferOwner($jobApplication);
+
+        $cvText = $request->request->get('cv_text');
+        if (empty($cvText)) {
+            $this->addFlash('warning', 'Le texte du CV ne peut pas être vide.');
+            return $this->redirectToRoute('app_job_application_show', ['id' => $jobApplication->getId()]);
+        }
+
+        // 1. Scoring 
+        $jobDescription = $jobApplication->getJobOffre()?->getDescription() ?? '';
+        
+        // Analyse par IA systématique pour le résumé
+        $result = $cvAnalyzer->analyze($jobDescription, $cvText);
+
+        if (isset($result['error'])) {
+            $result = $keywordScorer->analyze($jobDescription, $cvText);
+        }
+
+        // 2. Sauvegarde
+        $jobApplication->setAiScore($result['score']);
+        $jobApplication->setAiAnalysis(json_encode($result, JSON_UNESCAPED_UNICODE));
+        $jobApplication->setAiAnalyzedAt(new \DateTime());
+
+        $entityManager->flush();
+
+        $this->addFlash('success', 'Analyse manuelle terminée ! Score : ' . $result['score'] . '%');
+
+        return $this->redirectToRoute('app_job_application_show', ['id' => $jobApplication->getId()]);
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

@@ -1,91 +1,180 @@
 {% extends 'layout/admin.html.twig' %}
 
 {% block title %}Mes Entretiens | SyfonuRH{% endblock %}
-{% block page_title %}Mes Entretiens{% endblock %}
+{% block page_title %}Gestion des Entretiens{% endblock %}
 
 {% block content %}
 <div class="row g-6 mt-2">
-    <div class="col-12">
-        <div class="card h-100">
-            <div class="card-header border-bottom-0">
-                <h5 class="mb-0">Mes entretiens prévus et passés</h5>
+    <!-- SECTION 1: ENTRETIENS À VENIR / EN ATTENTE -->
+    <div class="col-12 mb-6">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="mb-0 fw-bold"><i class="ti ti-calendar-time me-2 text-primary"></i>Entretiens en attente et à venir</h5>
+                    <p class="text-muted small mb-0">Rendez-vous prévus ou en attente de réalisation.</p>
+                </div>
+                <span class="badge bg-primary-subtle text-primary rounded-pill px-3">{{ upcoming|length }} session(s)</span>
             </div>
             <div class="table-responsive">
-                <table class="table table-hover table-centered mb-0 text-nowrap">
-                    <thead class="table-light">
+                <table class="table table-hover align-middle mb-0 text-nowrap">
+                    <thead class="bg-light-subtle">
                         <tr>
-                            <th>Date & Heure</th>
-                            <th>Offre d'emploi</th>
+                            <th class="ps-4">Date & Heure</th>
+                            <th>Offre</th>
                             <th>Candidat</th>
                             <th>Statut</th>
-                            <th>Lien Visio / Lieu</th>
-                            <th>Notes</th>
-                            <th>Actions</th>
+                            <th>Action</th>
+                            <th class="text-end pe-4">Options</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for interview in interviews %}
+                        {% for interview in upcoming %}
                         <tr>
-                            <td>
-                                <strong>{{ interview.scheduledAt|date('d/m/Y') }}</strong> à {{ interview.scheduledAt|date('H:i') }}
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="icon-shape icon-xs bg-light rounded shadow-sm">
+                                        <i class="ti ti-calendar"></i>
+                                    </div>
+                                    <div>
+                                        <span class="fw-bold d-block">{{ interview.scheduledAt|date('d/m/Y') }}</span>
+                                        <span class="text-muted small">{{ interview.scheduledAt|date('H:i') }}</span>
+                                    </div>
+                                </div>
                             </td>
-                            <td>{{ interview.application.jobOffre.title }}</td>
-                            <td>{{ interview.application.candidat.firstName }} {{ interview.application.candidat.lastName }}</td>
+                            <td><span class="fw-medium">{{ interview.application.jobOffre.title }}</span></td>
                             <td>
-                                <span class="badge bg-{{ interview.status == 'Prévue' ? 'primary' : (interview.status == 'Réalisée' ? 'success' : 'secondary') }}-subtle text-{{ interview.status == 'Prévue' ? 'primary' : (interview.status == 'Réalisée' ? 'success' : 'secondary') }}-emphasis px-2 py-1">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar avatar-xs rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center fw-bold">
+                                        {{ interview.application.candidat.firstName|first }}
+                                    </div>
+                                    <span>{{ interview.application.candidat.firstName }} {{ interview.application.candidat.lastName }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ interview.status == 'Confirmée' ? 'success' : 'primary' }}-subtle text-{{ interview.status == 'Confirmée' ? 'success' : 'primary' }}-emphasis rounded-pill px-3">
                                     {{ interview.status }}
                                 </span>
                             </td>
                             <td>
-                                <a href="{{ path('app_interview_video', {id: interview.id}) }}" class="btn btn-sm btn-primary">
-                                    <i class="ti ti-video"></i> Rejoindre Appel
+                                <a href="{{ path('app_interview_video', {id: interview.id}) }}" class="btn btn-sm btn-primary rounded-pill px-3">
+                                    <i class="ti ti-video me-1"></i> Rejoindre
                                 </a>
                             </td>
-                            <td>
-                                {{ interview.notes|default('-')|slice(0, 30) }}{% if interview.notes|length > 30 %}...{% endif %}
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center gap-1">
-                                    {# Bouton de confirmation pour le candidat #}
-                                    {% if interview.status == 'Prévue' and interview.application.candidat == app.user %}
-                                        <form method="post" action="{{ path('app_interview_confirm', {id: interview.id}) }}" class="d-inline" onsubmit="return confirm('Confirmer votre présence à cet entretien ?');">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('confirm' ~ interview.id) }}">
-                                            <button type="submit" class="btn btn-sm btn-success">
-                                                <i class="ti ti-check me-1"></i> Confirmer
-                                            </button>
-                                        </form>
-                                    {% endif %}
-
-                                    {% if interview.application.jobOffre.user.id == app.user.id %}
-                                        <a href="{{ path('app_interview_show', {id: interview.id}) }}" class="btn btn-sm btn-ghost btn-icon rounded-circle text-info" title="Voir détails">
-                                            <i class="ti ti-eye fs-4"></i>
-                                        </a>
-                                        <a href="{{ path('app_interview_edit', {id: interview.id}) }}" class="btn btn-sm btn-ghost btn-icon rounded-circle text-warning" title="Modifier">
-                                            <i class="ti ti-pencil fs-4"></i>
-                                        </a>
-                                        <form method="post" action="{{ path('app_interview_delete', {id: interview.id}) }}" class="d-inline" onsubmit="return confirm('Voulez-vous vraiment annuler cet entretien ?');">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ interview.id) }}">
-                                            <button type="submit" class="btn btn-sm btn-ghost btn-icon rounded-circle text-danger" title="Supprimer">
-                                                <i class="ti ti-trash fs-4"></i>
-                                            </button>
-                                        </form>
-                                    {% else %}
-                                        <a href="{{ path('app_interview_show', {id: interview.id}) }}" class="btn btn-sm btn-ghost btn-icon rounded-circle text-info" title="Voir détails">
-                                            <i class="ti ti-eye fs-4"></i>
-                                        </a>
-                                    {% endif %}
-
-                                    {% if not (interview.status == 'Prévue' and interview.application.candidat == app.user) and interview.application.jobOffre.user != app.user %}
-                                        <span class="text-secondary small">Aucune action</span>
-                                    {% endif %}
+                            <td class="text-end pe-4">
+                                <div class="dropdown">
+                                    <button class="btn btn-ghost btn-sm rounded-circle p-1" type="button" data-bs-toggle="dropdown">
+                                        <i class="ti ti-dots-vertical fs-5"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0">
+                                        <li><a class="dropdown-item" href="{{ path('app_interview_show', {id: interview.id}) }}"><i class="ti ti-eye me-2 text-info"></i>Détails</a></li>
+                                        <li><a class="dropdown-item" href="{{ path('app_interview_edit', {id: interview.id}) }}"><i class="ti ti-pencil me-2 text-warning"></i>Modifier</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <form method="post" action="{{ path('app_interview_delete', {id: interview.id}) }}" onsubmit="return confirm('Annuler cet entretien ?');">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ interview.id) }}">
+                                                <button type="submit" class="dropdown-item text-danger"><i class="ti ti-trash me-2"></i>Annuler</button>
+                                            </form>
+                                        </li>
+                                    </ul>
                                 </div>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="7" class="text-center py-8">
-                                <p class="text-secondary mb-0">Aucun entretien prévu pour le moment.</p>
+                            <td colspan="6" class="text-center py-5 text-muted">Aucun entretien en attente.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: RÉSULTATS ET CLASSEMENT PAR SCORE D'ENTRETIEN -->
+    <div class="col-12">
+        <div class="card h-100 shadow border-0 overflow-hidden" style="border-radius: 1rem;">
+            <div class="card-header bg-dark text-white py-3 d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="mb-0 text-white"><i class="ti ti-award me-2 text-warning"></i>Classement après Entretien</h5>
+                    <p class="text-white-50 small mb-0">Candidats évalués, classés par performance globale.</p>
+                </div>
+                <span class="badge bg-warning text-dark fw-bold rounded-pill px-3 shadow-sm">Top Performance</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Rang</th>
+                            <th>Candidat</th>
+                            <th>Offre</th>
+                            <th class="text-center">Évaluation Globale</th>
+                            <th class="text-center">Score / 100</th>
+                            <th class="text-center">Résultat</th>
+                            <th class="text-end pe-4">Verdict</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for interview in completed %}
+                        <tr class="{% if loop.first %}bg-warning-subtle{% endif %}">
+                            <td class="ps-4">
+                                {% if loop.index == 1 %}
+                                    <div class="icon-shape icon-sm bg-warning text-white rounded-circle shadow-sm">1</div>
+                                {% elseif loop.index == 2 %}
+                                    <div class="icon-shape icon-sm bg-secondary text-white rounded-circle shadow-sm">2</div>
+                                {% elseif loop.index == 3 %}
+                                    <div class="icon-shape icon-sm bg-bronze text-white rounded-circle shadow-sm" style="background-color: #cd7f32;">3</div>
+                                {% else %}
+                                    <span class="fw-bold text-muted ps-2">{{ loop.index }}</span>
+                                {% endif %}
                             </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="avatar avatar-sm rounded-circle bg-white border d-flex align-items-center justify-content-center fw-bold shadow-sm">
+                                        {{ interview.application.candidat.firstName|first }}
+                                    </div>
+                                    <h6 class="mb-0 fw-bold">{{ interview.application.candidat.firstName }} {{ interview.application.candidat.lastName }}</h6>
+                                </div>
+                            </td>
+                            <td><span class="small">{{ interview.application.jobOffre.title }}</span></td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <span class="badge bg-light text-dark border me-1" title="Technique">T: {{ interview.technicalRating }}/5</span>
+                                    <span class="badge bg-light text-dark border me-1" title="Com">C: {{ interview.communicationRating }}/5</span>
+                                    <span class="badge bg-light text-dark border" title="Motivation">M: {{ interview.motivationRating }}/5</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex flex-column align-items-center">
+                                    <span class="fw-bold text-{{ interview.averageScore >= 80 ? 'success' : (interview.averageScore >= 50 ? 'primary' : 'danger') }} fs-5">
+                                        {{ interview.averageScore }}%
+                                    </span>
+                                    <div class="progress w-100 mt-1" style="height: 4px; max-width: 80px;">
+                                        <div class="progress-bar bg-{{ interview.averageScore >= 80 ? 'success' : (interview.averageScore >= 50 ? 'primary' : 'danger') }}" style="width: {{ interview.averageScore }}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                {% if interview.outcome == 'ACCEPTED' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2">Accepté</span>
+                                {% elseif interview.outcome == 'REJECTED' %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2">Refusé</span>
+                                {% else %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2">En attente</span>
+                                {% endif %}
+                                
+                                {% if interview.status == 'Archivée' %}
+                                    <br><small class="text-muted"><i class="ti ti-archive"></i> Archivé</small>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <a href="{{ path('app_interview_show', {id: interview.id}) }}" class="btn btn-sm btn-outline-dark rounded-pill px-4">
+                                    <i class="ti ti-file-search me-1"></i> Voir l'avis
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted fst-italic">Terminez des entretiens et évaluez les candidats pour voir le classement.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -94,4 +183,9 @@
         </div>
     </div>
 </div>
+
+<style>
+    .bg-bronze { background-color: #cd7f32; }
+    .table-hover tbody tr:hover { transform: scale(1.002); transition: all 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+</style>
 {% endblock %}

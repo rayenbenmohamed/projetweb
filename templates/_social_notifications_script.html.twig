@@ -6,7 +6,8 @@
     }
     var prevDetail = {
         friend_requests: parseInt(wrap.dataset.initialFr || '0', 10) || 0,
-        unread_messages: parseInt(wrap.dataset.initialUm || '0', 10) || 0
+        unread_messages: parseInt(wrap.dataset.initialUm || '0', 10) || 0,
+        hr_notifications: parseInt(wrap.dataset.initialHr || '0', 10) || 0
     };
 
     function showToast(title, message) {
@@ -29,20 +30,24 @@
     }
 
     function apply(data) {
-        var fr = parseInt(String(data.friend_requests || 0), 10) || 0;
-        var um = parseInt(String(data.unread_messages || 0), 10) || 0;
-        var total = fr + um;
+        var fr  = parseInt(String(data.friend_requests  || 0), 10) || 0;
+        var um  = parseInt(String(data.unread_messages  || 0), 10) || 0;
+        var hr  = parseInt(String(data.hr_notifications || 0), 10) || 0;
+        var total = fr + um + hr;
 
         if (document.visibilityState === 'visible') {
             if (fr > prevDetail.friend_requests) {
-                showToast('SyfonuRH', 'Vous avez une nouvelle demande d’ami.');
+                showToast('SyfonuRH', 'Vous avez une nouvelle demande d\'ami.');
             }
             if (um > prevDetail.unread_messages) {
                 showToast('SyfonuRH', 'Vous avez reçu un nouveau message.');
             }
+            if (hr > prevDetail.hr_notifications) {
+                showToast('SyfonuRH', '🔔 Vous avez une nouvelle notification RH (candidature / entretien).');
+            }
         }
 
-        prevDetail = {friend_requests: fr, unread_messages: um};
+        prevDetail = {friend_requests: fr, unread_messages: um, hr_notifications: hr};
 
         var badge = document.getElementById('socialNotifyBadge');
         if (badge) {
@@ -55,6 +60,10 @@
         });
         document.querySelectorAll('[data-sn-unread-messages]').forEach(function (el) {
             el.textContent = String(um);
+        });
+        document.querySelectorAll('[data-sn-hr-notifications]').forEach(function (el) {
+            el.textContent = String(hr);
+            el.classList.toggle('d-none', hr === 0);
         });
         document.querySelectorAll('[data-sidebar-social-total]').forEach(function (el) {
             el.textContent = total > 99 ? '99+' : String(total);

@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Interview;
 use App\Entity\JobApplication;
 use App\Service\InterviewService;
+use App\Service\NotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,10 +17,12 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class InterviewController extends AbstractController
 {
     private InterviewService $interviewService;
+    private NotificationService $notificationService;
 
-    public function __construct(InterviewService $interviewService)
+    public function __construct(InterviewService $interviewService, NotificationService $notificationService)
     {
-        $this->interviewService = $interviewService;
+        $this->interviewService    = $interviewService;
+        $this->notificationService = $notificationService;
     }
 
     #[Route('/new/{jobApplication}', name: 'app_interview_new', methods: ['GET', 'POST'])]
@@ -65,6 +68,17 @@ class InterviewController extends AbstractController
                 $entityManager->persist($interview);
                 $entityManager->flush();
 
+                // ── Notification au candidat ─────────────────────────────
+                $candidate  = $jobApplication->getCandidat();
+                $offreTitle = $jobApplication->getJobOffre()?->getTitle() ?? 'votre candidature';
+                $dateFormatted = $date ? $date->format('d/m/Y \u00e0 H:i') : '';
+                if ($candidate) {
+                    $this->notificationService->addNotification(
+                        $candidate,
+                        '📅 Un entretien a été planifié pour "' . $offreTitle . '". Date : ' . $dateFormatted
+                    );
+                }
+
                 $this->addFlash('success', 'Entretien planifié avec succès.');
                 return $this->redirectToRoute('app_interview_index');
             }
@@ -74,8 +88,11 @@ class InterviewController extends AbstractController
             }
         }
 
+        $existingInterviews = $this->interviewService->getAllInterviews($user);
+
         return $this->render('interview/new.html.twig', [
             'job_application' => $jobApplication,
+            'existingInterviews' => $existingInterviews,
         ]);
     }
 
@@ -126,9 +143,12 @@ class InterviewController extends AbstractController
             }
         }
 
+        $existingInterviews = $this->interviewService->getAllInterviews($user);
+
         return $this->render('interview/edit.html.twig', [
             'interview' => $interview,
             'job_application' => $interview->getApplication(),
+            'existingInterviews' => $existingInterviews,
         ]);
     }
 
@@ -173,10 +193,31 @@ class InterviewController extends AbstractController
             return $this->redirectToRoute('app_login');
         }
 
-        $interviews = $this->interviewService->getAllInterviews($user);
+        $allInterviews = $this->interviewService->getAllInterviews($user);
+        
+        $upcoming = [];
+        $completed = [];
+
+        foreach ($allInterviews as $interview) {
+            $isCompleted = ($interview->getStatus() === 'Réalisée' || $interview->getStatus() === 'Archivée');
+            
+            if ($isCompleted && $interview->getFinalVerdict()) {
+                // Calcul du score moyen
+                $totalPoints = $interview->getTechnicalRating() + $interview->getCommunicationRating() + $interview->getMotivationRating();
+                $averageScore = round(($totalPoints / 15) * 100, 1);
+                $interview->averageScore = $averageScore; // Propriété temporaire pour le tri
+                $completed[] = $interview;
+            } else {
+                $upcoming[] = $interview;
+            }
+        }
+
+        // Tri des complétés par score moyen décroissant
+        usort($completed, fn($a, $b) => $b->averageScore <=> $a->averageScore);
 
         return $this->render('interview/index.html.twig', [
-            'interviews' => $interviews,
+            'upcoming' => $upcoming,
+            'completed' => $completed,
         ]);
     }
 
@@ -201,6 +242,94 @@ class InterviewController extends AbstractController
             'roomName' => $roomName,
             'userName' => $user->getFirstName() . ' ' . $user->getLastName(),
         ]);
+    }
+
+    #[Route('/{id}/evaluate', name: 'app_interview_evaluate', methods: ['POST'])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function evaluate(
+        Request $request, 
+        Interview $interview, 
+        EntityManagerInterface $entityManager,
+        NotificationService $notificationService
+    ): Response
+    {
+        /** @var \App\Entity\User $user */
+        $user = $this->getUser();
+        if ($interview->getApplication()->getJobOffre()->getUser() !== $user) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $interview->setTechnicalRating((int) $request->request->get('technicalRating'));
+        $interview->setCommunicationRating((int) $request->request->get('communicationRating'));
+        $interview->setMotivationRating((int) $request->request->get('motivationRating'));
+        $interview->setFinalVerdict($request->request->get('finalVerdict'));
+        
+        $outcome = $request->request->get('outcome', 'PENDING_DECISION');
+        $interview->setOutcome($outcome);
+        $interview->setCompletedAt(new \DateTime());
+        $interview->setStatus('Réalisée');
+
+        // Optionnel : Mise à jour automatique du statut de la candidature
+        $application = $interview->getApplication();
+        $candidate = $application->getCandidat();
+        $offerTitle = $application->getJobOffre()?->getTitle() ?? 'l\'offre';
+
+        if ($outcome === 'ACCEPTED') {
+            $application->setStatus(JobApplication::STATUS_FINAL_REVIEW);
+            if ($candidate) {
+                $notificationService->addNotification($candidate, "🎯 Bravo ! Votre entretien pour \"$offerTitle\" a été concluant. Vous passez en revue finale.");
+            }
+        } elseif ($outcome === 'REJECTED') {
+            $application->setStatus(JobApplication::STATUS_REJECTED);
+            if ($candidate) {
+                $notificationService->addNotification($candidate, "👋 Votre entretien pour \"$offerTitle\" a été analysé. Malheureusement, nous ne donnerons pas suite à votre candidature.");
+            }
+        } else {
+            if ($candidate) {
+                $notificationService->addNotification($candidate, "📅 Votre entretien pour \"$offerTitle\" du " . $interview->getScheduledAt()->format('d/m') . " est terminé. Nous vous ferons part de notre décision prochainement.");
+            }
+        }
+
+        $entityManager->flush();
+
+        $this->addFlash('success', 'Évaluation enregistrée avec succès. Résultat : ' . $outcome);
+        return $this->redirectToRoute('app_interview_show', ['id' => $interview->getId()]);
+    }
+
+    #[Route('/{id}/archive', name: 'app_interview_archive', methods: ['POST'])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function archive(Interview $interview, EntityManagerInterface $entityManager): Response
+    {
+        $this->assertIsOwner($interview);
+        $interview->setStatus('Archivée');
+        $entityManager->flush();
+
+        $this->addFlash('info', 'Entretien archivé dans l\'historique.');
+        return $this->redirectToRoute('app_interview_index');
+    }
+
+    #[Route('/{id}/ai-suggest', name: 'app_interview_ai_suggest', methods: ['POST'])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function aiSuggest(
+        Interview $interview, 
+        \App\Service\CVAnalyzerService $cvAnalyzer,
+        \App\Service\CVParserService $cvParser
+    ): \Symfony\Component\HttpFoundation\JsonResponse
+    {
+        /** @var \App\Entity\User $user */
+        $user = $this->getUser();
+        if ($interview->getApplication()->getJobOffre()->getUser() !== $user) {
+            return $this->json(['error' => 'Accès refusé.'], 403);
+        }
+
+        $jobDesc = $interview->getApplication()->getJobOffre()->getDescription();
+        $cvPath = $interview->getApplication()->getCvPath();
+        $cvText = $cvPath ? $cvParser->extractTextFromPdf($cvPath) : '';
+        $notes = $interview->getNotes() ?? '';
+
+        $suggestion = $cvAnalyzer->suggestEvaluation($jobDesc, $cvText, $notes);
+
+        return $this->json($suggestion);
     }
 
     #[Route('/{id}/show', name: 'app_interview_show', methods: ['GET'])]
