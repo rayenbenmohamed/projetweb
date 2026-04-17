@@ -136,12 +136,26 @@ class JobApplicationController extends AbstractController
 
     /** Voir une candidature */
     #[Route('/{id}', name: 'app_job_application_show', methods: ['GET'])]
-    public function show(JobApplication $jobApplication): Response
+    public function show(JobApplication $jobApplication, CVParserService $cvParser): Response
     {
         $this->assertCanAccess($jobApplication);
 
+        // Extraction automatique du texte du CV pour pré-remplir la modal
+        $extractedCvText = null;
+        if ($jobApplication->getCvPath()) {
+            try {
+                $text = $cvParser->extractTextFromPdf($jobApplication->getCvPath());
+                if ($text && !str_starts_with($text, 'Erreur') && strlen(trim($text)) > 10) {
+                    $extractedCvText = $text;
+                }
+            } catch (\Exception $e) {
+                // Silencieux — le textarea restera vide si l'extraction échoue
+            }
+        }
+
         return $this->render('job_application/show.html.twig', [
-            'job_application' => $jobApplication,
+            'job_application'  => $jobApplication,
+            'extracted_cv_text' => $extractedCvText,
         ]);
     }
 
