@@ -143,9 +143,8 @@ PROMPT;
                 return json_decode($jsonMatches[0], true);
             }
             return null;
-        } catch (\Exception $e) {
-            return ['error' => $e->getMessage()];
         }
+    }
     /**
      * Analyzes a document (PDF/Image) directly using Gemini's multimodal capabilities.
      * This is the "True Scan" method that works even for scanned images.
