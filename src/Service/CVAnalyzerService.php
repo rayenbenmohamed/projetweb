@@ -146,6 +146,96 @@ PROMPT;
         } catch (\Exception $e) {
             return ['error' => $e->getMessage()];
         }
+    /**
+     * Analyzes a document (PDF/Image) directly using Gemini's multimodal capabilities.
+     * This is the "True Scan" method that works even for scanned images.
+     */
+    public function analyzeDocument(string $jobDescription, string $documentUrl): ?array
+    {
+        $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . $this->apiKey;
+
+        try {
+            // 1. Télécharger le document
+            $fileContent = file_get_contents($documentUrl);
+            if (!$fileContent) {
+                return ['error' => 'Impossible de télécharger le document depuis Cloudinary.'];
+            }
+            $base64Data = base64_encode($fileContent);
+
+            // 2. Préparer le prompt enrichi
+            $prompt = <<<PROMPT
+Tu es un expert en recrutement RH senior hautement analytique. 
+Analyse le DOCUMENT joint (CV) par rapport à la description du poste fournie ci-dessous.
+Ta mission est de fournir une évaluation PERSONNALISÉE et CRITIQUE du candidat, même si le document est un scan ou une image.
+
+Donne ta réponse UNIQUEMENT sous forme de JSON valide avec les clés suivantes :
+- "score": un entier entre 0 et 100 représentant la compatibilité globale.
+- "score_breakdown": un objet avec les scores suivants (0-100) :
+    - "technical": Maîtrise des outils et langages requis.
+    - "experience": Pertinence du parcours et des responsabilités passées.
+    - "soft_skills": Signaux d'intelligence relationnelle et d'autonomie.
+    - "potential": Capacité d'évolution et d'apprentissage.
+- "summary": un résumé TRÈS PERSONNALISÉ du profil (max 250 caractères).
+- "verdict": un objet avec :
+    - "pros": un tableau des 3 points forts principaux.
+    - "cons": un tableau des 2 points de vigilance ou manques.
+- "recommendation": une recommandation stratégique courte (ex: "À recruter immédiatement", "Profil intéressant mais manque de seniorité", "Ne pas retenir").
+
+DESCRIPTION DU POSTE :
+$jobDescription
+PROMPT;
+
+            // Détection du mimeType basé sur l'extension Cloudinary
+            $mimeType = 'application/pdf';
+            if (preg_match('/\.(jpg|jpeg|png)$/i', $documentUrl)) {
+                $ext = strtolower(pathinfo($documentUrl, PATHINFO_EXTENSION));
+                $mimeType = ($ext === 'png') ? 'image/png' : 'image/jpeg';
+            }
+
+            // 3. Appel API Gemini Multimodal
+            $response = $this->httpClient->request('POST', $apiUrl, [
+                'json' => [
+                    'contents' => [
+                        [
+                            'parts' => [
+                                ['text' => $prompt],
+                                [
+                                    'inline_data' => [
+                                        'mime_type' => $mimeType,
+                                        'data' => $base64Data
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ],
+                    'generationConfig' => [
+                        'temperature' => 0.1,
+                        'maxOutputTokens' => 1024,
+                    ],
+                ]
+            ]);
+
+            $data = $response->toArray();
+            if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+                return ['error' => 'Échec de l\'analyse visuelle par l\'IA.'];
+            }
+
+            $aiText = $data['candidates'][0]['content']['parts'][0]['text'];
+            
+            // Nettoyage et décodage JSON
+            if (preg_match('/\{[\s\S]*\}/m', $aiText, $jsonMatches)) {
+                $result = json_decode($jsonMatches[0], true);
+                if ($result) {
+                    $result['raw_text_analyzed'] = "[Document analysé visuellement par l'IA]";
+                    return $result;
+                }
+            }
+
+            return ['error' => 'L\'IA a renvoyé un format illisible.'];
+
+        } catch (\Exception $e) {
+            return ['error' => "Erreur de scan automatique : " . $e->getMessage()];
+        }
     }
 }
 

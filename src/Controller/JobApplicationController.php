@@ -43,12 +43,20 @@ class JobApplicationController extends AbstractController
         // Candidatures où l'utilisateur a postulé
         $asCandidat = $jobApplicationRepository->findForCandidate($user, $sentStatus, $sentOffer);
 
-        // Grouper les candidatures reçues (en tant que recruteur) par offre
+        // Grouper les candidatures reçues (en tant que recruteur) par offre et trier par score
         $applicationsByOffer = [];
         foreach ($asRecruiter as $app) {
             $offerTitle = $app->getJobOffre()?->getTitle() ?? 'Offre inconnue';
             $applicationsByOffer[$offerTitle][] = $app;
         }
+
+        // --- SMART RANKING IA ---
+        foreach ($applicationsByOffer as $title => &$apps) {
+            usort($apps, function($a, $b) {
+                return ($b->getAiScore() ?? 0) <=> ($a->getAiScore() ?? 0);
+            });
+        }
+        unset($apps);
 
         return $this->render('job_application/index.html.twig', [
             'applications_by_offer' => $applicationsByOffer,
@@ -97,20 +105,14 @@ class JobApplicationController extends AbstractController
                 $cvUrl = $cloudinaryService->uploadFile($cvFile, 'cvs');
                 $jobApplication->setCvPath($cvUrl);
                 
-                // --- ANALYSE AUTOMATIQUE IMMÉDIATE ---
+                // --- ANALYSE AUTOMATIQUE VISUELLE IMMÉDIATE ---
                 try {
-                    $cvText = $cvParser->extractTextFromPdf($cvUrl);
-                    if ($cvText && !str_starts_with($cvText, 'Erreur')) {
-                        $jobDesc = $jobOffre->getDescription() ?? '';
-                        
-                        // Analyse par IA systématique pour avoir le résumé et le score immédiatement
-                        $result = $cvAnalyzer->analyze($jobDesc, $cvText);
-                        
-                        // Fallback mots-clés si Gemini échoue
-                        if (isset($result['error'])) {
-                            $result = $keywordScorer->analyze($jobDesc, $cvText);
-                        }
-                        
+                    $jobDesc = $jobOffre->getDescription() ?? '';
+                    
+                    // Utilisation directe de la vision IA (Multimodal) pour le scan
+                    $result = $cvAnalyzer->analyzeDocument($jobDesc, $cvUrl);
+                    
+                    if ($result && !isset($result['error'])) {
                         $jobApplication->setAiScore($result['score']);
                         $jobApplication->setAiAnalysis(json_encode($result, JSON_UNESCAPED_UNICODE));
                         $jobApplication->setAiAnalyzedAt(new \DateTime());
@@ -243,28 +245,15 @@ class JobApplicationController extends AbstractController
     ): Response {
         $this->assertIsOfferOwner($jobApplication);
 
-        if (!$jobApplication->getCvPath()) {
-            $this->addFlash('warning', 'Aucun CV n\'est associé à cette candidature.');
-            return $this->redirectToRoute('app_job_application_index');
-        }
-
-        $cvText = $cvParser->extractTextFromPdf($jobApplication->getCvPath());
-
-        if (str_starts_with($cvText, 'Erreur')) {
-            $this->addFlash('danger', $cvText);
-            return $this->redirectToRoute('app_job_application_index');
-        }
-
         $jobDescription = $jobApplication->getJobOffre()?->getDescription() ?? '';
-        $result = $keywordScorer->analyze($jobDescription, $cvText);
-
-        if ($result['score'] < 40) {
-            $aiResult = $cvAnalyzer->analyze($jobDescription, $cvText);
-            if (!isset($aiResult['error'])) {
-                $result = $aiResult;
-            }
+        
+        // --- SCAN VISUEL IA ---
+        $result = $cvAnalyzer->analyzeDocument($jobDescription, $jobApplication->getCvPath());
+        
+        if (isset($result['error'])) {
+            $this->addFlash('danger', "Échec du scan IA : " . $result['error']);
+            return $this->redirectToRoute('app_job_application_show', ['id' => $jobApplication->getId()]);
         }
-
         $jobApplication->setAiScore($result['score']);
         $jobApplication->setAiAnalysis(json_encode($result, JSON_UNESCAPED_UNICODE));
         $jobApplication->setAiAnalyzedAt(new \DateTime());

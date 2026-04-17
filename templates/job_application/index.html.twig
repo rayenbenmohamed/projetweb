@@ -47,23 +47,35 @@
                     </thead>
                     <tbody>
                         {% for offerTitle, apps in applications_by_offer %}
-                            <tr class="bg-light">
+                            <tr class="bg-light shadow-sm">
                                 <td colspan="5" class="py-2 ps-4">
-                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1">
-                                        <i class="ti ti-briefcase me-1"></i> {{ offerTitle }}
-                                    </span>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-primary text-white border-0 px-3 py-1 fw-bold shadow-sm">
+                                            <i class="ti ti-briefcase me-1"></i> {{ offerTitle }}
+                                        </span>
+                                        <span class="text-secondary small me-4 fw-bold">
+                                            <i class="ti ti-sort-descending-numbers text-primary me-1"></i> Smart Ranking IA Actif
+                                        </span>
+                                    </div>
                                 </td>
                             </tr>
                             {% for job_app in apps %}
                             <tr>
                                 <td class="ps-4">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="avatar avatar-md rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold shadow-sm">
-                                            {{ job_app.candidat.firstName|first }}{{ job_app.candidat.lastName|first }}
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar avatar-md rounded-circle bg-primary-subtle text-primary fw-bold me-3">
+                                            {{ job_app.candidat.firstName|first|upper }}{{ job_app.candidat.lastName|first|upper }}
                                         </div>
                                         <div>
-                                            <h6 class="mb-0 fw-bold">{{ job_app.candidat.firstName }} {{ job_app.candidat.lastName }}</h6>
-                                            <span class="text-muted small"><i class="ti ti-mail me-1"></i>{{ job_app.candidat.email }}</span>
+                                            <div class="fw-bold text-dark d-flex align-items-center">
+                                                {{ job_app.candidat.firstName }} {{ job_app.candidat.lastName }}
+                                                {% if loop.index <= 5 and job_app.aiScore is not null %}
+                                                    <span class="badge-smart-rank ms-2 {% if loop.index == 1 %}pulse-rank-1{% endif %}">
+                                                        <i class="ti ti-sparkles me-1"></i> Coup de ❤️ IA
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="small text-muted">{{ job_app.candidat.email }}</div>
                                         </div>
                                     </div>
                                 </td>
@@ -262,6 +274,29 @@
         display: none; animation: fadeIn 0.3s forwards;
     }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    /* Smart Badge Premium */
+    .badge-smart-rank {
+        background: linear-gradient(135deg, #6610f2 0%, #fd7e14 100%);
+        color: white;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 5px 12px;
+        border-radius: 50px;
+        font-size: 0.65rem;
+        box-shadow: 0 4px 15px rgba(102, 16, 242, 0.3);
+        display: inline-flex;
+        align-items: center;
+        border: 2px solid rgba(255,255,255,0.2);
+    }
+    .pulse-rank-1 {
+        animation: pulse-rank 2s infinite;
+    }
+    @keyframes pulse-rank {
+        0% { box-shadow: 0 0 0 0 rgba(102, 16, 242, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(102, 16, 242, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(102, 16, 242, 0); }
+    }
 </style>
 
 <div id="copyToast" class="copy-toast"><i class="ti ti-check me-2 text-success"></i> Texte copié !</div>
