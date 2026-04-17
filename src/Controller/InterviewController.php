@@ -279,6 +279,11 @@ class InterviewController extends AbstractController
             if ($candidate) {
                 $notificationService->addNotification($candidate, "🎯 Bravo ! Votre entretien pour \"$offerTitle\" a été concluant. Vous passez en revue finale.");
             }
+        } elseif ($outcome === 'READY_FOR_CONTRACT') {
+            $application->setStatus(JobApplication::STATUS_READY_FOR_CONTRACT);
+            if ($candidate) {
+                $notificationService->addNotification($candidate, "📄 Félicitations ! Votre entretien pour \"$offerTitle\" est validé. Nous préparons votre contrat !");
+            }
         } elseif ($outcome === 'REJECTED') {
             $application->setStatus(JobApplication::STATUS_REJECTED);
             if ($candidate) {
@@ -324,7 +329,7 @@ class InterviewController extends AbstractController
 
         $jobDesc = $interview->getApplication()->getJobOffre()->getDescription();
         $cvPath = $interview->getApplication()->getCvPath();
-        $cvText = $cvPath ? $cvParser->extractTextFromPdf($cvPath) : '';
+        $cvText = $cvPath ? $cvParser->extractText($cvPath) : '';
         $notes = $interview->getNotes() ?? '';
 
         $suggestion = $cvAnalyzer->suggestEvaluation($jobDesc, $cvText, $notes);

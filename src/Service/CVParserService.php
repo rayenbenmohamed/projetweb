@@ -3,14 +3,34 @@
 namespace App\Service;
 
 use Smalot\PdfParser\Parser;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class CVParserService
 {
     private Parser $parser;
+    private HttpClientInterface $httpClient;
+    private string $geminiApiKey;
 
-    public function __construct()
+    public function __construct(HttpClientInterface $httpClient, string $geminiApiKey)
     {
         $this->parser = new Parser();
+        $this->httpClient = $httpClient;
+        $this->geminiApiKey = $geminiApiKey;
+    }
+
+    /**
+     * General method to extract text from a CV document (PDF or Image).
+     */
+    public function extractText(string $filePath): string
+    {
+        $cleanUrl = strtok($filePath, '?');
+        $ext = strtolower(pathinfo($cleanUrl, PATHINFO_EXTENSION));
+
+        if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'])) {
+            return $this->extractTextFromImage($filePath);
+        }
+
+        return $this->extractTextFromPdf($filePath);
     }
 
     /**
@@ -46,6 +66,52 @@ class CVParserService
 
         } catch (\Exception $e) {
             return "Erreur lors de l'extraction du texte du PDF : " . $e->getMessage();
+        }
+    }
+
+    /**
+     * OCR via Gemini 2.0 Flash to extract text from an image.
+     */
+    public function extractTextFromImage(string $imageUrl): string
+    {
+        $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=" . $this->geminiApiKey;
+
+        try {
+            $response = $this->httpClient->request('GET', $imageUrl);
+            if ($response->getStatusCode() !== 200) {
+                return "Erreur : impossible de télécharger l'image (" . $response->getStatusCode() . ")";
+            }
+            $base64Data = base64_encode($response->getContent());
+
+            $cleanUrl = strtok($imageUrl, '?');
+            $ext = strtolower(pathinfo($cleanUrl, PATHINFO_EXTENSION));
+            $mimeMap = [
+                'jpg'  => 'image/jpeg', 'jpeg' => 'image/jpeg',
+                'png'  => 'image/png', 'webp' => 'image/webp',
+                'heic' => 'image/heic', 'heif' => 'image/heif'
+            ];
+            $mimeType = $mimeMap[$ext] ?? 'image/jpeg';
+
+            $prompt = "Extraire tout le texte lisible de ce CV. Reformater de manière structurée si possible, mais conserver tout le contenu textuel essentiel.";
+
+            $response = $this->httpClient->request('POST', $apiUrl, [
+                'json' => [
+                    'contents' => [
+                        [
+                            'parts' => [
+                                ['text' => $prompt],
+                                ['inline_data' => ['mime_type' => $mimeType, 'data' => $base64Data]]
+                            ]
+                        ]
+                    ]
+                ]
+            ]);
+
+            $data = $response->toArray();
+            return $data['candidates'][0]['content']['parts'][0]['text'] ?? "Erreur : aucun texte extrait par l'IA.";
+
+        } catch (\Exception $e) {
+            return "Erreur lors de l'OCR IA : " . $e->getMessage();
         }
     }
 

@@ -100,6 +100,8 @@
                         <span class="fw-bold">Décision :</span>
                         {% if interview.outcome == 'ACCEPTED' %}
                             <span class="badge bg-success px-3 py-2"><i class="ti ti-check me-1"></i> Accepté</span>
+                        {% elseif interview.outcome == 'READY_FOR_CONTRACT' %}
+                            <span class="badge bg-indigo text-white px-3 py-2"><i class="ti ti-file-text me-1"></i> Prêt pour contrat</span>
                         {% elseif interview.outcome == 'REJECTED' %}
                             <span class="badge bg-danger px-3 py-2"><i class="ti ti-x me-1"></i> Refusé</span>
                         {% else %}
@@ -127,6 +129,14 @@
                             <button type="button" class="btn btn-success px-4" data-bs-toggle="modal" data-bs-target="#evaluateModal">
                                 <i class="ti ti-award me-2"></i>Évaluer le candidat
                             </button>
+                        {% elseif interview.outcome == 'READY_FOR_CONTRACT' %}
+                            <a href="{{ path('app_contract_new', {
+                                candidate_id: interview.application.candidat.id,
+                                job_offre_id: interview.application.jobOffre.id,
+                                recruiter_id: interview.application.jobOffre.user.id
+                            }) }}" class="btn btn-indigo text-white px-4 fw-bold shadow-sm" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">
+                                <i class="ti ti-file-certificate me-2"></i>Générer le Contrat
+                            </a>
                         {% elseif interview.status == 'Réalisée' %}
                             <form action="{{ path('app_interview_archive', {id: interview.id}) }}" method="post" style="display:inline;">
                                 <button type="submit" class="btn btn-dark px-4">
@@ -199,7 +209,8 @@
                         <label class="form-label fw-bold text-primary">Décision de l'entretien</label>
                         <select name="outcome" class="form-select border-primary">
                             <option value="PENDING_DECISION">En attente de décision</option>
-                            <option value="ACCEPTED">Accepter le profil pour la suite</option>
+                            <option value="ACCEPTED">Accepter pour la suite (Revue Finale)</option>
+                            <option value="READY_FOR_CONTRACT">Prêt pour Signature de Contrat</option>
                             <option value="REJECTED">Rejeter le profil</option>
                         </select>
                     </div>

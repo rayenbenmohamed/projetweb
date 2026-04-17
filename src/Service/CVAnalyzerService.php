@@ -24,7 +24,7 @@ class CVAnalyzerService
      */
     public function analyze(string $jobDescription, string $cvText): ?array
     {
-        $url = "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=" . $this->apiKey;
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=" . $this->apiKey;
 
         $prompt = <<<PROMPT
 Tu es un expert en recrutement RH senior hautement analytique. Analyse le CV suivant par rapport à la description du poste fournie.
@@ -153,15 +153,37 @@ PROMPT;
      */
     public function analyzeDocument(string $jobDescription, string $documentUrl): ?array
     {
-        $apiUrl = "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=" . $this->apiKey;
+        $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=" . $this->apiKey;
 
         try {
-            // 1. Télécharger le document
-            $fileContent = file_get_contents($documentUrl);
-            if (!$fileContent) {
-                return ['error' => 'Impossible de télécharger le document depuis Cloudinary.'];
+            // 1. Télécharger le document avec HttpClient
+            $response = $this->httpClient->request('GET', $documentUrl, [
+                'timeout' => 30,
+            ]);
+            
+            if ($response->getStatusCode() !== 200) {
+                return ['error' => 'Impossible de télécharger le document (Statut: ' . $response->getStatusCode() . ')'];
             }
+            
+            $fileContent = $response->getContent();
             $base64Data = base64_encode($fileContent);
+
+            // ── Détection robuste du mimeType ──────────────────────────────
+            // On nettoie l'URL des paramètres de requête (?v=...)
+            $cleanUrl = strtok($documentUrl, '?');
+            $ext = strtolower(pathinfo($cleanUrl, PATHINFO_EXTENSION));
+            
+            $mimeMap = [
+                'pdf'  => 'application/pdf',
+                'jpg'  => 'image/jpeg',
+                'jpeg' => 'image/jpeg',
+                'png'  => 'image/png',
+                'webp' => 'image/webp',
+                'heic' => 'image/heic',
+                'heif' => 'image/heif'
+            ];
+            
+            $mimeType = $mimeMap[$ext] ?? 'application/pdf';
 
             // 2. Préparer le prompt enrichi
             $prompt = <<<PROMPT
@@ -186,13 +208,6 @@ DESCRIPTION DU POSTE :
 $jobDescription
 PROMPT;
 
-            // Détection du mimeType basé sur l'extension Cloudinary
-            $mimeType = 'application/pdf';
-            if (preg_match('/\.(jpg|jpeg|png)$/i', $documentUrl)) {
-                $ext = strtolower(pathinfo($documentUrl, PATHINFO_EXTENSION));
-                $mimeType = ($ext === 'png') ? 'image/png' : 'image/jpeg';
-            }
-
             // 3. Appel API Gemini Multimodal
             $response = $this->httpClient->request('POST', $apiUrl, [
                 'json' => [
@@ -216,9 +231,13 @@ PROMPT;
                 ]
             ]);
 
-            $data = $response->toArray();
+            $data = $response->toArray(false); // Disable throwing exception on 4xx/5xx to see errors
+            if (isset($data['error'])) {
+                return ['error' => 'Erreur API Gemini: ' . ($data['error']['message'] ?? 'Inconnue')];
+            }
+            
             if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
-                return ['error' => 'Échec de l\'analyse visuelle par l\'IA.'];
+                return ['error' => 'Échec de l\'analyse visuelle par l\'IA (Pas de réponse générée).'];
             }
 
             $aiText = $data['candidates'][0]['content']['parts'][0]['text'];

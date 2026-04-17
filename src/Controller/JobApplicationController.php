@@ -105,12 +105,18 @@ class JobApplicationController extends AbstractController
                 $cvUrl = $cloudinaryService->uploadFile($cvFile, 'cvs');
                 $jobApplication->setCvPath($cvUrl);
                 
-                // --- ANALYSE AUTOMATIQUE VISUELLE IMMÉDIATE ---
+                // --- ANALYSE AUTOMATIQUE OPTIMISÉE (Text-First) ---
                 try {
                     $jobDesc = $jobOffre->getDescription() ?? '';
+                    $cvText = $cvParser->extractText($cvUrl);
                     
-                    // Utilisation directe de la vision IA (Multimodal) pour le scan
-                    $result = $cvAnalyzer->analyzeDocument($jobDesc, $cvUrl);
+                    if ($cvText && !str_starts_with($cvText, 'Erreur') && strlen(trim($cvText)) > 100) {
+                        // Cas 1 : Le texte a pu être extrait (PDF standard) -> Analyse textuelle IA
+                        $result = $cvAnalyzer->analyze($jobDesc, $cvText);
+                    } else {
+                        // Cas 2 : Pas de texte (Scan/Image) -> Analyse visuelle Multimodale
+                        $result = $cvAnalyzer->analyzeDocument($jobDesc, $cvUrl);
+                    }
                     
                     if ($result && !isset($result['error'])) {
                         $jobApplication->setAiScore($result['score']);
@@ -118,7 +124,7 @@ class JobApplicationController extends AbstractController
                         $jobApplication->setAiAnalyzedAt(new \DateTime());
                     }
                 } catch (\Exception $e) {
-                    // Erreur silencieuse
+                    // Erreur silencieuse lors de l'upload
                 }
             } else {
                 $jobApplication->setCvPath($request->request->get('cv_path'));
@@ -145,7 +151,7 @@ class JobApplicationController extends AbstractController
         $extractedCvText = null;
         if ($jobApplication->getCvPath() && $jobApplication->getAiScore() === null) {
             try {
-                $text = $cvParser->extractTextFromPdf($jobApplication->getCvPath());
+                $text = $cvParser->extractText($jobApplication->getCvPath());
                 if ($text && !str_starts_with($text, 'Erreur') && strlen(trim($text)) > 10) {
                     $extractedCvText = $text;
                 }
@@ -233,6 +239,7 @@ class JobApplicationController extends AbstractController
             JobApplication::STATUS_HR_SCREENING => '🔍 Votre candidature pour "' . $offreTitle . '" est en cours d\'examen RH.',
             JobApplication::STATUS_TECHNICAL_TEST => '💻 Un test technique vous a été assigné pour "' . $offreTitle . '".',
             JobApplication::STATUS_FINAL_REVIEW => '📝 Votre dossier pour "' . $offreTitle . '" est en cours de revue finale.',
+            JobApplication::STATUS_READY_FOR_CONTRACT => '📄 Félicitations ! Votre entretien pour "' . $offreTitle . '" est validé. Nous préparons votre contrat !',
             JobApplication::STATUS_ACCEPTED => '✅ Félicitations ! Votre candidature pour "' . $offreTitle . '" a été acceptée !',
             JobApplication::STATUS_REJECTED => '❌ Votre candidature pour "' . $offreTitle . '" n\'a pas été retenue.' . ($rejectionReason ? ' Motif : ' . $rejectionReason : ''),
         ];
@@ -262,13 +269,23 @@ class JobApplicationController extends AbstractController
 
         $jobDescription = $jobApplication->getJobOffre()?->getDescription() ?? '';
         
-        // --- SCAN VISUEL IA ---
-        $result = $cvAnalyzer->analyzeDocument($jobDescription, $jobApplication->getCvPath());
+        // --- ANALYSE OPTIMISÉE (Text-First) ---
+        $cvUrl = $jobApplication->getCvPath();
+        $cvText = $cvParser->extractText($cvUrl);
+        
+        if ($cvText && !str_starts_with($cvText, 'Erreur') && strlen(trim($cvText)) > 100) {
+            // Analyse textuelle
+            $result = $cvAnalyzer->analyze($jobDescription, $cvText);
+        } else {
+            // Analyse visuelle (OCR + Vision)
+            $result = $cvAnalyzer->analyzeDocument($jobDescription, $cvUrl);
+        }
         
         if (isset($result['error'])) {
             $this->addFlash('danger', "Échec du scan IA : " . $result['error']);
             return $this->redirectToRoute('app_job_application_show', ['id' => $jobApplication->getId(), 'scanned' => 1]);
         }
+        
         $jobApplication->setAiScore($result['score']);
         $jobApplication->setAiAnalysis(json_encode($result, JSON_UNESCAPED_UNICODE));
         $jobApplication->setAiAnalyzedAt(new \DateTime());

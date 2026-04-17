@@ -156,6 +156,8 @@
                             <td class="text-center">
                                 {% if interview.outcome == 'ACCEPTED' %}
                                     <span class="badge bg-success-subtle text-success border border-success-subtle px-2">Accepté</span>
+                                {% elseif interview.outcome == 'READY_FOR_CONTRACT' %}
+                                    <span class="badge bg-indigo-subtle text-indigo border border-indigo-subtle px-2">Prêt Contrat</span>
                                 {% elseif interview.outcome == 'REJECTED' %}
                                     <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2">Refusé</span>
                                 {% else %}

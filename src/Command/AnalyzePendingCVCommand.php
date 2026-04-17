@@ -64,8 +64,8 @@ class AnalyzePendingCVCommand extends Command
             }
 
             try {
-                // 1. Extraction du texte
-                $cvText = $this->cvParser->extractTextFromPdf($cvPath);
+                // 1. Extraction du texte (PDF ou Image via OCR IA)
+                $cvText = $this->cvParser->extractText($cvPath);
                 
                 if ($cvText && !str_starts_with($cvText, 'Erreur')) {
                     $jobDesc = $app->getJobOffre()->getDescription() ?? '';

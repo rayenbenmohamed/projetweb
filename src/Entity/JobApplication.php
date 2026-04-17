@@ -19,6 +19,7 @@ class JobApplication
     public const STATUS_FINAL_REVIEW = 'FINAL_REVIEW';
     public const STATUS_ACCEPTED = 'ACCEPTED';
     public const STATUS_REJECTED = 'REJECTED';
+    public const STATUS_READY_FOR_CONTRACT = 'READY_FOR_CONTRACT';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

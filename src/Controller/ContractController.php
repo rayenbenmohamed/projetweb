@@ -95,6 +95,24 @@ class ContractController extends AbstractController
         $contract = new Contract();
         $form = null;
 
+        // Pré-remplissage via paramètres GET (ex: depuis une candidature "Prêt pour contrat")
+        $prefillCandidateId = $request->query->get('candidate_id');
+        $prefillJobOffreId = $request->query->get('job_offre_id');
+        $prefillRecruiterId = $request->query->get('recruiter_id');
+
+        if ($prefillCandidateId) {
+            $candidate = $userRepository->find((int) $prefillCandidateId);
+            if ($candidate) $contract->setCandidate($candidate);
+        }
+        if ($prefillJobOffreId) {
+            $jobOffre = $jobOffreRepository->find((int) $prefillJobOffreId);
+            if ($jobOffre) $contract->setJobOffre($jobOffre);
+        }
+        if ($prefillRecruiterId) {
+            $recruiter = $userRepository->find((int) $prefillRecruiterId);
+            if ($recruiter) $contract->setRecruiter($recruiter);
+        }
+
         if ($request->isMethod('POST')) {
             $candidateId = $request->request->get('candidate_id');
             $recruiterId = $request->request->get('recruiter_id');
