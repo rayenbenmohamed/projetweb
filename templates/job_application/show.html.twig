@@ -230,16 +230,11 @@
                         <div class="cv-icon-wrap"><i class="ti ti-file-type-pdf"></i></div>
                         <div class="flex-grow-1">
                             <div class="fw-bold text-dark">CV du candidat</div>
-                            <div class="text-muted small">Hébergé sur Cloudinary • Cliquez pour visualiser</div>
+                            <div class="text-muted small">Hébergé sur Cloudinary</div>
                         </div>
-                        <div class="d-flex gap-2">
-                            <a href="{{ job_application.cvPath }}" target="_blank" class="btn btn-danger btn-sm rounded-pill px-3">
-                                <i class="ti ti-eye me-1"></i> Voir
-                            </a>
-                            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#manualEntryModal">
-                                <i class="ti ti-edit me-1"></i> Texte manuel
-                            </button>
-                        </div>
+                        <a href="{{ job_application.cvPath }}" target="_blank" class="btn btn-danger btn-sm rounded-pill px-3">
+                            <i class="ti ti-eye me-1"></i> Voir le CV
+                        </a>
                     </div>
                 {% else %}
                     <div class="alert alert-warning rounded-3 mb-0"><i class="ti ti-alert-circle me-2"></i>Aucun CV joint à cette candidature.</div>
@@ -247,8 +242,28 @@
             </div>
         </div>
 
-        {# Analyse IA SyfonuMatch #}
-        {% if job_application.aiScore is not null %}
+        {# Analyse IA SyfonuMatch — auto-triggered if no score yet #}
+        {% if job_application.aiScore is null and job_application.cvPath %}
+        <div class="card premium-card mb-4 text-center p-5" id="autoAnalyzeCard">
+            <div class="p-3 rounded-circle d-inline-flex mx-auto mb-3" style="background:linear-gradient(135deg,#ede9fe,#dbeafe);width:72px;height:72px;align-items:center;justify-content:center;">
+                <i class="ti ti-brain text-primary" style="font-size:2rem;"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Analyse IA en cours...</h5>
+            <p class="text-muted small mb-3">SyfonuMatch™ scanne le CV automatiquement.</p>
+            <div class="spinner-border text-primary" role="status" style="width:2rem;height:2rem;"></div>
+            {# Formulaire soumis automatiquement #}
+            <form id="autoAnalyzeForm" method="post" action="{{ path('app_job_application_analyze', {id: job_application.id}) }}" class="d-none">
+            </form>
+        </div>
+        <script>
+            // Déclencher automatiquement l'analyse IA dès que la page est chargée
+            window.addEventListener('DOMContentLoaded', function() {
+                setTimeout(function() {
+                    document.getElementById('autoAnalyzeForm').submit();
+                }, 800);
+            });
+        </script>
+        {% elseif job_application.aiScore is not null %}
         {% set analysis = job_application.aiAnalysis|json_decode %}
         <div class="card premium-card mb-4">
             <div class="action-card-header d-flex align-items-center justify-content-between">
