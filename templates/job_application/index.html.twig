@@ -148,6 +148,13 @@
                                                     <button type="submit" class="dropdown-item text-danger small">Refuser</button>
                                                 </form>
                                             </li>
+                                            <li class="dropdown-divider"></li>
+                                            <li>
+                                                <form action="{{ path('app_job_application_delete', {id: job_app.id}) }}" method="post" onsubmit="return confirm('Supprimer définitivement cette candidature ?');">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ job_app.id) }}">
+                                                    <button type="submit" class="dropdown-item text-danger small"><i class="ti ti-trash me-2"></i>Supprimer</button>
+                                                </form>
+                                            </li>
                                         </ul>
                                     </div>
                                 </td>

@@ -102,14 +102,13 @@ class JobApplicationController extends AbstractController
                     $cvText = $cvParser->extractTextFromPdf($cvUrl);
                     if ($cvText && !str_starts_with($cvText, 'Erreur')) {
                         $jobDesc = $jobOffre->getDescription() ?? '';
-                        $result = $keywordScorer->analyze($jobDesc, $cvText);
                         
-                        // Si score faible, Gemini analyse
-                        if ($result['score'] < 40) {
-                            $aiResult = $cvAnalyzer->analyze($jobDesc, $cvText);
-                            if (!isset($aiResult['error'])) {
-                                $result = $aiResult;
-                            }
+                        // Analyse par IA systématique pour avoir le résumé et le score immédiatement
+                        $result = $cvAnalyzer->analyze($jobDesc, $cvText);
+                        
+                        // Fallback mots-clés si Gemini échoue
+                        if (isset($result['error'])) {
+                            $result = $keywordScorer->analyze($jobDesc, $cvText);
                         }
                         
                         $jobApplication->setAiScore($result['score']);
@@ -117,7 +116,7 @@ class JobApplicationController extends AbstractController
                         $jobApplication->setAiAnalyzedAt(new \DateTime());
                     }
                 } catch (\Exception $e) {
-                    // Erreur silencieuse pour ne pas bloquer la candidature
+                    // Erreur silencieuse
                 }
             } else {
                 $jobApplication->setCvPath($request->request->get('cv_path'));
@@ -368,8 +367,8 @@ class JobApplicationController extends AbstractController
         $appUser = $app->getCandidat();
         $offerOwner = $app->getJobOffre() ? $app->getJobOffre()->getUser() : null;
 
-        $isCandidat = $appUser && $appUser->getId() === $user->getId();
-        $isOfferOwner = $offerOwner && $offerOwner->getId() === $user->getId();
+        $isCandidat = ($appUser && $appUser->getId() === $user->getId());
+        $isOfferOwner = ($offerOwner && $offerOwner->getId() === $user->getId());
 
         if (!$isCandidat && !$isOfferOwner) {
             $this->addFlash('danger', "Action refusée. Vous ne pouvez supprimer que vos propres candidatures ou celles reçues sur vos offres.");
