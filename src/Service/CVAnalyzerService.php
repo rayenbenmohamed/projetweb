@@ -27,11 +27,21 @@ class CVAnalyzerService
         $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . $this->apiKey;
 
         $prompt = <<<PROMPT
-Tu es un expert en recrutement RH. Analyse le CV suivant par rapport à la description du poste fournie.
+Tu es un expert en recrutement RH senior hautement analytique. Analyse le CV suivant par rapport à la description du poste fournie.
+Ta mission est de fournir une évaluation PERSONNALISÉE et CRITIQUE du candidat.
+
 Donne ta réponse UNIQUEMENT sous forme de JSON valide avec les clés suivantes :
 - "score": un entier entre 0 et 100 représentant la compatibilité globale.
-- "summary": un court résumé (max 200 caractères) des points forts du candidat.
-- "recommendation": une recommandation courte (max 200 caractères) (ex: "À recruter", "Profil junior prometteur", "Manque de compétences clés").
+- "score_breakdown": un objet avec les scores suivants (0-100) :
+    - "technical": Maîtrise des outils et langages requis.
+    - "experience": Pertinence du parcours et des responsabilités passées.
+    - "soft_skills": Signaux d'intelligence relationnelle et d'autonomie.
+    - "potential": Capacité d'évolution et d'apprentissage.
+- "summary": un résumé TRÈS PERSONNALISÉ du profil (max 250 caractères). Évite les généralités.
+- "verdict": un objet avec :
+    - "pros": un tableau des 3 points forts principaux.
+    - "cons": un tableau des 2 points de vigilance ou manques.
+- "recommendation": une recommandation stratégique courte (ex: "À recruter immédiatement", "Profil intéressant mais manque de seniorité", "Ne pas retenir").
 
 Ne réponds qu'avec le JSON, sans texte avant ni après, sans bloc markdown.
 

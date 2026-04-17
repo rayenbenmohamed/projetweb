@@ -200,7 +200,13 @@ class JobApplicationController extends AbstractController
         $this->assertIsOfferOwner($jobApplication);
 
         $status = $request->request->get('status');
+        $rejectionReason = $request->request->get('rejection_reason');
+        
         $jobApplication->setStatus($status);
+        if ($status === JobApplication::STATUS_REJECTED && $rejectionReason) {
+            $jobApplication->setRejectionReason($rejectionReason);
+        }
+        
         $entityManager->flush();
 
         // ── Notification au candidat ───────────────────────────────────────────
@@ -212,7 +218,7 @@ class JobApplicationController extends AbstractController
             JobApplication::STATUS_TECHNICAL_TEST => '💻 Un test technique vous a été assigné pour "' . $offreTitle . '".',
             JobApplication::STATUS_FINAL_REVIEW => '📝 Votre dossier pour "' . $offreTitle . '" est en cours de revue finale.',
             JobApplication::STATUS_ACCEPTED => '✅ Félicitations ! Votre candidature pour "' . $offreTitle . '" a été acceptée !',
-            JobApplication::STATUS_REJECTED => '❌ Votre candidature pour "' . $offreTitle . '" n\'a pas été retenue.',
+            JobApplication::STATUS_REJECTED => '❌ Votre candidature pour "' . $offreTitle . '" n\'a pas été retenue.' . ($rejectionReason ? ' Motif : ' . $rejectionReason : ''),
         ];
 
         if ($candidate && isset($messages[$status])) {

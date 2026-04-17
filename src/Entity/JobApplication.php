@@ -57,6 +57,9 @@ class JobApplication
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $aiAnalyzedAt = null;
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $rejectionReason = null;
+
     public function __construct()
     {
         $this->applyDate = new \DateTime();
@@ -172,6 +175,17 @@ class JobApplication
     public function setAiAnalyzedAt(?\DateTimeInterface $aiAnalyzedAt): self
     {
         $this->aiAnalyzedAt = $aiAnalyzedAt;
+        return $this;
+    }
+
+    public function getRejectionReason(): ?string
+    {
+        return $this->rejectionReason;
+    }
+
+    public function setRejectionReason(?string $rejectionReason): self
+    {
+        $this->rejectionReason = $rejectionReason;
         return $this;
     }
 }

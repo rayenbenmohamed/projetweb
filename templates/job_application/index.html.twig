@@ -293,18 +293,61 @@ function copyToClipboard(elementId) {
                                             <div class="progress-bar bg-primary" role="progressbar" style="width: {{ analysis.score }}%"></div>
                                         </div>
                                     </div>
-                                    <div class="mb-3">
+                                    <div class="row g-2 mb-4">
+                                        {% if analysis.score_breakdown is defined %}
+                                            {% for key, val in analysis.score_breakdown %}
+                                            <div class="col-6">
+                                                <div class="p-2 bg-light rounded-3 text-center h-100">
+                                                    <div class="small fw-bold text-secondary mb-0" style="font-size: 0.6rem;">{{ key|upper|replace({'TECHNICAL': 'TECH', 'EXPERIENCE': 'EXP', 'SOFT_S_SKILLS': 'SOFT', 'POTENTIAL': 'POT.'}) }}</div>
+                                                    <div class="small fw-bold text-primary">{{ val }}%</div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="mb-4">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <h6 class="fw-bold text-dark mb-0">Résumé de l'analyse</h6>
-                                            <button class="btn btn-sm btn-link p-0 text-primary d-flex align-items-center" onclick="copyToClipboard('summary{{ job_app.id }}')">
+                                            <h6 class="fw-bold text-dark mb-0 small">Résumé IA</h6>
+                                            <button class="btn btn-sm btn-link p-0 text-primary small d-flex align-items-center" onclick="copyToClipboard('summary{{ job_app.id }}')">
                                                 <i class="ti ti-copy me-1"></i> Copier
                                             </button>
                                         </div>
-                                        <p class="text-secondary small mb-0" id="summary{{ job_app.id }}">{{ analysis.summary }}</p>
+                                        <div class="p-3 bg-light rounded-3 text-secondary small" id="summary{{ job_app.id }}" style="font-size: 0.8rem;">
+                                            {{ analysis.summary|default('En attente...') }}
+                                        </div>
                                     </div>
+
+                                    {% if analysis.verdict is defined %}
+                                    <div class="row g-2 mb-4">
+                                        <div class="col-6">
+                                            <div class="p-2 bg-success-subtle rounded-3 small h-100">
+                                                <div class="fw-bold text-success mb-1" style="font-size: 0.7rem;">Points Forts</div>
+                                                <ul class="p-0 m-0 list-unstyled" style="font-size: 0.65rem;">
+                                                    {% for pro in analysis.verdict.pros|slice(0, 2) %}
+                                                        <li>• {{ pro }}</li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="p-2 bg-danger-subtle rounded-3 small h-100">
+                                                <div class="fw-bold text-danger mb-1" style="font-size: 0.7rem;">Points Vigilance</div>
+                                                <ul class="p-0 m-0 list-unstyled" style="font-size: 0.65rem;">
+                                                    {% for con in analysis.verdict.cons|slice(0, 2) %}
+                                                        <li>• {{ con }}</li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
                                     <div class="p-3 bg-warning-subtle rounded-3 border-start border-4 border-warning mb-3">
-                                        <h6 class="fw-bold text-dark mb-1 small">💡 Recommandation Recruteur</h6>
-                                        <p class="mb-0 text-dark-emphasis small">{{ analysis.recommendation }}</p>
+                                        <h6 class="fw-bold text-dark mb-1 small">💡 Recommandation Stratégique</h6>
+                                        <p class="mb-0 text-dark-emphasis" style="font-size: 0.75rem;">
+                                            {{ analysis.recommendation|default('Consultation requise.') }}
+                                        </p>
                                     </div>
                                     {% if analysis.raw_text_analyzed is defined %}
                                     <div class="mt-4">

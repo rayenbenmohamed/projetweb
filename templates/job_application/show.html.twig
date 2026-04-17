@@ -55,6 +55,75 @@
             </div>
         </div>
 
+        <div class="card card-lg mb-6">
+            <div class="card-body p-6">
+                <h5 class="mb-4 d-flex align-items-center"><i class="ti ti-history me-2 text-primary"></i>Historique & Timeline</h5>
+                <div class="position-relative ms-2 ps-4 border-start border-2 border-light py-2">
+                    {# Postulation #}
+                    <div class="mb-6 position-relative">
+                        <div class="position-absolute translate-middle-x" style="left: -25px; top: 0;">
+                            <div class="icon-shape icon-xs rounded-circle bg-primary text-white"><i class="ti ti-plus fs-6"></i></div>
+                        </div>
+                        <h6 class="mb-1">Candidature déposée</h6>
+                        <p class="small text-secondary mb-0">Origine : Candidature externe • {{ job_application.applyDate|date('d/m/Y H:i') }}</p>
+                    </div>
+
+                    {# Analyses IA #}
+                    {% if job_application.aiAnalyzedAt %}
+                    <div class="mb-6 position-relative">
+                        <div class="position-absolute translate-middle-x" style="left: -25px; top: 0;">
+                            <div class="icon-shape icon-xs rounded-circle bg-info text-white"><i class="ti ti-brain fs-6"></i></div>
+                        </div>
+                        <h6 class="mb-1">Analyse SyfonuMatch effectuée</h6>
+                        <p class="small text-secondary mb-0">Score : {{ job_application.aiScore }}% • {{ job_application.aiAnalyzedAt|date('d/m/Y H:i') }}</p>
+                    </div>
+                    {% endif %}
+
+                    {# Entretiens #}
+                    {% for interview in job_application.interviews|sort((a,b) => a.scheduledAt <=> b.scheduledAt) %}
+                    <div class="mb-6 position-relative">
+                        <div class="position-absolute translate-middle-x" style="left: -25px; top: 0;">
+                            <div class="icon-shape icon-xs rounded-circle bg-{{ interview.status == 'Réalisée' ? 'success' : (interview.status == 'Annulée' ? 'danger' : 'warning') }} text-white">
+                                <i class="ti ti-{{ interview.status == 'Réalisée' ? 'check' : (interview.status == 'Annulée' ? 'x' : 'calendar') }} fs-6"></i>
+                            </div>
+                        </div>
+                        <h6 class="mb-1">Entretien {{ loop.index }} : {{ interview.status }}</h6>
+                        <p class="small text-secondary mb-1">Prévu le {{ interview.scheduledAt|date('d/m/Y à H:i') }}</p>
+                        {% if interview.outcome %}
+                            <div class="badge bg-{{ interview.outcome == 'ACCEPTED' ? 'success' : 'danger' }}-subtle text-{{ interview.outcome == 'ACCEPTED' ? 'success' : 'danger' }} small">
+                                Verdict : {{ interview.outcome }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    {# Rejet #}
+                    {% if job_application.status == 'REJECTED' %}
+                    <div class="mb-0 position-relative">
+                        <div class="position-absolute translate-middle-x" style="left: -25px; top: 0;">
+                            <div class="icon-shape icon-xs rounded-circle bg-danger text-white"><i class="ti ti-x fs-6"></i></div>
+                        </div>
+                        <h6 class="mb-1 text-danger">Candidature refusée</h6>
+                        <p class="small text-secondary mb-2">
+                            <strong>Motif :</strong> {{ job_application.rejectionReason|default('Non spécifié') }}
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    {# Acceptation Finale #}
+                    {% if job_application.status == 'ACCEPTED' %}
+                    <div class="mb-0 position-relative">
+                        <div class="position-absolute translate-middle-x" style="left: -25px; top: 0;">
+                            <div class="icon-shape icon-xs rounded-circle bg-success text-white"><i class="ti ti-star fs-6"></i></div>
+                        </div>
+                        <h6 class="mb-1 text-success">Candidat recruté !</h6>
+                        <p class="small text-secondary mb-0">Le candidat a été accepté pour ce poste.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
         <div class="card card-lg">
             <div class="card-body p-6">
                 <h5 class="mb-4">Détails de l'offre</h5>
@@ -114,12 +183,9 @@
                         {% endif %}
 
                         {% if job_application.status != 'REJECTED' %}
-                        <form method="post" action="{{ path('app_job_application_status', {id: job_application.id}) }}">
-                            <input type="hidden" name="status" value="REJECTED">
-                            <button type="submit" class="btn btn-danger w-100">
+                            <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#rejectionModal">
                                 <i class="ti ti-x me-1"></i> Refuser la candidature
                             </button>
-                        </form>
                         {% endif %}
 
                         <hr class="my-2">
@@ -166,17 +232,55 @@
                     </div>
                 </div>
 
-                <div class="mb-4">
-                    <h6 class="fw-bold text-dark mb-3">Résumé de l'IA</h6>
-                    <div class="p-3 bg-light rounded-3 text-secondary small lh-lg">
+                <div class="row g-3 mb-6">
+                    {% if analysis.score_breakdown is defined %}
+                        {% for key, val in analysis.score_breakdown %}
+                        <div class="col-6 col-md-3">
+                            <div class="p-3 bg-light rounded-3 text-center h-100">
+                                <div class="small text-uppercase text-secondary fw-bold mb-1" style="font-size: 0.65rem;">{{ key|replace({'technical': 'Technique', 'experience': 'Expérience', 'soft_skills': 'Soft Skills', 'potential': 'Potentiel'}) }}</div>
+                                <div class="h5 fw-bold text-primary mb-0">{{ val }}%</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="mb-5">
+                    <h6 class="fw-bold text-dark mb-3">Résumé Personnalisé</h6>
+                    <div class="p-4 bg-light rounded-4 text-secondary small lh-lg border-start border-4 border-primary shadow-sm">
                         {{ analysis.summary|default('Analyse en attente...') }}
                     </div>
                 </div>
 
+                {% if analysis.verdict is defined %}
+                <div class="row g-4 mb-5">
+                    <div class="col-md-6">
+                        <div class="p-4 bg-success-subtle rounded-4 h-100">
+                            <h6 class="fw-bold text-success mb-3 small d-flex align-items-center"><i class="ti ti-circle-check me-2"></i>Points Forts</h6>
+                            <ul class="list-unstyled mb-0 small text-success-emphasis">
+                                {% for pro in analysis.verdict.pros %}
+                                    <li class="mb-2 d-flex"><i class="ti ti-check me-2 mt-1"></i> {{ pro }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-4 bg-danger-subtle rounded-4 h-100">
+                            <h6 class="fw-bold text-danger mb-3 small d-flex align-items-center"><i class="ti ti-alert-triangle me-2"></i>Points de Vigilance</h6>
+                            <ul class="list-unstyled mb-0 small text-danger-emphasis">
+                                {% for con in analysis.verdict.cons %}
+                                    <li class="mb-2 d-flex"><i class="ti ti-minus me-2 mt-1"></i> {{ con }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
                 <div class="p-4 bg-warning-subtle rounded-4 border-start border-4 border-warning">
-                    <h6 class="fw-bold text-dark mb-2 small"><i class="ti ti-bulb me-1"></i>Recommandation Recruteur</h6>
+                    <h6 class="fw-bold text-dark mb-2 small"><i class="ti ti-bulb me-1"></i>Recommandation Stratégique</h6>
                     <p class="mb-0 text-dark-emphasis small">
-                        {{ analysis.recommendation|default('Consultez les détails pour plus d\'infos.') }}
+                        {{ analysis.recommendation|default('Analyse en cours...') }}
                     </p>
                 </div>
 
@@ -216,6 +320,32 @@
                     </a>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Rejet -->
+<div class="modal fade" id="rejectionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <form action="{{ path('app_job_application_status', {id: job_application.id}) }}" method="post">
+                <input type="hidden" name="status" value="REJECTED">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold"><i class="ti ti-x me-2"></i>Refuser la candidature</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Motif du refus (optionnel)</label>
+                        <textarea name="rejection_reason" class="form-control" rows="4" placeholder="Ex: Manque d'expérience sur React, Profil trop senior..."></textarea>
+                        <div class="form-text mt-2 small">Ce motif sera conservé dans l'historique et pourra être communiqué au candidat.</div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-danger px-4">Confirmer le refus</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
