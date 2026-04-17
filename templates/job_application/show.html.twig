@@ -242,8 +242,9 @@
             </div>
         </div>
 
-        {# Analyse IA SyfonuMatch — auto-triggered if no score yet #}
-        {% if job_application.aiScore is null and job_application.cvPath %}
+        {# Analyse IA SyfonuMatch — auto-triggered ONLY for the recruiter if no score yet and not already attempted #}
+        {% if app.user and job_application.jobOffre.user and job_application.jobOffre.user.id == app.user.id 
+           and job_application.aiScore is null and job_application.cvPath and app.request.query.get('scanned') != '1' %}
         <div class="card premium-card mb-4 text-center p-5" id="autoAnalyzeCard">
             <div class="p-3 rounded-circle d-inline-flex mx-auto mb-3" style="background:linear-gradient(135deg,#ede9fe,#dbeafe);width:72px;height:72px;align-items:center;justify-content:center;">
                 <i class="ti ti-brain text-primary" style="font-size:2rem;"></i>
@@ -256,13 +257,28 @@
             </form>
         </div>
         <script>
-            // Déclencher automatiquement l'analyse IA dès que la page est chargée
+            // Déclencher automatiquement l'analyse IA dès que la page est chargée (une seule fois pour le recruteur)
             window.addEventListener('DOMContentLoaded', function() {
                 setTimeout(function() {
-                    document.getElementById('autoAnalyzeForm').submit();
+                    let form = document.getElementById('autoAnalyzeForm');
+                    if (form) form.submit();
                 }, 800);
             });
         </script>
+        {% elseif app.user and job_application.jobOffre.user and job_application.jobOffre.user.id == app.user.id
+           and job_application.aiScore is null and job_application.cvPath and app.request.query.get('scanned') == '1' %}
+        <div class="card premium-card mb-4 text-center p-5">
+            <div class="p-3 rounded-circle d-inline-flex mx-auto mb-3" style="background:#fff1f2;width:72px;height:72px;align-items:center;justify-content:center;">
+                <i class="ti ti-alert-triangle text-danger" style="font-size:2rem;"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Analyse IA interrompue</h5>
+            <p class="text-muted small mb-4">Le scan automatique a échoué. Vous pouvez réessayer manuellement.</p>
+            <form method="post" action="{{ path('app_job_application_analyze', {id: job_application.id}) }}">
+                <button type="submit" class="btn btn-outline-primary rounded-pill px-5 fw-bold">
+                    <i class="ti ti-refresh me-2"></i>Réessayer le scan IA
+                </button>
+            </form>
+        </div>
         {% elseif job_application.aiScore is not null %}
         {% set analysis = job_application.aiAnalysis|json_decode %}
         <div class="card premium-card mb-4">

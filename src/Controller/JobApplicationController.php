@@ -140,16 +140,17 @@ class JobApplicationController extends AbstractController
     {
         $this->assertCanAccess($jobApplication);
 
-        // Extraction automatique du texte du CV pour pré-remplir la modal
+        // Extraction automatique du texte du CV UNIQUEMENT si l'analyse n'a pas encore été faite
+        // Cela accélère le chargement de la page pour les dossiers déjà traités
         $extractedCvText = null;
-        if ($jobApplication->getCvPath()) {
+        if ($jobApplication->getCvPath() && $jobApplication->getAiScore() === null) {
             try {
                 $text = $cvParser->extractTextFromPdf($jobApplication->getCvPath());
                 if ($text && !str_starts_with($text, 'Erreur') && strlen(trim($text)) > 10) {
                     $extractedCvText = $text;
                 }
             } catch (\Exception $e) {
-                // Silencieux — le textarea restera vide si l'extraction échoue
+                // Silencieux
             }
         }
 
@@ -266,7 +267,7 @@ class JobApplicationController extends AbstractController
         
         if (isset($result['error'])) {
             $this->addFlash('danger', "Échec du scan IA : " . $result['error']);
-            return $this->redirectToRoute('app_job_application_show', ['id' => $jobApplication->getId()]);
+            return $this->redirectToRoute('app_job_application_show', ['id' => $jobApplication->getId(), 'scanned' => 1]);
         }
         $jobApplication->setAiScore($result['score']);
         $jobApplication->setAiAnalysis(json_encode($result, JSON_UNESCAPED_UNICODE));
