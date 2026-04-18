@@ -13,7 +13,7 @@
 
 <div class="card card-lg mb-4 mt-1">
     <div class="card-body py-3">
-        <form method="get" action="{{ path('app_friends_index') }}" class="row g-2 align-items-end" role="search">
+        <form method="get" action="{{ path('app_friends_index') }}" class="row g-2 align-items-end" role="search" id="friendsSearchForm">
             <div class="col-md-8 col-lg-6">
                 <label for="friendSearchInput" class="form-label small text-secondary mb-1">Rechercher des membres ou filtrer vos amis</label>
                 <div class="input-group">
@@ -30,7 +30,7 @@
                 <button type="submit" class="btn btn-primary w-100">Rechercher</button>
             </div>
             {% if search_query != '' %}
-                <div class="col-12 small text-secondary">
+                <div class="col-12 small text-secondary" id="friendSearchSummary">
                     Filtre actif : <strong>{{ search_query }}</strong>
                     — {{ friends|length }} ami(s) affiché(s), {{ directory|length }} profil(s) dans l’annuaire.
                 </div>
@@ -79,7 +79,9 @@
             </div>
             <ul class="list-group list-group-flush">
                 {% for f in friends %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2"
+                        data-friend-row
+                        data-search="{{ (f.firstName|default('') ~ ' ' ~ f.lastName|default('') ~ ' ' ~ f.email)|lower }}">
                         <div>
                             <strong>{{ f.firstName|default('') }} {{ f.lastName|default('') }}</strong>
                             <span class="text-secondary small d-block">{{ f.email }}</span>
@@ -135,7 +137,8 @@
                     </thead>
                     <tbody>
                         {% for u in directory %}
-                            <tr>
+                            <tr data-directory-row
+                                data-search="{{ (u.firstName|default('') ~ ' ' ~ u.lastName|default('') ~ ' ' ~ u.email)|lower }}">
                                 <td>
                                     <strong>{{ u.firstName|default('') }} {{ u.lastName|default('') }}</strong>
                                     <span class="text-secondary small d-block">{{ u.email }}</span>
@@ -173,4 +176,84 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        (() => {
+            const input = document.getElementById('friendSearchInput');
+            if (!input) {
+                return;
+            }
+
+            const normalize = (value) => (value || '')
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .trim();
+
+            const friendRows = Array.from(document.querySelectorAll('[data-friend-row]'));
+            const directoryRows = Array.from(document.querySelectorAll('[data-directory-row]'));
+            const friendEmpty = document.querySelector('#section-friends .list-group-item.text-secondary.small');
+            const directoryEmpty = document.querySelector('#section-directory tbody tr td.text-secondary.small')?.closest('tr') || null;
+            const summary = document.getElementById('friendSearchSummary');
+            const form = document.getElementById('friendsSearchForm');
+            const submitButton = form ? form.querySelector('button[type="submit"]') : null;
+            const clearButton = form ? form.querySelector('a.btn.btn-outline-secondary') : null;
+
+            const applyFilter = () => {
+                const query = normalize(input.value);
+                let visibleFriends = 0;
+                let visibleDirectory = 0;
+
+                friendRows.forEach((row) => {
+                    const haystack = normalize(row.getAttribute('data-search'));
+                    const visible = query === '' || haystack.includes(query);
+                    row.classList.toggle('d-none', !visible);
+                    if (visible) {
+                        visibleFriends++;
+                    }
+                });
+
+                directoryRows.forEach((row) => {
+                    const haystack = normalize(row.getAttribute('data-search'));
+                    const visible = query === '' || haystack.includes(query);
+                    row.classList.toggle('d-none', !visible);
+                    if (visible) {
+                        visibleDirectory++;
+                    }
+                });
+
+                if (friendEmpty) {
+                    friendEmpty.classList.toggle('d-none', visibleFriends > 0);
+                }
+
+                if (directoryEmpty) {
+                    directoryEmpty.classList.toggle('d-none', visibleDirectory > 0);
+                }
+
+                if (summary) {
+                    summary.innerHTML = query === ''
+                        ? ''
+                        : `Filtre actif : <strong>${input.value}</strong> — ${visibleFriends} ami(s) affiché(s), ${visibleDirectory} profil(s) dans l’annuaire.`;
+                    summary.classList.toggle('d-none', query === '');
+                }
+
+                if (submitButton) {
+                    submitButton.classList.add('btn-outline-primary');
+                    submitButton.classList.remove('btn-primary');
+                    submitButton.textContent = 'Filtre en direct';
+                }
+
+                if (clearButton) {
+                    clearButton.classList.toggle('d-none', query === '');
+                    clearButton.setAttribute('href', '{{ path('app_friends_index') }}');
+                }
+            };
+
+            input.addEventListener('input', applyFilter);
+            applyFilter();
+        })();
+    </script>
 {% endblock %}

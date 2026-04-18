@@ -63,12 +63,25 @@
                                     <input type="password" class="form-control" id="regPassword" name="password" required/>
                                 </div>
 
-                                <div class="mb-4">
+                                <div class="mb-3">
                                     <label for="regRole" class="form-label">Rôle</label>
                                     <select class="form-select" id="regRole" name="role">
                                         <option value="Candidat">Candidat</option>
                                         <option value="Recruteur">Recruteur</option>
                                     </select>
+                                </div>
+
+                                <div class="mb-4 border rounded p-3 bg-body-secondary bg-opacity-25 d-none" id="recruiterFields" aria-live="polite">
+                                    <p class="small text-secondary mb-3 mb-md-2">En tant que recruteur, renseignez l’identité de l’entreprise. Votre compte sera activé après validation par un administrateur.</p>
+                                    <div class="mb-3">
+                                        <label for="regCompanyName" class="form-label">Nom de l’entreprise <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="regCompanyName" name="companyname" maxlength="255" autocomplete="organization"/>
+                                    </div>
+                                    <div class="mb-0">
+                                        <label for="regCompanyRne" class="form-label">RNE / SIREN / SIRET <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="regCompanyRne" name="companyRne" maxlength="32" inputmode="text" autocomplete="off" placeholder="ex. 123456789 ou 12345678901234"/>
+                                        <div class="form-text">SIREN (9 chiffres), SIRET (14 chiffres) ou identifiant alphanumérique sans espaces.</div>
+                                    </div>
                                 </div>
 
                                 <div class="d-grid">
@@ -84,5 +97,21 @@
 </main>
 {% block javascripts %}
     <script src="{{ asset('dasher/js/vendors/password.js') }}"></script>
+    <script>
+    (function () {
+        var role = document.getElementById('regRole');
+        var box = document.getElementById('recruiterFields');
+        var company = document.getElementById('regCompanyName');
+        var rne = document.getElementById('regCompanyRne');
+        function sync() {
+            var isRec = role && role.value === 'Recruteur';
+            if (!box) return;
+            box.classList.toggle('d-none', !isRec);
+            if (company) { company.required = isRec; if (!isRec) company.value = ''; }
+            if (rne) { rne.required = isRec; if (!isRec) rne.value = ''; }
+        }
+        if (role) { role.addEventListener('change', sync); sync(); }
+    })();
+    </script>
 {% endblock %}
 {% endblock %}

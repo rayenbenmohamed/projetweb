@@ -27,6 +27,7 @@ class AdminDashboardController extends AbstractController
             'count_offres' => $jobOffreRepo->count([]),
             'count_applications' => $appRepo->count([]),
             'count_contracts' => $contractRepo->count([]),
+            'count_pending_recruiters' => $userRepo->countPendingRecruiters(),
             'latest_jobs' => $jobOffreRepo->findBy([], ['createdAt' => 'DESC'], 5),
         ]);
     }

@@ -13,7 +13,7 @@
             <span class="fs-3 lh-1 text-danger" aria-hidden="true"><i class="ti ti-lock-exclamation"></i></span>
             <div class="flex-grow-1 pt-1">
                 <strong class="d-block mb-2">Connexion impossible</strong>
-                <p class="mb-0 small">{{ custom[key]|default('La connexion a échoué. Réessayez ou contactez le support si le problème continue.') }}</p>
+                <p class="mb-0 small">{{ custom[key]|default(error.message|default('La connexion a échoué. Réessayez ou contactez le support si le problème continue.')) }}</p>
             </div>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
         </div>

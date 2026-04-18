@@ -23,14 +23,22 @@ security:
         main:
             lazy: true
             provider: app_user_provider
+            user_checker: App\Security\UserChecker
             form_login:
                 login_path: app_login
                 check_path: app_login
                 enable_csrf: true
                 success_handler: App\Security\AuthenticationSuccessHandler
+            remember_me:
+                secret: '%kernel.secret%'
+                lifetime: 2592000
+                path: /
+                name: SYFONURH_REMEMBER
+                always_remember_me: false
             logout:
                 path: app_logout
                 target: app_home
+                invalidate_session: true
 
     access_control:
         - { path: ^/admin, roles: ROLE_ADMIN }
@@ -39,13 +47,13 @@ security:
         - { path: ^/$, roles: PUBLIC_ACCESS }
         - { path: ^/job/offre$, roles: PUBLIC_ACCESS }
         - { path: '^/job/offre/[0-9]+$', roles: PUBLIC_ACCESS, methods: [GET] }
-        - { path: ^/job/offre/new, roles: IS_AUTHENTICATED_FULLY }
-        - { path: '^/job/offre/[0-9]+/edit$', roles: IS_AUTHENTICATED_FULLY }
-        - { path: ^/app, roles: IS_AUTHENTICATED_FULLY }
-        - { path: ^/cv, roles: IS_AUTHENTICATED_FULLY }
-        - { path: ^/job/application, roles: IS_AUTHENTICATED_FULLY }
-        - { path: ^/interview, roles: IS_AUTHENTICATED_FULLY }
-        - { path: ^/contract, roles: IS_AUTHENTICATED_FULLY }
-        - { path: ^/notification, roles: IS_AUTHENTICATED_FULLY }
-        - { path: ^/forum, roles: IS_AUTHENTICATED_FULLY }
-        - { path: '^/job/offre/[0-9]+$', roles: IS_AUTHENTICATED_FULLY, methods: [POST] }
+        - { path: ^/job/offre/new, roles: IS_AUTHENTICATED_REMEMBERED }
+        - { path: '^/job/offre/[0-9]+/edit$', roles: IS_AUTHENTICATED_REMEMBERED }
+        - { path: ^/app, roles: IS_AUTHENTICATED_REMEMBERED }
+        - { path: ^/cv, roles: IS_AUTHENTICATED_REMEMBERED }
+        - { path: ^/job/application, roles: IS_AUTHENTICATED_REMEMBERED }
+        - { path: ^/interview, roles: IS_AUTHENTICATED_REMEMBERED }
+        - { path: ^/contract, roles: IS_AUTHENTICATED_REMEMBERED }
+        - { path: ^/notification, roles: IS_AUTHENTICATED_REMEMBERED }
+        - { path: ^/forum, roles: IS_AUTHENTICATED_REMEMBERED }
+        - { path: '^/job/offre/[0-9]+$', roles: IS_AUTHENTICATED_REMEMBERED, methods: [POST] }

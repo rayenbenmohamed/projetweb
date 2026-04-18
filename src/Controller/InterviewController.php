@@ -23,7 +23,7 @@ class InterviewController extends AbstractController
     }
 
     #[Route('/new/{jobApplication}', name: 'app_interview_new', methods: ['GET', 'POST'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[IsGranted('IS_AUTHENTICATED_REMEMBERED')]
     public function new(Request $request, JobApplication $jobApplication, EntityManagerInterface $entityManager): Response
     {
         /** @var \App\Entity\User $user */
@@ -80,7 +80,7 @@ class InterviewController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_interview_edit', methods: ['GET', 'POST'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[IsGranted('IS_AUTHENTICATED_REMEMBERED')]
     public function edit(Request $request, Interview $interview, EntityManagerInterface $entityManager): Response
     {
         /** @var \App\Entity\User $user */
@@ -133,7 +133,7 @@ class InterviewController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_interview_delete', methods: ['POST'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[IsGranted('IS_AUTHENTICATED_REMEMBERED')]
     public function delete(Request $request, Interview $interview, EntityManagerInterface $entityManager): Response
     {
         $this->assertIsOwner($interview);
@@ -148,7 +148,7 @@ class InterviewController extends AbstractController
     }
 
     #[Route('/{id}/confirm', name: 'app_interview_confirm', methods: ['POST'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[IsGranted('IS_AUTHENTICATED_REMEMBERED')]
     public function confirm(Request $request, Interview $interview, EntityManagerInterface $entityManager): Response
     {
         /** @var \App\Entity\User $user */
@@ -181,7 +181,7 @@ class InterviewController extends AbstractController
     }
 
     #[Route('/{id}/video', name: 'app_interview_video', methods: ['GET'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[IsGranted('IS_AUTHENTICATED_REMEMBERED')]
     public function video(Interview $interview): Response
     {
         /** @var \App\Entity\User $user */
@@ -204,7 +204,7 @@ class InterviewController extends AbstractController
     }
 
     #[Route('/{id}/show', name: 'app_interview_show', methods: ['GET'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[IsGranted('IS_AUTHENTICATED_REMEMBERED')]
     public function show(Interview $interview): Response
     {
         /** @var \App\Entity\User $user */

@@ -17,7 +17,7 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInt
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/app/profile')]
-#[IsGranted('IS_AUTHENTICATED_FULLY')]
+#[IsGranted('IS_AUTHENTICATED_REMEMBERED')]
 class ProfileController extends AbstractController
 {
     #[Route('', name: 'app_profile', methods: ['GET', 'POST'])]
@@ -54,7 +54,7 @@ class ProfileController extends AbstractController
             }
 
             $plainPassword = (string) $request->request->get('password');
-            if ($plainPassword !== '' && strlen($plainPassword) < 4) {
+            if ($plainPassword !== '' && strlen($plainPassword) < 6) {
                 $this->addFlash('error', 'Si vous changez le mot de passe, il doit comporter au moins 4 caractères.');
 
                 return $this->redirectToRoute('app_profile');

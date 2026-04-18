@@ -32,6 +32,25 @@ class FriendMessageRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * Messages plus récents que $afterId (strictement), ordre chronologique.
+     *
+     * @return FriendMessage[]
+     */
+    public function findConversationAfter(User $a, User $b, int $afterId, int $limit = 50): array
+    {
+        return $this->createQueryBuilder('m')
+            ->where('(m.sender = :a AND m.recipient = :b) OR (m.sender = :b AND m.recipient = :a)')
+            ->andWhere('m.id > :after')
+            ->setParameter('a', $a)
+            ->setParameter('b', $b)
+            ->setParameter('after', $afterId)
+            ->orderBy('m.id', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function countUnreadForRecipient(User $recipient): int
     {
         return (int) $this->createQueryBuilder('m')

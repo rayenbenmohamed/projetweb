@@ -49,6 +49,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: "datetime", nullable: true)]
     private ?\DateTimeInterface $resetTokenExpiry = null;
 
+    /** Compte bloqué par un admin : connexion refusée jusqu’au déverrouillage. */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $blocked = false;
+
+    /**
+     * Compte recruteur validé par un admin (inscription publique = false jusqu’à approbation).
+     * Candidats et admins : true par défaut.
+     */
+    #[ORM\Column(options: ['default' => true])]
+    private bool $approved = true;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -190,6 +201,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setResetTokenExpiry(?\DateTimeInterface $resetTokenExpiry): self
     {
         $this->resetTokenExpiry = $resetTokenExpiry;
+        return $this;
+    }
+
+    public function isBlocked(): bool
+    {
+        return $this->blocked;
+    }
+
+    public function setBlocked(bool $blocked): self
+    {
+        $this->blocked = $blocked;
+
+        return $this;
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->approved;
+    }
+
+    public function setApproved(bool $approved): self
+    {
+        $this->approved = $approved;
+
         return $this;
     }
 }

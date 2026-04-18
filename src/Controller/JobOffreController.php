@@ -38,7 +38,7 @@ class JobOffreController extends AbstractController
 
     /** Mes offres : seulement les offres du user connecté */
     #[Route('/mes-offres', name: 'app_job_offre_my', methods: ['GET'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[IsGranted('IS_AUTHENTICATED_REMEMBERED')]
     public function myOffers(JobOffreRepository $jobOffreRepository): Response
     {
         $myOffres = $jobOffreRepository->findBy(
@@ -52,7 +52,7 @@ class JobOffreController extends AbstractController
     }
 
     #[Route('/new', name: 'app_job_offre_new', methods: ['GET', 'POST'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[IsGranted('IS_AUTHENTICATED_REMEMBERED')]
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
         $jobOffre = new JobOffre();
@@ -106,7 +106,7 @@ class JobOffreController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_job_offre_edit', methods: ['GET', 'POST'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[IsGranted('IS_AUTHENTICATED_REMEMBERED')]
     public function edit(Request $request, JobOffre $jobOffre, EntityManagerInterface $entityManager): Response
     {
         // Seul le propriétaire peut modifier
@@ -144,7 +144,7 @@ class JobOffreController extends AbstractController
     }
 
     #[Route('/{id}/duplicate', name: 'app_job_offre_duplicate', methods: ['POST'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[IsGranted('IS_AUTHENTICATED_REMEMBERED')]
     public function duplicate(Request $request, JobOffre $jobOffre, EntityManagerInterface $entityManager): Response
     {
         if (!$this->isCsrfTokenValid('duplicate' . $jobOffre->getId(), $request->request->get('_token'))) {
@@ -178,7 +178,7 @@ class JobOffreController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_job_offre_delete', methods: ['POST'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[IsGranted('IS_AUTHENTICATED_REMEMBERED')]
     public function delete(Request $request, JobOffre $jobOffre, EntityManagerInterface $entityManager): Response
     {
         /** @var \App\Entity\User $user */
