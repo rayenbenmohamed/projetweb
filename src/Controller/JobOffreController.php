@@ -80,6 +80,16 @@ class JobOffreController extends AbstractController
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function new(Request $request, EntityManagerInterface $entityManager, AvantageRepository $avantageRepository, ValidatorInterface $validator, CloudinaryUploader $uploader): Response
     {
+        /** @var \App\Entity\User $user */
+        $user = $this->getUser();
+        $entreprise = $user->getEntreprise();
+
+        // ── LOGIQUE : L'utilisateur DOIT avoir une entreprise pour créer un job ──
+        if (!$entreprise) {
+            $this->addFlash('info', 'Veuillez enregistrer votre entreprise avant de publier une offre.');
+            return $this->redirectToRoute('app_entreprise_new');
+        }
+
         $jobOffre = new JobOffre();
         $avantages = $avantageRepository->findAll();
         $errors = [];
@@ -95,8 +105,11 @@ class JobOffreController extends AbstractController
             $jobOffre->setAdvantages($request->request->get('advantages') ?: null);
             $jobOffre->setSalaryNegotiable($request->request->get('is_salary_negotiable') === 'on');
             $jobOffre->setSkills($request->request->get('skills') ?: null);
+            
+            // On lie automatiquement à l'entreprise du recruteur
+            $jobOffre->setEntreprise($entreprise);
 
-            // Dates
+            // Dates ... (le reste du code est identique)
             $publishedAtRaw = $request->request->get('published_at');
             $jobOffre->setPublishedAt($publishedAtRaw ? new \DateTime($publishedAtRaw) : new \DateTime());
 
@@ -269,6 +282,11 @@ class JobOffreController extends AbstractController
             $jobOffre->setAdvantages($request->request->get('advantages') ?: null);
             $jobOffre->setSalaryNegotiable($request->request->get('is_salary_negotiable') === 'on');
             $jobOffre->setSkills($request->request->get('skills') ?: null);
+
+            // On s'assure que l'entreprise est bien liée (sécurité)
+            if ($user->getEntreprise()) {
+                $jobOffre->setEntreprise($user->getEntreprise());
+            }
 
             // Dates
             if ($request->request->get('published_at')) {

@@ -11,21 +11,26 @@
         {# En-tête de l'offre #}
         <div class="card card-lg mb-4">
             <div class="card-body p-6">
-                <div class="d-flex justify-content-between align-items-start mb-4">
                     <div class="d-flex gap-3 align-items-center">
-                        {% if job_offre.companyLogo %}
+                        {% if job_offre.entreprise and job_offre.entreprise.logo %}
+                        <div class="flex-shrink-0">
+                            <img src="{{ job_offre.entreprise.logo }}" alt="Logo {{ job_offre.entreprise.name }}"
+                                 style="width:82px;height:82px;object-fit:cover;border-radius:18px;border:2.5px solid #eef0f8;box-shadow:0 4px 18px rgba(92,103,245,.14);">
+                        </div>
+                        {% elseif job_offre.companyLogo %}
                         <div class="flex-shrink-0">
                             <img src="{{ job_offre.companyLogo }}" alt="Logo {{ job_offre.title }}"
                                  style="width:82px;height:82px;object-fit:cover;border-radius:18px;border:2.5px solid #eef0f8;box-shadow:0 4px 18px rgba(92,103,245,.14);">
                         </div>
                         {% else %}
-                        <div class="icon-shape icon-xl rounded-3 bg-primary-subtle text-primary">
-                            <i class="ti ti-briefcase fs-2"></i>
+                        <div class="icon-shape icon-xl rounded-4 bg-primary-subtle text-primary">
+                            <i class="ti ti-building fs-2"></i>
                         </div>
                         {% endif %}
                         <div>
                             <h2 class="mb-1 fs-4 fw-bold">{{ job_offre.title }}</h2>
                             <div class="d-flex flex-wrap gap-3 text-secondary small">
+                                <span class="fw-bold text-primary"><i class="ti ti-building me-1"></i>{{ job_offre.entreprise.name|default('Entreprise') }}</span>
                                 {% if job_offre.location %}
                                 <span><i class="ti ti-map-pin me-1"></i>{{ job_offre.location }}</span>
                                 {% endif %}
@@ -144,16 +149,49 @@
         {% if job_offre.skills %}
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="card-title mb-0"><i class="ti ti-bulb me-2"></i>Compétences attendues (Skills)</h5>
+                <h5 class="card-title mb-0"><i class="ti ti-bulb me-2"></i>Compétences attendues & Niveaux</h5>
             </div>
             <div class="card-body">
-                <div class="d-flex flex-wrap gap-2">
-                    {% for skill in job_offre.skills|split(',') %}
-                        {% set skill = skill|trim %}
-                        {% if skill %}
-                        <span class="badge bg-info-subtle text-info-emphasis px-3 py-2 rounded-pill fs-6">
-                            {{ skill }}
-                        </span>
+                <div class="row g-4">
+                    {% for skill_part in job_offre.skills|split(',') %}
+                        {% set skill_part = skill_part|trim %}
+                        {% if skill_part %}
+                            {# Tenter d'extraire le nom et le pourcentage si présent #}
+                            {% set name = skill_part %}
+                            {% set percent = null %}
+
+                            {# Vérifier sil y a des parenthèses #}
+                            {% if '(' in skill_part and ')' in skill_part %}
+                                {% set name_percent = skill_part|split('(') %}
+                                {% set name = name_percent[0]|trim %}
+                                {% set percent_raw = name_percent[1]|split(')') %}
+                                {% set percent = percent_raw[0]|replace({'%': ''})|trim %}
+                            {% endif %}
+
+                            <div class="col-md-6">
+                                <div class="skill-display-item mb-1">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="fw-semibold text-dark">{{ name }}</span>
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill" style="font-size: 0.7rem;">
+                                            {{ percent is not null ? percent ~ '%' : 'Requis' }}
+                                        </span>
+                                    </div>
+                                    {% if percent is not null %}
+                                    <div class="progress" style="height: 6px; background-color: #f1f5f9; border-radius: 10px; overflow: hidden;">
+                                        <div class="progress-bar progress-bar-animated" 
+                                             role="progressbar" 
+                                             style="width: {{ percent }}%; background: linear-gradient(90deg, #5c67f5, #8892f7); transition: width 1s ease-in-out;" 
+                                             aria-valuenow="{{ percent }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100"></div>
+                                    </div>
+                                    {% else %}
+                                    <div class="progress" style="height: 6px; background-color: #f1f5f9; border-radius: 10px;">
+                                        <div class="progress-bar" role="progressbar" style="width: 100%; background-color: #94a3b8;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
                         {% endif %}
                     {% endfor %}
                 </div>
@@ -262,6 +300,38 @@
                 </div>
             </div>
         </div>
+
+        {# Entreprise Profile #}
+        {% if job_offre.entreprise %}
+        <div class="card mb-4 border-0 shadow-sm overflow-hidden">
+            <div class="card-header bg-light d-flex align-items-center justify-content-between">
+                <h5 class="card-title mb-0 small text-uppercase fw-bold text-secondary">À propos de l'entreprise</h5>
+                {% if job_offre.entreprise.website %}
+                    <a href="{{ job_offre.entreprise.website }}" target="_blank" class="small fw-bold text-primary text-decoration-none">Site Web <i class="ti ti-external-link"></i></a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="avatar avatar-lg rounded-3 bg-white border p-1" style="width:54px;height:54px;">
+                        {% if job_offre.entreprise.logo %}
+                            <img src="{{ job_offre.entreprise.logo }}" alt="{{ job_offre.entreprise.name }}" class="w-100 h-100 object-fit-cover rounded-2">
+                        {% else %}
+                            <div class="w-100 h-100 d-flex align-items-center justify-content-center text-primary bg-primary-subtle rounded-2">
+                                <i class="ti ti-building fs-3"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h6 class="mb-0 fw-bold">{{ job_offre.entreprise.name }}</h6>
+                        <span class="small text-secondary"><i class="ti ti-map-pin me-1"></i>{{ job_offre.entreprise.address|default('Localisation non précisée') }}</span>
+                    </div>
+                </div>
+                <p class="small text-secondary mb-0 lh-base">
+                    {{ job_offre.entreprise.description|slice(0, 200) }}{{ job_offre.entreprise.description|length > 200 ? '...' : '' }}
+                </p>
+            </div>
+        </div>
+        {% endif %}
 
         {# Recruteur #}
         <div class="card mb-4">

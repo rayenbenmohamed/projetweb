@@ -1,0 +1,107 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Profil Entreprise | SyfonuRH{% endblock %}
+{% block page_title %}Mon Entreprise{% endblock %}
+
+{% block content %}
+<div class="row g-6 mt-2 justify-content-center">
+    <div class="col-xl-8">
+        <div class="card border-0 shadow-sm overflow-hidden mb-4">
+            <div class="card-body p-0">
+                <div class="p-6 bg-primary bg-opacity-10 d-sm-flex align-items-center gap-5">
+                    <div class="flex-shrink-0">
+                        {% if entreprise.logo %}
+                            <img src="{{ entreprise.logo }}" alt="{{ entreprise.name }}" 
+                                 class="rounded-4 border bg-white p-1" style="width:120px;height:120px;object-fit:cover;box-shadow:0 8px 30px rgba(0,0,0,0.05);">
+                        {% else %}
+                            <div class="icon-shape icon-xxl rounded-4 bg-white border text-primary shadow-sm" style="width:120px;height:120px;">
+                                <i class="ti ti-building fs-1"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mt-4 mt-sm-0 flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h2 class="fw-bold mb-1" style="color:#1e2343;">{{ entreprise.name }}</h2>
+                                <div class="d-flex flex-wrap gap-4 text-secondary small">
+                                    {% if entreprise.website %}
+                                        <span><i class="ti ti-world me-1"></i><a href="{{ entreprise.website }}" target="_blank" class="text-secondary">{{ entreprise.website|replace({'https://': '', 'http://': ''}) }}</a></span>
+                                    {% endif %}
+                                    {% if entreprise.address %}
+                                        <span><i class="ti ti-map-pin me-1"></i>{{ entreprise.address }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <a href="{{ path('app_entreprise_edit') }}" class="btn btn-white btn-sm border shadow-sm">
+                                <i class="ti ti-edit me-1"></i>Modifier
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <h5 class="fw-bold mb-3"><i class="ti ti-info-circle me-2 text-primary"></i>À propos</h5>
+                    <div class="text-secondary lh-lg mb-0">
+                        {{ entreprise.description ? entreprise.description|nl2br : "Aucune description fournie." }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center p-4">
+                <h5 class="card-title mb-0 fw-bold"><i class="ti ti-briefcase me-2 text-success"></i>Offres d'emploi ({{ entreprise.jobOffres|length }})</h5>
+                <a href="{{ path('app_job_offre_new') }}" class="btn btn-primary btn-sm">
+                    <i class="ti ti-plus me-1"></i>Nouvelle offre
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if entreprise.jobOffres|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light-subtle small text-uppercase fw-bold text-secondary">
+                            <tr>
+                                <th class="px-4 py-3">Titre</th>
+                                <th class="py-3 text-center">Type</th>
+                                <th class="py-3 text-center">Date</th>
+                                <th class="py-3 text-center">Candidatures</th>
+                                <th class="px-4 py-3 text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for job in entreprise.jobOffres %}
+                            <tr>
+                                <td class="px-4">
+                                    <div class="fw-bold text-dark">{{ job.title }}</div>
+                                    <div class="small text-secondary">{{ job.location }}</div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill">{{ job.employmentType }}</span>
+                                </td>
+                                <td class="text-center small text-secondary">
+                                    {{ job.createdAt|date('d/m/Y') }}
+                                </td>
+                                <td class="text-center">
+                                    <div class="badge bg-info-subtle text-info fw-bold">{{ job.jobApplications|length }}</div>
+                                </td>
+                                <td class="px-4 text-end">
+                                    <a href="{{ path('app_job_offre_show', {id: job.id}) }}" class="btn btn-icon btn-light btn-sm rounded-circle">
+                                        <i class="ti ti-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-6 text-center text-secondary opacity-75">
+                    <i class="ti ti-ghost fs-1 d-block mb-2"></i>
+                    <p>Aucune offre publiée pour le moment.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

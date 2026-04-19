@@ -49,6 +49,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: "datetime", nullable: true)]
     private ?\DateTimeInterface $resetTokenExpiry = null;
 
+    #[ORM\OneToOne(mappedBy: 'user', targetEntity: Entreprise::class, cascade: ['persist', 'remove'])]
+    private ?Entreprise $entreprise = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -190,6 +193,23 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setResetTokenExpiry(?\DateTimeInterface $resetTokenExpiry): self
     {
         $this->resetTokenExpiry = $resetTokenExpiry;
+        return $this;
+    }
+
+    public function getEntreprise(): ?Entreprise
+    {
+        return $this->entreprise;
+    }
+
+    public function setEntreprise(Entreprise $entreprise): self
+    {
+        // set the owning side of the relation if necessary
+        if ($entreprise->getUser() !== $this) {
+            $entreprise->setUser($this);
+        }
+
+        $this->entreprise = $entreprise;
+
         return $this;
     }
 }

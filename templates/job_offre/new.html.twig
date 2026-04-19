@@ -49,6 +49,137 @@
     box-shadow: 0 0 0 4px rgba(92,103,245,.18), 0 6px 24px rgba(92,103,245,.2);
 }
 .logo-ring-wrapper:hover .logo-ring-overlay { opacity: 1; }
+
+/* ── Modern Skills Scanner ────────────────────────── */
+.skills-scanner-container {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1.5px solid #eef0f8;
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.skills-input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+}
+
+.skill-tag-card {
+    background: #ffffff;
+    border: 1px solid #e0e4f0;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    animation: skillSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    overflow: hidden;
+}
+
+.skill-tag-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(92, 103, 245, 0.05), transparent);
+    animation: skillScan 3s infinite;
+}
+
+@keyframes skillScan {
+    0% { left: -100%; }
+    100% { left: 200%; }
+}
+
+@keyframes skillSlideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.skill-name {
+    font-weight: 600;
+    color: #1e2343;
+    min-width: 100px;
+    font-size: 0.9rem;
+}
+
+.skill-slider-wrapper {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.skill-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 5px;
+    background: #eef0ff;
+    outline: none;
+    cursor: pointer;
+}
+
+.skill-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #5c67f5;
+    cursor: pointer;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 6px rgba(92,103,245,0.4);
+    transition: transform 0.2s;
+}
+
+.skill-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.skill-percent {
+    font-weight: 700;
+    color: #5c67f5;
+    font-size: 0.85rem;
+    min-width: 45px;
+    text-align: right;
+}
+
+.btn-remove-skill {
+    color: #ff5b5b;
+    background: #fff5f5;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1rem;
+}
+
+.btn-remove-skill:hover {
+    background: #ff5b5b;
+    color: #fff;
+}
+
+.empty-skills-msg {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 1rem;
+    border: 1px dashed #e2e8f0;
+    border-radius: 12px;
+}
+
 </style>
 {% endblock %}
 
@@ -225,10 +356,37 @@
 
                     <div class="row g-4 mb-4">
                         <div class="col-12">
-                            <label class="form-label">Compétences / Skills (Pour Matching)</label>
-                            <input type="text" name="skills" class="form-control {% if errors.skills is defined %}is-invalid{% endif %}" placeholder="Ex: PHP, Symfony, React..." value="{{ job_offre.skills|default('') }}">
+                            <label class="form-label d-flex justify-content-between align-items-center">
+                                Compétences & Matching
+                                <span class="badge bg-primary-subtle text-primary fw-600" style="font-size:0.65rem;">SCANNER DE COMPÉTENCES</span>
+                            </label>
+                            
+                            <div class="skills-scanner-container">
+                                <div class="skills-input-group">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white border-end-0 text-secondary">
+                                            <i class="ti ti-search" style="font-size: 1.1rem;"></i>
+                                        </span>
+                                        <input type="text" id="skill-input" class="form-control border-start-0 ps-0" placeholder="Ajouter une compétence (ex: Symfony, React...)" aria-label="Skill name">
+                                        <button class="btn btn-primary px-4" type="button" id="btn-add-skill">
+                                            <i class="ti ti-plus me-1"></i>Ajouter
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="skills-list" class="skills-grid">
+                                    {# Les cartes de compétences seront injectées ici par JS #}
+                                    <div class="empty-skills-msg">
+                                        <i class="ti ti-info-circle me-1"></i>Aucune compétence ajoutée. Tapez un nom et cliquez sur Ajouter.
+                                    </div>
+                                </div>
+                            </div>
+
+                            {# Champ caché pour la soumission réelle #}
+                            <input type="hidden" name="skills" id="hidden-skills-input" value="{{ job_offre.skills|default('') }}">
+                            
                             {% if errors.skills is defined %}
-                                <div class="invalid-feedback">{{ errors.skills }}</div>
+                                <div class="text-danger small mt-2"><i class="ti ti-alert-circle me-1"></i>{{ errors.skills }}</div>
                             {% endif %}
                         </div>
                     </div>
@@ -264,7 +422,91 @@
 {{ parent() }}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    // ── Skills Scanner Logic ─────────────────────────────
+    const skillInput = document.getElementById('skill-input');
+    const btnAddSkill = document.getElementById('btn-add-skill');
+    const skillsList = document.getElementById('skills-list');
+    const hiddenSkillsInput = document.getElementById('hidden-skills-input');
+
+    let skillsData = [];
+
+    // Initialiser depuis la valeur existante
+    const initialSkills = hiddenSkillsInput.value;
+    if (initialSkills) {
+        // Format supporté: "PHP (80%), Symfony (100%)" ou simple CSV
+        const parts = initialSkills.split(',').map(s => s.trim()).filter(s => s !== '');
+        parts.forEach(part => {
+            const match = part.match(/(.+)\s\((\d+)%\)/);
+            if (match) {
+                skillsData.push({ name: match[1], percent: parseInt(match[2]) });
+            } else {
+                skillsData.push({ name: part, percent: 100 });
+            }
+        });
+        renderSkills();
+    }
+
+    function renderSkills() {
+        if (skillsData.length === 0) {
+            skillsList.innerHTML = '<div class="empty-skills-msg"><i class="ti ti-info-circle me-1"></i>Aucune compétence ajoutée. Tapez un nom et cliquez sur Ajouter.</div>';
+            return;
+        }
+
+        skillsList.innerHTML = '';
+        skillsData.forEach((skill, index) => {
+            const card = document.createElement('div');
+            card.className = 'skill-tag-card';
+            card.innerHTML = `
+                <div class="skill-name">${skill.name}</div>
+                <div class="skill-slider-wrapper">
+                    <input type="range" class="skill-slider" min="0" max="100" value="${skill.percent}" oninput="updateSkillPercent(${index}, this.value)">
+                    <div class="skill-percent">${skill.percent}%</div>
+                </div>
+                <button type="button" class="btn-remove-skill" onclick="removeSkill(${index})">
+                    <i class="ti ti-x"></i>
+                </button>
+            `;
+            skillsList.appendChild(card);
+        });
+        updateHiddenInput();
+    }
+
+    function updateHiddenInput() {
+        const value = skillsData.map(s => `${s.name} (${s.percent}%)`).join(', ');
+        hiddenSkillsInput.value = value;
+    }
+
+    window.updateSkillPercent = (index, value) => {
+        skillsData[index].percent = parseInt(value);
+        const percentDisplay = skillsList.children[index].querySelector('.skill-percent');
+        percentDisplay.textContent = value + '%';
+        updateHiddenInput();
+    };
+
+    window.removeSkill = (index) => {
+        skillsData.splice(index, 1);
+        renderSkills();
+    };
+
+    function addSkill() {
+        const name = skillInput.value.trim();
+        if (name && !skillsData.find(s => s.name.toLowerCase() === name.toLowerCase())) {
+            skillsData.push({ name: name, percent: 100 });
+            skillInput.value = '';
+            renderSkills();
+        }
+    }
+
+    btnAddSkill.addEventListener('click', addSkill);
+    skillInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addSkill();
+        }
+    });
+
     const btnGenerate = document.getElementById('btn-generate-ai');
+
     if (btnGenerate) {
         btnGenerate.addEventListener('click', async () => {
             const btnOriginalText = btnGenerate.innerHTML;
@@ -286,14 +528,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(data)
                 });
+                
                 const result = await res.json();
-                if (result.description) {
-                    document.querySelector('textarea[name="description"]').value = result.description;
+                
+                if (result.description && result.description.length > 10) {
+                    const descField = document.querySelector('textarea[name="description"]');
+                    descField.value = result.description;
+                    // Flash effect
+                    descField.style.transition = 'background-color 0.5s';
+                    descField.style.backgroundColor = '#f0fff4';
+                    setTimeout(() => descField.style.backgroundColor = '', 1000);
                 } else if (result.error) {
-                    alert('Erreur: ' + result.error);
+                    alert('Erreur IA: ' + result.error);
+                } else {
+                    alert('L\'IA n\'a pas pu générer une description valide. Vérifiez vos informations.');
                 }
             } catch (err) {
-                alert('Erreur lors de la communication avec le serveur.');
+                console.error(err);
+                alert('Erreur de communication avec le serveur. Vérifiez la configuration (Clé Groq).');
             } finally {
                 btnGenerate.innerHTML = btnOriginalText;
                 btnGenerate.disabled = false;

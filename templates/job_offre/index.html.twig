@@ -278,11 +278,12 @@
                  data-location-raw="{{ offre.location }}">
 
                 <div class="jcard-logo">
-                    {% if offre.companyLogo %}
-                        <img src="{{ offre.companyLogo }}" alt="Logo"
-                             style="width:48px;height:48px;object-fit:cover;border-radius:12px;">
+                    {% if offre.entreprise and offre.entreprise.logo %}
+                        <img src="{{ offre.entreprise.logo }}" alt="{{ offre.entreprise.name }}">
+                    {% elseif offre.companyLogo %}
+                        <img src="{{ offre.companyLogo }}" alt="Logo">
                     {% else %}
-                        <i class="ti ti-briefcase"></i>
+                        <i class="ti ti-building-factory-2"></i>
                     {% endif %}
                 </div>
 
@@ -296,9 +297,11 @@
                         {% endif %}
                     </div>
 
-                    {% if offre.user %}
-                    {% set initials = (offre.user.firstName|slice(0,1) ~ offre.user.lastName|slice(0,1))|upper %}
-                    <div><span class="rec-chip"><span class="rec-av">{{ initials }}</span>{{ offre.user.firstName }} {{ offre.user.lastName }}</span></div>
+                    {% if offre.entreprise %}
+                        <div><span class="rec-chip"><i class="ti ti-building me-1 opacity-50"></i>{{ offre.entreprise.name }}</span></div>
+                    {% elseif offre.user %}
+                        {% set initials = (offre.user.firstName|slice(0,1) ~ offre.user.lastName|slice(0,1))|upper %}
+                        <div><span class="rec-chip"><span class="rec-av">{{ initials }}</span>{{ offre.user.firstName }} {{ offre.user.lastName }}</span></div>
                     {% endif %}
 
                     <div class="jcard-meta">

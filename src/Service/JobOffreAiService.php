@@ -100,11 +100,20 @@ PROMPT;
             'timeout' => 20,
         ]);
 
-        $responseData = $response->toArray(false); // don't throw on HTTP Error right away to check structure if needed, though default handles it
+        $responseData = $response->toArray(false);
+        
+        if (isset($responseData['error'])) {
+            throw new \RuntimeException('Groq API Error: ' . ($responseData['error']['message'] ?? 'Unknown error'));
+        }
+
         $content = $responseData['choices'][0]['message']['content'] ?? '';
         
+        if (empty($content)) {
+            throw new \RuntimeException('L\'IA n\'a pas pu générer de description. Veuillez vérifier vos données.');
+        }
+
         // Strip markdown code if accidentally added
-        $content = preg_replace('/^```(?:markdown)?\s*/i', '', trim($content));
+        $content = preg_replace('/^```(?:markdown|text)?\s*/i', '', trim($content));
         $content = preg_replace('/\s*```$/', '', $content);
         
         return $content;

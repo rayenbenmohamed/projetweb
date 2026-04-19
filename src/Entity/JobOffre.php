@@ -97,6 +97,10 @@ class JobOffre
     #[ORM\JoinColumn(name: 'user_id', nullable: true)]
     private ?User $user = null;
 
+    #[ORM\ManyToOne(targetEntity: Entreprise::class, inversedBy: 'jobOffres')]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?Entreprise $entreprise = null;
+
     #[ORM\OneToMany(mappedBy: 'jobOffre', targetEntity: JobApplication::class, cascade: ['remove'], orphanRemoval: true)]
     private Collection $jobApplications;
 
@@ -332,6 +336,17 @@ class JobOffre
     public function setSkills(?string $skills): self
     {
         $this->skills = $skills;
+        return $this;
+    }
+
+    public function getEntreprise(): ?Entreprise
+    {
+        return $this->entreprise;
+    }
+
+    public function setEntreprise(?Entreprise $entreprise): self
+    {
+        $this->entreprise = $entreprise;
         return $this;
     }
 }
