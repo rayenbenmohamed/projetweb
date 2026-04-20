@@ -1,0 +1,10 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Nouveau Modèle PDF | SyfonuRH{% endblock %}
+{% block page_title %}Créer un modèle de document{% endblock %}
+
+{% block content %}
+<div class="container-fluid animate__animated animate__fadeIn">
+    {{ include('pdf_template/_form.html.twig') }}
+</div>
+{% endblock %}

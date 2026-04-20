@@ -1,0 +1,10 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Modifier Modèle PDF | SyfonuRH{% endblock %}
+{% block page_title %}Personnalisation du modèle{% endblock %}
+
+{% block content %}
+<div class="container-fluid animate__animated animate__fadeIn">
+    {{ include('pdf_template/_form.html.twig', {'button_label': 'Mettre à jour le modèle'}) }}
+</div>
+{% endblock %}

@@ -39,8 +39,8 @@ security:
         - { path: ^/$, roles: PUBLIC_ACCESS }
         - { path: ^/job/offre$, roles: PUBLIC_ACCESS }
         - { path: '^/job/offre/[0-9]+$', roles: PUBLIC_ACCESS, methods: [GET] }
-        - { path: ^/job/offre/new, roles: IS_AUTHENTICATED_FULLY }
-        - { path: '^/job/offre/[0-9]+/edit$', roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/job/offre/new, roles: [ROLE_RECRUTEUR, ROLE_ADMIN] }
+        - { path: '^/job/offre/[0-9]+/edit$', roles: [ROLE_RECRUTEUR, ROLE_ADMIN] }
         - { path: ^/app, roles: IS_AUTHENTICATED_FULLY }
         - { path: ^/cv, roles: IS_AUTHENTICATED_FULLY }
         - { path: ^/job/application, roles: IS_AUTHENTICATED_FULLY }

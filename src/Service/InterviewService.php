@@ -42,19 +42,4 @@ class InterviewService
             ->getQuery()
             ->getResult();
     }
-
-    /**
-     * @return Interview[]
-     */
-    public function getAllInterviews(User $user): array
-    {
-        return $this->interviewRepository->createQueryBuilder('i')
-            ->join('i.application', 'a')
-            ->join('a.jobOffre', 'jo')
-            ->where('jo.user = :user OR a.candidat = :user')
-            ->setParameter('user', $user)
-            ->orderBy('i.scheduledAt', 'ASC')
-            ->getQuery()
-            ->getResult();
-    }
 }

@@ -1,0 +1,74 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Modèles PDF | SyfonuRH{% endblock %}
+{% block page_title %}Gestion des Modèles PDF{% endblock %}
+
+{% block content %}
+<div class="row mb-4 animate__animated animate__fadeIn">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="mb-0">Modèles Documentaires</h4>
+            <p class="text-secondary small">Créez et personnalisez les mises en page de vos contrats PDF</p>
+        </div>
+        <a href="{{ path('app_pdf_template_new') }}" class="btn btn-primary d-flex align-items-center gap-2">
+            <i class="ti ti-plus fs-5"></i> Nouveau Modèle
+        </a>
+    </div>
+</div>
+
+<div class="row g-4 animate__animated animate__fadeInUp">
+    {% for template in pdf_templates %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm overflow-hidden hover-shadow transition-all">
+                <div class="card-header p-0 position-relative" style="height: 120px; background: {{ template.primaryColor }};">
+                    <div class="position-absolute top-0 end-0 p-3">
+                        <span class="badge bg-white text-dark shadow-sm">ID #{{ template.id }}</span>
+                    </div>
+                    {% if template.logoPath %}
+                        <div class="position-absolute bottom-0 start-0 p-3">
+                            <img src="{{ template.logoPath }}" alt="Logo" class="bg-white p-2 rounded shadow-sm" style="max-height: 50px;">
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-body p-4">
+                    <h5 class="card-title fw-bold mb-1">{{ template.name }}</h5>
+                    <div class="d-flex gap-2 mb-4">
+                        <div class="rounded-circle border" style="width: 20px; height: 20px; background: {{ template.primaryColor }};" title="Primaire"></div>
+                        <div class="rounded-circle border" style="width: 20px; height: 20px; background: {{ template.secondaryColor }};" title="Secondaire"></div>
+                    </div>
+                    
+                    <div class="small text-secondary mb-4">
+                        <i class="ti ti-code me-1"></i> Placeholders HTML configurés
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <a href="{{ path('app_pdf_template_edit', {'id': template.id}) }}" class="btn btn-outline-primary flex-grow-1">
+                            <i class="ti ti-edit me-1"></i> Modifier
+                        </a>
+                        <form method="post" action="{{ path('app_pdf_template_delete', {'id': template.id}) }}" onsubmit="return confirm('Supprimer ce modèle ?');" style="display:inline-block">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ template.id) }}">
+                            <button class="btn btn-outline-danger">
+                                <i class="ti ti-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="col-12">
+            <div class="text-center py-10 bg-white rounded shadow-sm border">
+                <i class="ti ti-template fs-1 text-secondary opacity-25 mb-4"></i>
+                <h5>Aucun modèle configuré</h5>
+                <p class="text-secondary">Commencez par créer votre premier modèle de document personnalisé.</p>
+                <a href="{{ path('app_pdf_template_new') }}" class="btn btn-primary mt-3">Créer un modèle</a>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<style>
+.hover-shadow:hover { transform: translateY(-5px); box-shadow: 0 1rem 3rem rgba(0,0,0,.1) !important; }
+.transition-all { transition: all 0.3s ease; }
+</style>
+{% endblock %}

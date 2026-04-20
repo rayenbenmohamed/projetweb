@@ -15,23 +15,19 @@ class DashboardController extends AbstractController
     public function index(
         JobOffreRepository $jobOffreRepo,
         JobApplicationRepository $appRepo,
+        UserRepository $userRepo,
     ): Response {
         $user = $this->getUser();
-        if (!$user) {
-            return $this->redirectToRoute('app_login');
+        $myApplications = 0;
+        if ($user && $this->isGranted('ROLE_CANDIDAT')) {
+            $myApplications = $appRepo->count(['candidat' => $user]);
         }
 
-        // Stats for the user as a recruiter (his offers and applications received)
-        $myOffresCount = $jobOffreRepo->count(['user' => $user]);
-        $receivedApplicationsCount = $appRepo->countByRecruiter($user);
-
-        // Stats for the user as a candidate (his sent applications)
-        $myApplicationsCount = $appRepo->count(['candidat' => $user]);
-
         return $this->render('dashboard/front_index.html.twig', [
-            'count_my_offres' => $myOffresCount,
-            'count_received_apps' => $receivedApplicationsCount,
-            'count_my_apps' => $myApplicationsCount,
+            'count_offres' => $jobOffreRepo->count([]),
+            'count_applications' => $this->isGranted('ROLE_RECRUTEUR')
+                ? $appRepo->count([])
+                : $myApplications,
             'latest_jobs' => $jobOffreRepo->findBy([], ['createdAt' => 'DESC'], 5),
         ]);
     }

@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const elements = document.querySelectorAll('[data-choices]');
   elements.forEach(function (element) {
     const isInput = element.tagName.toLowerCase() === 'input';
-    new Choices(element, {
+    const choicesInstance = new Choices(element, {
       removeItemButton: element.dataset.choicesRemoveitembutton === 'true',
       itemSelectText: '',
       maxItemCount: 5,
@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
         containerInner: isInput ? 'form-control' : 'form-select',
       },
     });
+    element.choicesInstance = choicesInstance;
   });
 });
 

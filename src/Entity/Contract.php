@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\ContractRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ContractRepository::class)]
 class Contract
@@ -14,18 +15,26 @@ class Contract
     private ?int $id = null;
 
     #[ORM\Column(type: 'date')]
+    #[Assert\NotNull(message: 'La date de début est obligatoire.')]
     private ?\DateTimeInterface $startDate = null;
 
     #[ORM\Column(type: 'date', nullable: true)]
     private ?\DateTimeInterface $endDate = null;
 
     #[ORM\Column]
+    #[Assert\NotNull(message: 'Le salaire est obligatoire.')]
+    #[Assert\PositiveOrZero(message: 'Le salaire doit être un nombre positif ou nul.')]
     private ?int $salary = null;
 
     #[ORM\Column(nullable: true)]
     private ?float $salaireNet = null;
 
     #[ORM\Column(length: 50)]
+    #[Assert\NotBlank(message: 'Le statut est obligatoire.')]
+    #[Assert\Choice(
+        choices: ['En Attente', 'Actif', 'Suspendu', 'Terminé'],
+        message: 'Statut invalide. Choisissez parmi : En Attente, Actif, Suspendu, Terminé.'
+    )]
     private ?string $status = 'En Attente';
 
     #[ORM\Column]
@@ -52,6 +61,7 @@ class Contract
 
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(name: 'candidate_id', nullable: false, onDelete: 'CASCADE')]
+    #[Assert\NotNull(message: 'Veuillez sélectionner un candidat.')]
     private ?User $candidate = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
@@ -60,10 +70,15 @@ class Contract
 
     #[ORM\ManyToOne(targetEntity: JobOffre::class)]
     #[ORM\JoinColumn(name: 'job_offer_id', nullable: false, onDelete: 'CASCADE')]
+    #[Assert\NotNull(message: "Veuillez sélectionner une offre d'emploi.")]
     private ?JobOffre $jobOffre = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $content = null;
+
+    #[ORM\ManyToOne(targetEntity: PdfTemplate::class)]
+    #[ORM\JoinColumn(name: 'pdf_template_id', nullable: true, onDelete: 'SET NULL')]
+    private ?PdfTemplate $pdfTemplate = null;
 
     public function getId(): ?int
     {
@@ -206,6 +221,17 @@ class Contract
     public function setContent(?string $content): self
     {
         $this->content = $content;
+        return $this;
+    }
+
+    public function getPdfTemplate(): ?PdfTemplate
+    {
+        return $this->pdfTemplate;
+    }
+
+    public function setPdfTemplate(?PdfTemplate $pdfTemplate): self
+    {
+        $this->pdfTemplate = $pdfTemplate;
         return $this;
     }
 }

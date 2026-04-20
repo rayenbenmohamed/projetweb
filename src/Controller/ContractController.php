@@ -3,6 +3,9 @@
 namespace App\Controller;
 
 use App\Entity\Contract;
+use App\Entity\PdfTemplate;
+use App\Service\EmailService;
+use App\Service\GoogleCalendarService;
 use App\Repository\ContractRepository;
 use App\Repository\JobOffreRepository;
 use App\Repository\TypeContratRepository;
@@ -12,6 +15,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/contract')]
 class ContractController extends AbstractController
@@ -37,32 +41,28 @@ class ContractController extends AbstractController
         $limit = (int) $request->query->get('limit', 10);
         $result = $contractRepository->searchPaginated($filters, $page, $limit);
 
-        // --- Statistiques Innovantes pour le Dashboard ---
         $allContracts = $contractRepository->findAll();
-        
-        // 1. KPIs classiques
+
         $stats = [
             'total_payroll' => array_reduce($allContracts, fn($carry, $c) => $carry + ($c->getSalary() ?? 0), 0),
             'pending_signatures' => count(array_filter($allContracts, fn($c) => !$c->isSigned())),
-            'expiring_soon' => count(array_filter($allContracts, function($c) {
-                if (!$c->getEndDate()) return false;
+            'expiring_soon' => count(array_filter($allContracts, function ($c) {
+                if (!$c->getEndDate())
+                    return false;
                 $diff = (new \DateTime())->diff($c->getEndDate());
                 return $diff->invert === 0 && $diff->days <= 30;
             })),
         ];
 
-        // 2. Données pour le Graphique (ChartData)
         $chartData = [
             'types' => [],
-            'trends' => array_fill(1, 12, 0) // Jan..Dec
+            'trends' => array_fill(1, 12, 0)
         ];
-        
+
         foreach ($allContracts as $c) {
-            // Distribution par type
             $typeName = $c->getTypeContrat() ? $c->getTypeContrat()->getName() : 'Autre';
             $chartData['types'][$typeName] = ($chartData['types'][$typeName] ?? 0) + 1;
-            
-            // Tendance annuelle
+
             if ($c->getStartDate() && $c->getStartDate()->format('Y') == date('Y')) {
                 $month = (int) $c->getStartDate()->format('n');
                 $chartData['trends'][$month]++;
@@ -90,99 +90,75 @@ class ContractController extends AbstractController
         EntityManagerInterface $entityManager,
         UserRepository $userRepository,
         JobOffreRepository $jobOffreRepository,
-        TypeContratRepository $typeContratRepository
+        TypeContratRepository $typeContratRepository,
+        ValidatorInterface $validator,
+        EmailService $emailService,
+        GoogleCalendarService $calendarService
     ): Response {
         $contract = new Contract();
-        $form = null;
+        $formData = null;
 
         if ($request->isMethod('POST')) {
-            $candidateId = $request->request->get('candidate_id');
-            $recruiterId = $request->request->get('recruiter_id');
-            $jobOffreId = $request->request->get('job_offre_id');
-            $typeId = $request->request->get('type_contrat_id');
+            $formData = $this->extractFormData($request);
 
-            $candidate = $candidateId ? $userRepository->find((int) $candidateId) : null;
-            $jobOffre = $jobOffreId ? $jobOffreRepository->find((int) $jobOffreId) : null;
-            $recruiter = $recruiterId ? $userRepository->find((int) $recruiterId) : null;
-            $type = $typeId ? $typeContratRepository->find((int) $typeId) : null;
+            // Populate entity
+            $candidate = $formData['candidate_id'] ? $userRepository->find((int) $formData['candidate_id']) : null;
+            $jobOffre = $formData['job_offre_id'] ? $jobOffreRepository->find((int) $formData['job_offre_id']) : null;
+            $recruiter = $formData['recruiter_id'] ? $userRepository->find((int) $formData['recruiter_id']) : null;
+            $type = $formData['type_contrat_id'] ? $typeContratRepository->find((int) $formData['type_contrat_id']) : null;
+            $pdfTemplate = $formData['pdf_template_id'] ? $entityManager->getRepository(PdfTemplate::class)->find((int) $formData['pdf_template_id']) : null;
 
-            $form = [
-                'candidate_id' => (string) $candidateId,
-                'recruiter_id' => (string) $recruiterId,
-                'job_offre_id' => (string) $jobOffreId,
-                'type_contrat_id' => (string) $typeId,
-                'start_date' => (string) $request->request->get('start_date', ''),
-                'end_date' => (string) $request->request->get('end_date', ''),
-                'salary' => (string) $request->request->get('salary', ''),
-                'status' => (string) $request->request->get('status', 'En Attente'),
-                'is_signed' => $request->request->get('is_signed') === '1' ? '1' : '0',
-                'signature_base64' => (string) $request->request->get('signature_base64', ''),
-                'content' => (string) $request->request->get('content', ''),
-            ];
+            $contract->setCandidate($candidate);
+            $contract->setJobOffre($jobOffre);
+            $contract->setRecruiter($recruiter);
+            $contract->setTypeContrat($type);
+            $contract->setPdfTemplate($pdfTemplate);
+            $contract->setStatus($formData['status'] ?: 'En Attente');
+            $contract->setIsSigned($formData['is_signed'] === '1');
+            $contract->setContent($formData['content'] ?: null);
 
-            $errors = [];
-            if (!$candidate) {
-                $errors[] = 'Veuillez sélectionner un candidat.';
+            [$startDateObj, $endDateObj, $dateErrors] = $this->parseDates($formData['start_date'], $formData['end_date']);
+
+            if ($startDateObj) {
+                $contract->setStartDate($startDateObj);
             }
-            if (!$jobOffre) {
-                $errors[] = 'Veuillez sélectionner une offre.';
-            }
-            if ($form['start_date'] === '') {
-                $errors[] = 'La date de début est obligatoire.';
-            }
-            if ($form['salary'] === '' || !is_numeric($form['salary']) || (int) $form['salary'] < 0) {
-                $errors[] = 'Le salaire doit être un nombre positif.';
+            $contract->setEndDate($endDateObj);
+
+            if ($formData['salary'] !== '' && is_numeric($formData['salary'])) {
+                $contract->setSalary((int) $formData['salary']);
             }
 
-            $allowedStatuses = ['En Attente', 'Actif', 'Suspendu', 'Terminé'];
-            if (!in_array($form['status'], $allowedStatuses, true)) {
-                $errors[] = 'Statut invalide.';
+            if ($formData['signature_base64'] !== '') {
+                $contract->setSignatureBase64($formData['signature_base64']);
             }
 
-            $startDateObj = null;
-            $endDateObj = null;
-            try {
-                if ($form['start_date'] !== '') {
-                    $startDateObj = new \DateTime($form['start_date']);
-                }
-                if ($form['end_date'] !== '') {
-                    $endDateObj = new \DateTime($form['end_date']);
-                }
-            } catch (\Throwable) {
-                $errors[] = 'Format de date invalide.';
-            }
+            // Validate via entity constraints
+            $violations = $validator->validate($contract);
 
-            if ($startDateObj && $endDateObj && $endDateObj < $startDateObj) {
-                $errors[] = 'La date de fin doit être après la date de début.';
-            }
+            $allErrors = array_merge($dateErrors, iterator_to_array($violations, false));
 
-            if ($errors !== []) {
-                foreach ($errors as $e) {
-                    $this->addFlash('error', $e);
+            if (count($allErrors) > 0) {
+                foreach ($allErrors as $error) {
+                    if (is_string($error)) {
+                        $this->addFlash('error', $error);
+                    } else {
+                        $this->addFlash('error', $error->getMessage());
+                    }
                 }
             } else {
-                $contract->setCandidate($candidate);
-                $contract->setRecruiter($recruiter);
-                $contract->setJobOffre($jobOffre);
-                $contract->setTypeContrat($type);
-
-                $isSigned = $form['is_signed'] === '1';
-                $contract->setStartDate($startDateObj ?? new \DateTime());
-                $contract->setEndDate($endDateObj);
-                $contract->setSalary((int) $form['salary']);
-                $contract->setStatus($form['status']);
-                $contract->setIsSigned($isSigned);
-                $contract->setSignedAt($isSigned ? new \DateTime() : null);
-                if ($form['signature_base64'] !== '') {
-                    $contract->setSignatureBase64($form['signature_base64']);
-                }
-                $contract->setContent($form['content']);
+                $contract->setSignedAt($contract->isSigned() ? new \DateTime() : null);
 
                 $entityManager->persist($contract);
                 $entityManager->flush();
 
+                // ── Google Calendar Sync ──
+                $user = $this->getUser();
+                if ($user instanceof \App\Entity\User && $user->getGoogleAccessToken()) {
+                    $calendarService->syncContract($contract, $user);
+                }
+
                 $this->addFlash('success', 'Contrat créé avec succès.');
-                return $this->redirectToRoute('app_contract_index');
+                return $this->redirectToRoute('app_contract_show', ['id' => $contract->getId(), 'send_email' => 1]);
             }
         }
 
@@ -192,7 +168,8 @@ class ContractController extends AbstractController
             'recruiters' => $userRepository->findBy(['role' => 'ROLE_RECRUTEUR'], ['id' => 'DESC']),
             'job_offres' => $jobOffreRepository->findBy([], ['createdAt' => 'DESC']),
             'types' => $typeContratRepository->findBy([], ['name' => 'ASC']),
-            'form' => $form,
+            'pdf_templates' => $entityManager->getRepository(PdfTemplate::class)->findAll(),
+            'form' => $formData,
         ]);
     }
 
@@ -203,98 +180,73 @@ class ContractController extends AbstractController
         EntityManagerInterface $entityManager,
         UserRepository $userRepository,
         JobOffreRepository $jobOffreRepository,
-        TypeContratRepository $typeContratRepository
+        TypeContratRepository $typeContratRepository,
+        ValidatorInterface $validator,
+        GoogleCalendarService $calendarService
     ): Response {
-        $form = null;
+        $formData = null;
+
         if ($request->isMethod('POST')) {
-            $candidateId = $request->request->get('candidate_id');
-            $recruiterId = $request->request->get('recruiter_id');
-            $jobOffreId = $request->request->get('job_offre_id');
-            $typeId = $request->request->get('type_contrat_id');
+            $formData = $this->extractFormData($request);
 
-            $candidate = $candidateId ? $userRepository->find((int) $candidateId) : null;
-            $jobOffre = $jobOffreId ? $jobOffreRepository->find((int) $jobOffreId) : null;
-            $recruiter = $recruiterId ? $userRepository->find((int) $recruiterId) : null;
-            $type = $typeId ? $typeContratRepository->find((int) $typeId) : null;
+            $candidate = $formData['candidate_id'] ? $userRepository->find((int) $formData['candidate_id']) : null;
+            $jobOffre = $formData['job_offre_id'] ? $jobOffreRepository->find((int) $formData['job_offre_id']) : null;
+            $recruiter = $formData['recruiter_id'] ? $userRepository->find((int) $formData['recruiter_id']) : null;
+            $type = $formData['type_contrat_id'] ? $typeContratRepository->find((int) $formData['type_contrat_id']) : null;
+            $pdfTemplate = $formData['pdf_template_id'] ? $entityManager->getRepository(PdfTemplate::class)->find((int) $formData['pdf_template_id']) : null;
 
-            $form = [
-                'candidate_id' => (string) $candidateId,
-                'recruiter_id' => (string) $recruiterId,
-                'job_offre_id' => (string) $jobOffreId,
-                'type_contrat_id' => (string) $typeId,
-                'start_date' => (string) $request->request->get('start_date', ''),
-                'end_date' => (string) $request->request->get('end_date', ''),
-                'salary' => (string) $request->request->get('salary', ''),
-                'status' => (string) $request->request->get('status', 'En Attente'),
-                'is_signed' => $request->request->get('is_signed') === '1' ? '1' : '0',
-                'signature_base64' => (string) $request->request->get('signature_base64', ''),
-                'content' => (string) $request->request->get('content', ''),
-            ];
+            $contract->setCandidate($candidate);
+            $contract->setJobOffre($jobOffre);
+            $contract->setRecruiter($recruiter);
+            $contract->setTypeContrat($type);
+            $contract->setPdfTemplate($pdfTemplate);
+            $contract->setStatus($formData['status'] ?: 'En Attente');
+            $isSigned = $formData['is_signed'] === '1';
+            $contract->setIsSigned($isSigned);
+            $contract->setContent($formData['content'] ?: null);
 
-            $errors = [];
-            if (!$candidate) {
-                $errors[] = 'Veuillez sélectionner un candidat.';
+            [$startDateObj, $endDateObj, $dateErrors] = $this->parseDates($formData['start_date'], $formData['end_date']);
+
+            if ($startDateObj) {
+                $contract->setStartDate($startDateObj);
             }
-            if (!$jobOffre) {
-                $errors[] = 'Veuillez sélectionner une offre.';
-            }
-            if ($form['start_date'] === '') {
-                $errors[] = 'La date de début est obligatoire.';
-            }
-            if ($form['salary'] === '' || !is_numeric($form['salary']) || (int) $form['salary'] < 0) {
-                $errors[] = 'Le salaire doit être un nombre positif.';
+            $contract->setEndDate($endDateObj);
+
+            if ($formData['salary'] !== '' && is_numeric($formData['salary'])) {
+                $contract->setSalary((int) $formData['salary']);
             }
 
-            $allowedStatuses = ['En Attente', 'Actif', 'Suspendu', 'Terminé'];
-            if (!in_array($form['status'], $allowedStatuses, true)) {
-                $errors[] = 'Statut invalide.';
+            if ($formData['signature_base64'] !== '') {
+                $contract->setSignatureBase64($formData['signature_base64']);
             }
 
-            $startDateObj = null;
-            $endDateObj = null;
-            try {
-                if ($form['start_date'] !== '') {
-                    $startDateObj = new \DateTime($form['start_date']);
-                }
-                if ($form['end_date'] !== '') {
-                    $endDateObj = new \DateTime($form['end_date']);
-                }
-            } catch (\Throwable) {
-                $errors[] = 'Format de date invalide.';
-            }
+            $violations = $validator->validate($contract);
 
-            if ($startDateObj && $endDateObj && $endDateObj < $startDateObj) {
-                $errors[] = 'La date de fin doit être après la date de début.';
-            }
+            $allErrors = array_merge($dateErrors, iterator_to_array($violations, false));
 
-            if ($errors !== []) {
-                foreach ($errors as $e) {
-                    $this->addFlash('error', $e);
+            if (count($allErrors) > 0) {
+                foreach ($allErrors as $error) {
+                    if (is_string($error)) {
+                        $this->addFlash('error', $error);
+                    } else {
+                        $this->addFlash('error', $error->getMessage());
+                    }
                 }
             } else {
-                $contract->setCandidate($candidate);
-                $contract->setRecruiter($recruiter);
-                $contract->setJobOffre($jobOffre);
-                $contract->setTypeContrat($type);
-
-                $isSigned = $form['is_signed'] === '1';
-                if ($startDateObj) {
-                    $contract->setStartDate($startDateObj);
-                }
-                $contract->setEndDate($endDateObj);
-                $contract->setSalary((int) $form['salary']);
-                $contract->setStatus($form['status']);
-                $contract->setIsSigned($isSigned);
                 $contract->setSignedAt($isSigned ? ($contract->getSignedAt() ?? new \DateTime()) : null);
-                if ($form['signature_base64'] !== '') {
-                    $contract->setSignatureBase64($form['signature_base64']);
-                }
-                $contract->setContent($form['content']);
 
                 $entityManager->flush();
 
+                // ── Google Calendar Update Sync ──
+                $user = $this->getUser();
+                if ($user instanceof \App\Entity\User && $user->getGoogleAccessToken()) {
+                    // Note: This adds new events, real sync would need event IDs to update existing ones.
+                    // For now, we just push new ones as requested.
+                    $calendarService->syncContract($contract, $user);
+                }
+
                 $this->addFlash('success', 'Contrat mis à jour.');
-                return $this->redirectToRoute('app_contract_show', ['id' => $contract->getId()]);
+                return $this->redirectToRoute('app_contract_show', ['id' => $contract->getId(), 'send_email' => 1]);
             }
         }
 
@@ -304,7 +256,8 @@ class ContractController extends AbstractController
             'recruiters' => $userRepository->findBy(['role' => 'ROLE_RECRUTEUR'], ['id' => 'DESC']),
             'job_offres' => $jobOffreRepository->findBy([], ['createdAt' => 'DESC']),
             'types' => $typeContratRepository->findBy([], ['name' => 'ASC']),
-            'form' => $form,
+            'pdf_templates' => $entityManager->getRepository(PdfTemplate::class)->findAll(),
+            'form' => $formData,
         ]);
     }
 
@@ -326,5 +279,52 @@ class ContractController extends AbstractController
         }
 
         return $this->redirectToRoute('app_contract_index');
+    }
+
+    // ─── Private helpers ────────────────────────────────────────────────────────
+
+    private function extractFormData(Request $request): array
+    {
+        return [
+            'candidate_id' => (string) $request->request->get('candidate_id', ''),
+            'recruiter_id' => (string) $request->request->get('recruiter_id', ''),
+            'job_offre_id' => (string) $request->request->get('job_offre_id', ''),
+            'type_contrat_id' => (string) $request->request->get('type_contrat_id', ''),
+            'start_date' => (string) $request->request->get('start_date', ''),
+            'end_date' => (string) $request->request->get('end_date', ''),
+            'salary' => (string) $request->request->get('salary', ''),
+            'status' => (string) $request->request->get('status', 'En Attente'),
+            'is_signed' => $request->request->get('is_signed') === '1' ? '1' : '0',
+            'signature_base64' => (string) $request->request->get('signature_base64', ''),
+            'content' => (string) $request->request->get('content', ''),
+            'pdf_template_id' => (string) $request->request->get('pdf_template_id', ''),
+        ];
+    }
+
+    /**
+     * @return array{0: ?\DateTime, 1: ?\DateTime, 2: string[]}
+     */
+    private function parseDates(string $startRaw, string $endRaw): array
+    {
+        $errors = [];
+        $startObj = null;
+        $endObj = null;
+
+        try {
+            if ($startRaw !== '') {
+                $startObj = new \DateTime($startRaw);
+            }
+            if ($endRaw !== '') {
+                $endObj = new \DateTime($endRaw);
+            }
+        } catch (\Throwable) {
+            $errors[] = 'Format de date invalide.';
+        }
+
+        if ($startObj && $endObj && $endObj < $startObj) {
+            $errors[] = 'La date de fin doit être postérieure à la date de début.';
+        }
+
+        return [$startObj, $endObj, $errors];
     }
 }

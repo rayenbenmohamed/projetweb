@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contrat #{{ contract.id }} — SyfonuRH</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: DejaVu Sans, Arial, sans-serif;
+      font-size: 11pt;
+      color: #1a1a2e;
+      background: #ffffff;
+      padding: 30px 40px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 3px solid #1a1a2e;
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+    }
+    .header-brand { font-size: 22pt; font-weight: bold; color: #1a1a2e; letter-spacing: 1px; }
+    .header-brand span { color: #4361ee; }
+    .header-meta { text-align: right; font-size: 9pt; color: #555; }
+    .header-meta .badge {
+      display: inline-block;
+      background: #1a1a2e;
+      color: #fff;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 8pt;
+      margin-bottom: 4px;
+    }
+
+    /* ── Title block ── */
+    .contract-title {
+      text-align: center;
+      margin: 20px 0;
+    }
+    .contract-title h1 {
+      font-size: 17pt;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #1a1a2e;
+    }
+    .divider {
+      width: 60px;
+      height: 4px;
+      background: #4361ee;
+      margin: 8px auto 0;
+      border-radius: 2px;
+    }
+
+    /* ── Info grid ── */
+    .info-grid {
+      display: flex;
+      gap: 20px;
+      margin: 20px 0;
+    }
+    .info-card {
+      flex: 1;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 14px 16px;
+      background: #f8f9ff;
+    }
+    .info-card h3 {
+      font-size: 8pt;
+      text-transform: uppercase;
+      color: #4361ee;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #dde;
+      padding-bottom: 6px;
+    }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 10pt; }
+    .info-row .label { color: #666; }
+    .info-row .value { font-weight: bold; color: #1a1a2e; }
+
+    /* ── Status badge ── */
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 9pt;
+      font-weight: bold;
+    }
+    .status-en-attente { background: #fff3cd; color: #856404; }
+    .status-actif      { background: #d1e7dd; color: #0f5132; }
+    .status-suspendu   { background: #ffe5d0; color: #a34200; }
+    .status-termine    { background: #f2f2f2; color: #555; }
+
+    /* ── Content clause ── */
+    .content-box {
+      border-left: 4px solid #4361ee;
+      background: #f8f9ff;
+      padding: 14px 18px;
+      border-radius: 0 6px 6px 0;
+      margin: 20px 0;
+      font-size: 10pt;
+      line-height: 1.8;
+      color: #2d3748;
+      white-space: pre-wrap;
+    }
+    .content-title {
+      font-size: 9pt;
+      text-transform: uppercase;
+      color: #4361ee;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    /* ── Signature zone ── */
+    .sig-section {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      gap: 30px;
+    }
+    .sig-box {
+      flex: 1;
+      border: 1px dashed #bbb;
+      border-radius: 6px;
+      padding: 14px;
+      text-align: center;
+      min-height: 100px;
+    }
+    .sig-box .sig-label {
+      font-size: 8pt;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 8px;
+    }
+    .sig-box img { max-height: 70px; max-width: 100%; filter: grayscale(100%) contrast(120%); }
+    .sig-box .sig-name { font-weight: bold; font-size: 10pt; margin-top: 6px; }
+    .sig-box .sig-date { font-size: 8pt; color: #666; }
+
+    /* ── Seal / watermark ── */
+    .watermark {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-40deg);
+      font-size: 60pt;
+      color: rgba(67, 97, 238, 0.05);
+      font-weight: bold;
+      letter-spacing: 4px;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .seal {
+      display: inline-block;
+      border: 3px double #1a1a2e;
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      line-height: 1.1;
+      font-size: 7pt;
+      font-weight: bold;
+      text-align: center;
+      padding: 20px 5px;
+      color: #1a1a2e;
+      text-transform: uppercase;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 30px;
+      border-top: 1px solid #e0e0e0;
+      padding-top: 10px;
+      font-size: 8pt;
+      color: #999;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="watermark">SYFONURH</div>
+
+{# ── Header ── #}
+<div class="header">
+  <div>
+    <div class="header-brand">Syfonu<span>RH</span></div>
+    <div style="font-size:9pt;color:#555;margin-top:4px;">Système de Gestion des Ressources Humaines</div>
+  </div>
+  <div class="header-meta">
+    <div class="badge">DOCUMENT OFFICIEL</div><br>
+    Réf. : SYF-{{ contract.id }}-{{ contract.candidate ? contract.candidate.id : '0' }}<br>
+    Généré le : {{ "now"|date('d/m/Y à H:i') }}<br>
+    {% if contract.status == 'Actif' %}
+      <span style="color:#0f5132;font-weight:bold;">● Contrat en cours</span>
+    {% elseif contract.status == 'Terminé' %}
+      <span style="color:#555;font-weight:bold;">● Contrat terminé</span>
+    {% else %}
+      <span style="color:#856404;font-weight:bold;">● {{ contract.status }}</span>
+    {% endif %}
+  </div>
+</div>
+
+{# ── Title ── #}
+<div class="contract-title">
+  <h1>{{ contract.typeContrat ? contract.typeContrat.name : 'Contrat de Travail' }}</h1>
+  <div class="divider"></div>
+</div>
+
+{# ── Parties ── #}
+<div class="info-grid">
+  <div class="info-card">
+    <h3>👤 Le Candidat (Salarié)</h3>
+    <div class="info-row">
+      <span class="label">Nom complet</span>
+      <span class="value">{{ contract.candidate ? (contract.candidate.firstName ~ ' ' ~ contract.candidate.lastName) : '—' }}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Email</span>
+      <span class="value">{{ contract.candidate ? contract.candidate.email : '—' }}</span>
+    </div>
+  </div>
+
+  <div class="info-card">
+    <h3>🏢 Le Recruteur (Employeur)</h3>
+    <div class="info-row">
+      <span class="label">Nom complet</span>
+      <span class="value">{{ contract.recruiter ? (contract.recruiter.firstName ~ ' ' ~ contract.recruiter.lastName) : '—' }}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Email</span>
+      <span class="value">{{ contract.recruiter ? contract.recruiter.email : '—' }}</span>
+    </div>
+  </div>
+</div>
+
+{# ── Contract details ── #}
+<div class="info-grid">
+  <div class="info-card">
+    <h3>📋 Détails du Contrat</h3>
+    <div class="info-row">
+      <span class="label">Offre associée</span>
+      <span class="value">{{ contract.jobOffre ? contract.jobOffre.title : '—' }}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Statut</span>
+      <span class="value">
+        {% set s = contract.status %}
+        <span class="status-badge status-{{ s|lower|replace({' ': '-', 'é': 'e', 'è': 'e'}) }}">{{ s }}</span>
+      </span>
+    </div>
+    <div class="info-row">
+      <span class="label">Signé</span>
+      <span class="value">{{ contract.signed ? '✅ Oui' : '❌ Non' }}</span>
+    </div>
+    {% if contract.signedAt %}
+    <div class="info-row">
+      <span class="label">Date de signature</span>
+      <span class="value">{{ contract.signedAt|date('d/m/Y H:i') }}</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="info-card">
+    <h3>📅 Périodes &amp; Rémunération</h3>
+    <div class="info-row">
+      <span class="label">Date de début</span>
+      <span class="value">{{ contract.startDate ? contract.startDate|date('d/m/Y') : '—' }}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Date de fin</span>
+      <span class="value">{{ contract.endDate ? contract.endDate|date('d/m/Y') : 'Indéterminée' }}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Salaire brut</span>
+      <span class="value">{{ contract.salary ? contract.salary|number_format(0, ',', ' ') ~ ' TND' : '—' }}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Salaire net (est.)</span>
+      <span class="value" style="color:#0f5132;">{{ contract.salaireNet ? contract.salaireNet|number_format(0, ',', ' ') ~ ' TND' : '—' }}</span>
+    </div>
+  </div>
+</div>
+
+{# ── Clauses ── #}
+{% if contract.content %}
+<div>
+  <div class="content-title">📝 Clauses Particulières &amp; Engagements</div>
+  <div class="content-box">{{ contract.content }}</div>
+</div>
+{% endif %}
+
+{# ── Signatures ── #}
+<div class="sig-section">
+  <div class="sig-box">
+    <div class="sig-label">Cachet &amp; Visa Employeur</div>
+    <div class="seal">CERTIFIÉ<br>SYFONU<br>RH<br>DEPT. RH</div>
+    <div class="sig-name">SyfonuRH Corp.</div>
+    <div class="sig-date">Validé numériquement</div>
+  </div>
+
+  <div class="sig-box">
+    <div class="sig-label">Signature Électronique du Salarié</div>
+    {% if contract.signatureBase64 and gd_installed %}
+      <img src="{{ contract.signatureBase64 }}" alt="Signature">
+    {% elseif contract.signatureBase64 and not gd_installed %}
+      <div style="padding:10px; border:1px solid #ffcccc; color:#cc0000; font-size:8pt; background:#fff5f5;">
+         <i class="ti ti-alert-triangle"></i> Signature présente mais non affichable (GD extension manquante sur le serveur).
+      </div>
+    {% else %}
+      <div style="padding:20px;color:#bbb;font-style:italic;font-size:9pt;">Pas de signature enregistrée</div>
+    {% endif %}
+    <div class="sig-name">{{ contract.candidate ? (contract.candidate.firstName ~ ' ' ~ contract.candidate.lastName) : '—' }}</div>
+    <div class="sig-date">{{ contract.signedAt ? ('Signé le ' ~ contract.signedAt|date('d/m/Y')) : '' }}</div>
+  </div>
+</div>
+
+{# ── Footer ── #}
+<div class="footer">
+  Ce document est généré automatiquement par le Système SyfonuRH — Tous droits réservés.<br>
+  Identifiant de vérification : SYF-{{ contract.id }}-{{ contract.candidate ? contract.candidate.id : '0' }}-{{ "now"|date('Ymd') }}
+</div>
+
+</body>
+</html>
