@@ -76,6 +76,10 @@ class AiCommentService
             }
         }
 
+        if ($this->lastError === null) {
+            $this->lastError = 'No API key configured. Set XAI_API_KEY in .env.local.';
+        }
+
         return $this->buildFallbackSuggestion($post, $userPrompt);
     }
 
@@ -187,7 +191,25 @@ class AiCommentService
 
     private function readFromDotEnvFile(string $key): ?string
     {
-        $envPath = dirname(__DIR__, 2) . '/.env';
+        $projectDir = dirname(__DIR__, 2);
+        $envFiles = [
+            $projectDir . '/.env.local',
+            $projectDir . '/.env.dev.local',
+            $projectDir . '/.env',
+        ];
+
+        foreach ($envFiles as $envPath) {
+            $value = $this->readKeyFromSingleEnvFile($envPath, $key);
+            if ($value !== null) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    private function readKeyFromSingleEnvFile(string $envPath, string $key): ?string
+    {
         if (!is_file($envPath) || !is_readable($envPath)) {
             return null;
         }
