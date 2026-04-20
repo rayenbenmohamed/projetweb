@@ -75,11 +75,22 @@
             border-color: #6C5CE7;
             box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.15);
         }
+        .translatable-text {
+            white-space: pre-line;
+        }
     </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid mx-auto" style="max-width: 1000px;">
+    {% for type, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ type }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
     
     <div class="d-flex justify-content-between align-items-center mb-4">
         <a href="{{ path('app_forum_index') }}" class="btn btn-light text-secondary rounded-pill px-4 fw-semibold shadow-sm">
@@ -106,7 +117,28 @@
     {% endif %}
 
     <div class="post-body">
-        {{ post.content|nl2br }}
+        <div class="d-flex justify-content-end mb-3">
+            <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary translate-existing-btn"
+                data-target-id="post-content-text"
+                data-original-text="{{ post.content|e('html_attr') }}"
+                data-translated="0"
+            >
+                Translate post to English
+            </button>
+        </div>
+        <div id="post-content-text" class="translatable-text">{{ post.content }}</div>
+    </div>
+
+    <div class="mb-4">
+        <form method="post" action="{{ path('app_forum_post_like_toggle', {'id': post.id}) }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('toggle_like_' ~ post.id) }}">
+            {% set likedByUser = post.isLikedBy(currentUser) %}
+            <button type="submit" class="btn {{ likedByUser ? 'btn-danger' : 'btn-outline-danger' }} rounded-pill px-4 fw-bold">
+                {{ likedByUser ? '💔 Unlike' : '❤️ Like' }} ({{ post.likes|length }})
+            </button>
+        </form>
     </div>
 
     <div class="comments-section mt-5 pt-4 border-top">
@@ -119,9 +151,26 @@
             <div class="comment-card">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div class="comment-author">{{ comment.user.email|default('Anonyme') }}</div>
-                    <div class="comment-date">{{ comment.createdAt|date('d M Y, H:i') }}</div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="comment-date">{{ comment.createdAt|date('d M Y, H:i') }}</div>
+                        <form method="post" action="{{ path('app_forum_comment_delete', {'postId': post.id, 'commentId': comment.id}) }}" onsubmit="return confirm('Delete this comment?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete_comment_' ~ comment.id) }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </div>
                 </div>
-                <p class="mb-0 text-secondary lh-base">{{ comment.content|nl2br }}</p>
+                <div class="d-flex justify-content-end mb-2">
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary translate-existing-btn"
+                        data-target-id="comment-content-{{ comment.id }}"
+                        data-original-text="{{ comment.content|e('html_attr') }}"
+                        data-translated="0"
+                    >
+                        Translate comment to English
+                    </button>
+                </div>
+                <p id="comment-content-{{ comment.id }}" class="mb-0 text-secondary lh-base translatable-text">{{ comment.content }}</p>
             </div>
             {% else %}
             <div class="text-center py-4 bg-light rounded-4 text-muted">
@@ -132,12 +181,19 @@
 
         <div class="comment-form-container mt-4">
             <h5 class="fw-bold mb-3">Ajouter un commentaire</h5>
-            <form method="post" action="{{ path('app_forum_comment_add', {'id': post.id}) }}">
+            <form method="post" action="{{ path('app_forum_comment_add', {'id': post.id}) }}" id="comment-form">
                 <input type="hidden" name="_token" value="{{ csrf_token('add_comment') }}">
                 <div class="mb-3">
-                    <textarea name="content" class="form-control comment-input" rows="4" placeholder="Exprimez-vous respectueusement..." required></textarea>
+                    <textarea name="content" class="form-control comment-input" rows="4" placeholder="Exprimez-vous respectueusement..." required id="comment-content"></textarea>
+                    <div id="moderation-feedback" class="form-text mt-2"></div>
                 </div>
-                <div class="text-end">
+                <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                    <button type="button" id="ai-suggest-btn" class="btn btn-outline-primary rounded-pill">
+                        AI suggest comment
+                    </button>
+                    <button type="button" id="translate-btn" class="btn btn-outline-secondary rounded-pill">
+                        Translate to English
+                    </button>
                     <button type="submit" class="btn btn-primary px-4 py-2 rounded-pill fw-bold shadow-sm">
                         Publier le commentaire 🚀
                     </button>
@@ -147,4 +203,148 @@
     </div>
 
 </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('comment-form');
+            const textarea = document.getElementById('comment-content');
+            const feedback = document.getElementById('moderation-feedback');
+            const aiButton = document.getElementById('ai-suggest-btn');
+            const translateButton = document.getElementById('translate-btn');
+            const translateExistingButtons = document.querySelectorAll('.translate-existing-btn');
+
+            if (aiButton) {
+                aiButton.addEventListener('click', async function () {
+                    aiButton.disabled = true;
+                    aiButton.textContent = 'Generating...';
+                    try {
+                        const response = await fetch('{{ path('app_forum_api_ai_comment', {'id': post.id}) }}', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ prompt: textarea.value.trim() })
+                        });
+                        const data = await response.json();
+                        if (data.suggestion) {
+                            textarea.value = data.suggestion;
+                        }
+                    } finally {
+                        aiButton.disabled = false;
+                        aiButton.textContent = 'AI suggest comment';
+                    }
+                });
+            }
+
+            if (translateButton) {
+                translateButton.addEventListener('click', async function () {
+                    const rawText = textarea.value.trim();
+                    if (!rawText) {
+                        feedback.classList.add('text-danger');
+                        feedback.classList.remove('text-success');
+                        feedback.textContent = 'Write something first to translate.';
+                        return;
+                    }
+
+                    translateButton.disabled = true;
+                    translateButton.textContent = 'Translating...';
+                    try {
+                        const response = await fetch('{{ path('app_forum_api_translate_to_english') }}', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ text: rawText })
+                        });
+                        const data = await response.json();
+                        if (data.translatedText) {
+                            textarea.value = data.translatedText;
+                            feedback.classList.add('text-success');
+                            feedback.classList.remove('text-danger');
+                            feedback.textContent = 'Translated to English (' + (data.source || 'provider') + ').';
+                        } else {
+                            feedback.classList.add('text-danger');
+                            feedback.classList.remove('text-success');
+                            feedback.textContent = 'Translation failed.';
+                        }
+                    } finally {
+                        translateButton.disabled = false;
+                        translateButton.textContent = 'Translate to English';
+                    }
+                });
+            }
+
+            if (translateExistingButtons.length > 0) {
+                translateExistingButtons.forEach(function (button) {
+                    button.addEventListener('click', async function () {
+                        const targetId = button.dataset.targetId;
+                        const target = document.getElementById(targetId);
+                        const originalText = button.dataset.originalText || '';
+                        const isTranslated = button.dataset.translated === '1';
+
+                        if (!target || !originalText) {
+                            return;
+                        }
+
+                        if (isTranslated) {
+                            target.textContent = originalText;
+                            button.dataset.translated = '0';
+                            if (targetId === 'post-content-text') {
+                                button.textContent = 'Translate post to English';
+                            } else {
+                                button.textContent = 'Translate comment to English';
+                            }
+                            return;
+                        }
+
+                        button.disabled = true;
+                        button.textContent = 'Translating...';
+                        try {
+                            const response = await fetch('{{ path('app_forum_api_translate_to_english') }}', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ text: originalText })
+                            });
+                            const data = await response.json();
+                            if (data.translatedText) {
+                                target.textContent = data.translatedText;
+                                button.dataset.translated = '1';
+                                button.textContent = 'Show original';
+                            } else {
+                                button.textContent = 'Translation failed';
+                            }
+                        } finally {
+                            button.disabled = false;
+                        }
+                    });
+                });
+            }
+
+            if (form) {
+                form.addEventListener('submit', async function (event) {
+                    const content = textarea.value.trim();
+                    if (!content) {
+                        return;
+                    }
+
+                    const response = await fetch('{{ path('app_forum_api_moderate_comment') }}', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content: content })
+                    });
+                    const data = await response.json();
+
+                    if (data.containsBadWords) {
+                        event.preventDefault();
+                        feedback.classList.add('text-danger');
+                        feedback.classList.remove('text-success');
+                        feedback.textContent = 'Inappropriate words detected: ' + data.badWords.join(', ');
+                    } else {
+                        feedback.classList.add('text-success');
+                        feedback.classList.remove('text-danger');
+                        feedback.textContent = 'Comment looks clean.';
+                    }
+                });
+            }
+        });
+    </script>
 {% endblock %}

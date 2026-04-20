@@ -47,11 +47,15 @@ class ForumPost
     #[ORM\OneToMany(mappedBy: 'post', targetEntity: ForumComment::class, orphanRemoval: true)]
     private Collection $comments;
 
+    #[ORM\OneToMany(mappedBy: 'post', targetEntity: ForumLike::class, orphanRemoval: true)]
+    private Collection $likes;
+
     public function __construct()
     {
         $this->createdAt = new \DateTime();
         $this->updatedAt = new \DateTime();
         $this->comments = new ArrayCollection();
+        $this->likes = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -164,5 +168,54 @@ class ForumPost
     public function getComments(): Collection
     {
         return $this->comments;
+    }
+
+    /**
+     * @return Collection<int, ForumLike>
+     */
+    public function getLikes(): Collection
+    {
+        return $this->likes;
+    }
+
+    public function addLike(ForumLike $like): self
+    {
+        if (!$this->likes->contains($like)) {
+            $this->likes->add($like);
+            $like->setPost($this);
+        }
+
+        return $this;
+    }
+
+    public function removeLike(ForumLike $like): self
+    {
+        if ($this->likes->removeElement($like)) {
+            if ($like->getPost() === $this) {
+                $like->setPost(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getLikesCount(): int
+    {
+        return $this->likes->count();
+    }
+
+    public function isLikedBy(?User $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        foreach ($this->likes as $like) {
+            if ($like->getUser() && $like->getUser()->getId() === $user->getId()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

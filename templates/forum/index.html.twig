@@ -76,6 +76,35 @@
 
 {% block content %}
 <div class="container-fluid mb-5">
+    <form method="get" action="{{ path('app_forum_index') }}" class="card border-0 shadow-sm mb-4 p-3">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label fw-semibold">Search posts</label>
+                <input type="text" class="form-control" name="q" value="{{ filters.q }}" placeholder="Title or content...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Category filter</label>
+                <select class="form-select" name="category">
+                    <option value="">All categories</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}" {{ filters.category == category.id ? 'selected' : '' }}>{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Sort</label>
+                <select class="form-select" name="sort">
+                    <option value="recent" {{ filters.sort == 'recent' ? 'selected' : '' }}>Recent</option>
+                    <option value="popular" {{ filters.sort == 'popular' ? 'selected' : '' }}>Most discussed</option>
+                    <option value="most_liked" {{ filters.sort == 'most_liked' ? 'selected' : '' }}>Most liked</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button class="btn btn-primary w-100">Apply</button>
+                <a href="{{ path('app_forum_index') }}" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </div>
+    </form>
     
     <div class="forum-header-bg d-flex justify-content-between align-items-center flex-wrap gap-4">
         <div style="z-index: 1;">
@@ -104,6 +133,10 @@
                 <p class="post-content-preview flex-grow-1">
                     {{ post.content|striptags|slice(0, 120) }}{{ post.content|length > 120 ? '...' : '' }}
                 </p>
+                <div class="d-flex gap-3 mb-3 text-muted small">
+                    <span>💬 {{ post.comments|length }}</span>
+                    <span>❤️ {{ post.likes|length }}</span>
+                </div>
                 
                 <div class="d-flex gap-2 mt-auto pt-3 border-top border-light">
                     <a href="{{ path('app_forum_post_show', {'id': post.id}) }}" class="btn btn-primary action-btn flex-grow-1">Lire</a>
