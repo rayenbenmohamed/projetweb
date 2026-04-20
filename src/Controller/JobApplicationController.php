@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\JobApplication;
 use App\Entity\JobOffre;
+use App\Service\CVAnalyzerService;
 use App\Repository\JobApplicationRepository;
 use App\Service\CloudinaryService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -17,6 +18,107 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('IS_AUTHENTICATED_FULLY')]
 class JobApplicationController extends AbstractController
 {
+    /** Analyse IA d'une candidature */
+    #[Route('/{id}/analyze', name: 'app_job_application_analyze', methods: ['POST'])]
+    public function analyze(
+        JobApplication $jobApplication, 
+        CVAnalyzerService $cvAnalyzer, 
+        EntityManagerInterface $entityManager
+    ): Response {
+        $this->assertIsOfferOwner($jobApplication);
+
+        $jobDescription = $jobApplication->getJobOffre()?->getDescription() ?? '';
+        $cvPath = $jobApplication->getCvPath();
+
+        if (!$cvPath) {
+            $this->addFlash('danger', "Aucun CV n'est associé à cette candidature.");
+            return $this->redirectToRoute('app_job_application_index');
+        }
+
+        // Analyse visuelle directe du document (PDF/Image) via Gemini
+        $analysis = $cvAnalyzer->analyzeDocument($jobDescription, $cvPath);
+
+        if (isset($analysis['error'])) {
+            $this->addFlash('danger', "Erreur lors de l'analyse : " . $analysis['error']);
+        } else {
+            $jobApplication->setAiScore($analysis['score'] ?? 0);
+            $jobApplication->setAiAnalysis(json_encode($analysis));
+            $jobApplication->setAiAnalyzedAt(new \DateTime());
+            $entityManager->flush();
+            $this->addFlash('success', "Analyse IA terminée avec succès !");
+        }
+
+        return $this->redirectToRoute('app_job_application_index');
+    }
+
+    /** Exportation des candidatures en CSV */
+    #[Route('/export/csv', name: 'app_job_application_export_csv', methods: ['GET'])]
+    public function exportCsv(JobApplicationRepository $jobApplicationRepository): Response
+    {
+        $user = $this->getUser();
+        $applications = $jobApplicationRepository->findByRecruiter($user, null, null, 9999, 0);
+
+        $csvData = [];
+        $csvData[] = ['ID', 'Candidat', 'Email', 'Offre', 'Date', 'Statut', 'Score IA'];
+
+        foreach ($applications as $app) {
+            $csvData[] = [
+                $app->getId(),
+                $app->getCandidat()?->getFirstName() . ' ' . $app->getCandidat()?->getLastName(),
+                $app->getCandidat()?->getEmail(),
+                $app->getJobOffre()?->getTitle(),
+                $app->getApplyDate()?->format('d/m/Y'),
+                $app->getStatus(),
+                $app->getAiScore() ?? 'N/A'
+            ];
+        }
+
+        $fp = fopen('php://temp', 'r+');
+        foreach ($csvData as $row) {
+            fputcsv($fp, $row);
+        }
+        rewind($fp);
+        $response = new Response(stream_get_contents($fp));
+        fclose($fp);
+
+        $response->headers->set('Content-Type', 'text/csv');
+        $response->headers->set('Content-Disposition', 'attachment; filename="candidatures_export_' . date('Y-m-d') . '.csv"');
+
+        return $response;
+    }
+
+    /** Analyse IA manuelle (via texte collé) */
+    #[Route('/{id}/analyze-manual', name: 'app_job_application_analyze_manual', methods: ['POST'])]
+    public function analyzeManual(
+        Request $request,
+        JobApplication $jobApplication, 
+        CVAnalyzerService $cvAnalyzer, 
+        EntityManagerInterface $entityManager
+    ): Response {
+        $this->assertIsOfferOwner($jobApplication);
+
+        $cvText = $request->request->get('cv_text');
+        $jobDescription = $jobApplication->getJobOffre()?->getDescription() ?? '';
+
+        if (!$cvText) {
+            $this->addFlash('danger', "Veuillez saisir le texte du CV.");
+            return $this->redirectToRoute('app_job_application_show', ['id' => $jobApplication->getId()]);
+        }
+
+        $analysis = $cvAnalyzer->analyze($jobDescription, $cvText);
+
+        if (isset($analysis['error'])) {
+            $this->addFlash('danger', "Erreur lors de l'analyse manuelle : " . $analysis['error']);
+        } else {
+            $jobApplication->setAiScore($analysis['score'] ?? 0);
+            $jobApplication->setAiAnalysis(json_encode($analysis));
+            $jobApplication->setAiAnalyzedAt(new \DateTime());
+            $entityManager->flush();
+            $this->addFlash('success', "Analyse manuelle terminée avec succès !");
+        }
+
+        return $this->redirectToRoute('app_job_application_show', ['id' => $jobApplication->getId()]);
+    }
     /**
      * Liste des candidatures :
      * - Propriétaire de l'offre : voit les candidatures de SES offres

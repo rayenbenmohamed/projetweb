@@ -18,11 +18,16 @@ class InterviewController extends AbstractController
 {
     private InterviewService $interviewService;
     private NotificationService $notificationService;
+    private \App\Service\GoogleCalendarService $calendarService;
 
-    public function __construct(InterviewService $interviewService, NotificationService $notificationService)
-    {
+    public function __construct(
+        InterviewService $interviewService, 
+        NotificationService $notificationService,
+        \App\Service\GoogleCalendarService $calendarService
+    ) {
         $this->interviewService    = $interviewService;
         $this->notificationService = $notificationService;
+        $this->calendarService     = $calendarService;
     }
 
     #[Route('/new/{jobApplication}', name: 'app_interview_new', methods: ['GET', 'POST'])]
@@ -68,7 +73,20 @@ class InterviewController extends AbstractController
                 $entityManager->persist($interview);
                 $entityManager->flush();
 
-                // ── Notification au candidat ─────────────────────────────
+                // ── Synchronisation Google Calendar (Oussema's module) ───
+                try {
+                    $this->calendarService->createEvent(
+                        'Entretien : ' . $jobApplication->getJobOffre()->getTitle(),
+                        'Candidat : ' . $jobApplication->getCandidat()->getFirstName() . ' ' . $jobApplication->getCandidat()->getLastName(),
+                        $date,
+                        $date->modify('+1 hour'), // Durée par défaut 1h
+                        $meetingLink
+                    );
+                } catch (\Exception $e) {
+                    $this->addFlash('warning', 'Entretien enregistré, mais erreur de synchronisation Google Calendar : ' . $e->getMessage());
+                }
+
+                // ── Notification au candidat (Rayen's module) ─────────────
                 $candidate  = $jobApplication->getCandidat();
                 $offreTitle = $jobApplication->getJobOffre()?->getTitle() ?? 'votre candidature';
                 $dateFormatted = $date ? $date->format('d/m/Y \u00e0 H:i') : '';

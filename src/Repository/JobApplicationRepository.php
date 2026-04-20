@@ -18,30 +18,106 @@ class JobApplicationRepository extends ServiceEntityRepository
     }
 
     /**
-     * Retourne toutes les candidatures reçues sur les offres créées par ce recruteur.
+     * Retourne les candidatures reçues sur les offres du recruteur, avec filtres et tri IA.
      */
-    public function findByRecruiter(User $recruiter): array
+    public function findByRecruiter(User $recruiter, ?string $offerTitle = null, ?string $status = null, int $limit = 10, int $offset = 0): array
     {
-        return $this->createQueryBuilder('a')
+        $qb = $this->createQueryBuilder('a')
             ->join('a.jobOffre', 'o')
             ->where('o.user = :recruiter')
-            ->setParameter('recruiter', $recruiter)
-            ->orderBy('a.applyDate', 'DESC')
+            ->setParameter('recruiter', $recruiter);
+
+        if ($offerTitle) {
+            $qb->andWhere('o.title LIKE :title')
+               ->setParameter('title', '%' . $offerTitle . '%');
+        }
+
+        if ($status) {
+            $qb->andWhere('a.status = :status')
+               ->setParameter('status', $status);
+        }
+
+        // Tri intelligent : Score IA d'abord (desc), puis date (desc)
+        return $qb->orderBy('a.aiScore', 'DESC')
+            ->addOrderBy('a.applyDate', 'DESC')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset)
             ->getQuery()
             ->getResult();
     }
 
     /**
-     * Compte toutes les candidatures reçues sur les offres créées par ce recruteur.
+     * Compte les candidatures reçues pour un recruteur avec filtres.
      */
-    public function countByRecruiter(User $recruiter): int
+    public function countByRecruiter(User $recruiter, ?string $offerTitle = null, ?string $status = null): int
     {
-        return (int) $this->createQueryBuilder('a')
+        $qb = $this->createQueryBuilder('a')
             ->select('COUNT(a.id)')
             ->join('a.jobOffre', 'o')
             ->where('o.user = :recruiter')
-            ->setParameter('recruiter', $recruiter)
+            ->setParameter('recruiter', $recruiter);
+
+        if ($offerTitle) {
+            $qb->andWhere('o.title LIKE :title')
+               ->setParameter('title', '%' . $offerTitle . '%');
+        }
+
+        if ($status) {
+            $qb->andWhere('a.status = :status')
+               ->setParameter('status', $status);
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
+     * Retourne les candidatures envoyées par un candidat.
+     */
+    public function findForCandidate(User $candidate, ?string $status = null, ?string $offerTitle = null, int $limit = 10, int $offset = 0): array
+    {
+        $qb = $this->createQueryBuilder('a')
+            ->where('a.candidat = :candidate')
+            ->setParameter('candidate', $candidate);
+
+        if ($status) {
+            $qb->andWhere('a.status = :status')
+               ->setParameter('status', $status);
+        }
+
+        if ($offerTitle) {
+            $qb->join('a.jobOffre', 'o')
+               ->andWhere('o.title LIKE :title')
+               ->setParameter('title', '%' . $offerTitle . '%');
+        }
+
+        return $qb->orderBy('a.applyDate', 'DESC')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset)
             ->getQuery()
-            ->getSingleScalarResult();
+            ->getResult();
+    }
+
+    /**
+     * Compte les candidatures envoyées par un candidat.
+     */
+    public function countForCandidate(User $candidate, ?string $status = null, ?string $offerTitle = null): int
+    {
+        $qb = $this->createQueryBuilder('a')
+            ->select('COUNT(a.id)')
+            ->where('a.candidat = :candidate')
+            ->setParameter('candidate', $candidate);
+
+        if ($status) {
+            $qb->andWhere('a.status = :status')
+               ->setParameter('status', $status);
+        }
+
+        if ($offerTitle) {
+            $qb->join('a.jobOffre', 'o')
+               ->andWhere('o.title LIKE :title')
+               ->setParameter('title', '%' . $offerTitle . '%');
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
     }
 }

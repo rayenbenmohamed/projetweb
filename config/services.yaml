@@ -15,6 +15,7 @@ services:
             $clientId: '%env(GOOGLE_CLIENT_ID)%'
             $clientSecret: '%env(GOOGLE_CLIENT_SECRET)%'
             $redirectUri: '%env(GOOGLE_REDIRECT_URL)%'
+            $geminiApiKey: '%env(GEMINI_API_KEY)%'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
@@ -34,5 +35,9 @@ services:
             $phoneNumberId:  '%env(WHATSAPP_PHONE_NUMBER_ID)%'
 
     App\Service\GeminiService:
+        arguments:
+            $geminiApiKey: '%env(GEMINI_API_KEY)%'
+
+    App\Service\CVAnalyzerService:
         arguments:
             $geminiApiKey: '%env(GEMINI_API_KEY)%'
