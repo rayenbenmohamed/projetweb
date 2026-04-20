@@ -1,0 +1,49 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Recruteurs en attente | Admin{% endblock %}
+{% block page_title %}Approbation des comptes recruteurs{% endblock %}
+
+{% block content %}
+<div class="card card-lg mt-2">
+    <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
+        <h5 class="mb-0">Inscriptions à valider</h5>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ path('admin_users_index') }}" class="btn btn-sm btn-outline-secondary">Tous les utilisateurs</a>
+            <a href="{{ path('admin_dashboard') }}" class="btn btn-sm btn-outline-secondary">Tableau de bord</a>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Nom</th>
+                    <th>E-mail</th>
+                    <th>Nom entreprise</th>
+                    <th>RNE / SIREN</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in recruiters %}
+                    <tr>
+                        <td>{{ u.id }}</td>
+                        <td>{{ u.firstName|default('') }} {{ u.lastName|default('') }}</td>
+                        <td>{{ u.email }}</td>
+                        <td>{{ u.companyname|default('—') }}</td>
+                        <td><code class="small">{{ u.companyRne|default('—') }}</code></td>
+                        <td class="text-end">
+                            <form method="post" action="{{ path('admin_recruiters_approve', {id: u.id}) }}" class="d-inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('admin_recruiter_approve' ~ u.id) }}">
+                                <button type="submit" class="btn btn-sm btn-success">Approuver</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="text-center py-5 text-secondary">Aucun recruteur en attente d’approbation.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

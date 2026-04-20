@@ -4,42 +4,231 @@
 {% block page_title %}Discussion{% endblock %}
 
 {% block content %}
-{% if is_granted('ROLE_ADMIN') %}
-<div class="alert alert-light border d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-    <span class="small text-secondary">Mode administrateur</span>
-    <a href="{{ path('admin_dashboard') }}" class="btn btn-sm btn-outline-dark">Back-office</a>
-</div>
-{% endif %}
-<div class="card card-lg mt-1">
-    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div>
-            <h5 class="mb-0">{{ peer.firstName|default('') }} {{ peer.lastName|default('') }}</h5>
-            <span class="text-secondary small">{{ peer.email }}</span>
+<section class="social-shell">
+    {% if is_granted('ROLE_ADMIN') %}
+        <div class="alert social-glass-card d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <span class="small social-subtitle">Mode administrateur actif.</span>
+            <a href="{{ path('admin_dashboard') }}" class="btn btn-sm btn-outline-dark social-soft-btn">Back-office</a>
         </div>
-        <a href="{{ path('app_friends_index') }}" class="btn btn-sm btn-outline-secondary">← Amis</a>
-    </div>
-    <div class="card-body border-bottom bg-body-secondary" style="min-height: 320px; max-height: 55vh; overflow-y: auto;">
-        {% for m in messages %}
-            {% set mine = m.sender.id == app.user.id %}
-            <div class="d-flex mb-3 {{ mine ? 'justify-content-end' : 'justify-content-start' }}">
-                <div class="rounded-3 px-3 py-2 {{ mine ? 'bg-primary text-white' : 'bg-white border' }}" style="max-width: 85%;">
-                    <div class="small {{ mine ? 'text-white-50' : 'text-secondary' }}">{{ m.createdAt|date('d/m/Y H:i') }}</div>
-                    <div class="message-content">{{ m.content|e|nl2br }}</div>
+    {% endif %}
+    <div
+        id="friend-chat-app"
+        class="card social-glass-card mt-1"
+        data-my-id="{{ app.user.id }}"
+        data-peer-id="{{ peer.id }}"
+        data-chat-action="{{ path('app_chat_with', {id: peer.id}) }}"
+        data-poll-url="{{ path('app_chat_poll', {id: peer.id}) }}"
+        data-csrf-token="{{ csrf_token('friend_chat' ~ peer.id) }}"
+    >
+        <div class="card-header social-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h5 class="mb-0 social-title">{{ peer.firstName|default('') }} {{ peer.lastName|default('') }}</h5>
+                <span class="social-subtitle small">{{ peer.email }}</span>
+            </div>
+            <a href="{{ path('app_friends_index') }}" class="btn btn-sm btn-outline-secondary social-soft-btn">Retour aux amis</a>
+        </div>
+        <div id="friend-chat-scroll" class="card-body border-bottom social-chat-scroll">
+            <p id="friend-chat-placeholder" class="social-subtitle small mb-0 {{ messages is not empty ? 'd-none' : '' }}">Aucun message pour l’instant. Dites bonjour.</p>
+            <div id="friend-chat-bubbles">
+                {% for m in messages %}
+                    {% set mine = m.sender.id == app.user.id %}
+                    <div class="d-flex mb-3 {{ mine ? 'justify-content-end' : 'justify-content-start' }}" data-message-id="{{ m.id }}">
+                        <div class="social-chat-bubble {{ mine ? 'mine' : 'theirs' }}">
+                            <div class="social-chat-meta {{ mine ? 'text-white-50' : 'social-subtitle' }}">{{ m.createdAt|date('d/m/Y H:i') }}</div>
+                            <div class="message-content">{{ m.content|e }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="card-body social-chat-form">
+            <form id="friend-chat-form" method="post" action="{{ path('app_chat_with', {id: peer.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('friend_chat' ~ peer.id) }}">
+                <div class="mb-2">
+                    <label class="form-label visually-hidden">Message</label>
+                    <textarea name="content" id="friend-chat-content" class="form-control" rows="3" required maxlength="5000" placeholder="Écrire un message..."></textarea>
                 </div>
-            </div>
-        {% else %}
-            <p class="text-secondary small mb-0">Aucun message pour l’instant. Dites bonjour !</p>
-        {% endfor %}
+                <div id="friend-chat-send-error" class="alert alert-danger py-2 small d-none" role="alert"></div>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary social-soft-btn px-4" id="friend-chat-submit">Envoyer</button>
+                </div>
+            </form>
+        </div>
     </div>
-    <div class="card-body">
-        <form method="post">
-            <input type="hidden" name="_token" value="{{ csrf_token('friend_chat' ~ peer.id) }}">
-            <div class="mb-2">
-                <label class="form-label visually-hidden">Message</label>
-                <textarea name="content" class="form-control" rows="3" required maxlength="5000" placeholder="Votre message…"></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary">Envoyer</button>
-        </form>
-    </div>
-</div>
+</section>
+<script type="application/json" id="friend-chat-mercure-url">{{ mercure(mercure_topic)|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_HEX_TAG'))|raw }}</script>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        (() => {
+            const appEl = document.getElementById('friend-chat-app');
+            const scrollEl = document.getElementById('friend-chat-scroll');
+            const bubblesEl = document.getElementById('friend-chat-bubbles');
+            const placeholderEl = document.getElementById('friend-chat-placeholder');
+            const form = document.getElementById('friend-chat-form');
+            const contentInput = document.getElementById('friend-chat-content');
+            const submitBtn = document.getElementById('friend-chat-submit');
+            const errorEl = document.getElementById('friend-chat-send-error');
+            const mercureJson = document.getElementById('friend-chat-mercure-url');
+
+            if (!appEl || !bubblesEl || !form) {
+                return;
+            }
+
+            const myId = parseInt(appEl.dataset.myId, 10);
+            const chatAction = appEl.dataset.chatAction;
+            const pollUrl = appEl.dataset.pollUrl;
+
+            const scrollToBottom = () => {
+                scrollEl.scrollTop = scrollEl.scrollHeight;
+            };
+
+            const showSendError = (msg) => {
+                errorEl.textContent = msg;
+                errorEl.classList.remove('d-none');
+            };
+
+            const hideSendError = () => {
+                errorEl.classList.add('d-none');
+                errorEl.textContent = '';
+            };
+
+            const appendMessage = (msg) => {
+                if (!msg || !msg.id || document.querySelector('[data-message-id="' + msg.id + '"]')) {
+                    return;
+                }
+                const mine = parseInt(msg.senderId, 10) === myId;
+                const row = document.createElement('div');
+                row.className = 'd-flex mb-3 ' + (mine ? 'justify-content-end' : 'justify-content-start');
+                row.dataset.messageId = String(msg.id);
+
+                const bubble = document.createElement('div');
+                bubble.className = 'social-chat-bubble ' + (mine ? 'mine' : 'theirs');
+
+                const meta = document.createElement('div');
+                meta.className = 'social-chat-meta ' + (mine ? 'text-white-50' : 'social-subtitle');
+                const d = msg.createdAt ? new Date(msg.createdAt) : new Date();
+                meta.textContent = d.toLocaleString('fr-FR', {
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit',
+                });
+
+                const body = document.createElement('div');
+                body.className = 'message-content';
+                body.textContent = msg.content ?? '';
+
+                bubble.appendChild(meta);
+                bubble.appendChild(body);
+                row.appendChild(bubble);
+                bubblesEl.appendChild(row);
+
+                placeholderEl.classList.add('d-none');
+                scrollToBottom();
+                if (msg.id) {
+                    lastMessageId = Math.max(lastMessageId, parseInt(msg.id, 10));
+                }
+            };
+
+            let lastMessageId = 0;
+            document.querySelectorAll('[data-message-id]').forEach((el) => {
+                const id = parseInt(el.getAttribute('data-message-id'), 10);
+                if (!Number.isNaN(id)) {
+                    lastMessageId = Math.max(lastMessageId, id);
+                }
+            });
+
+            const handleMercureData = (raw) => {
+                try {
+                    const data = JSON.parse(raw);
+                    if (data.type === 'message') {
+                        appendMessage(data);
+                    }
+                } catch (e) {
+                    /* ignore */
+                }
+            };
+
+            let hubUrl = null;
+            if (mercureJson) {
+                try {
+                    hubUrl = JSON.parse(mercureJson.textContent);
+                } catch (e) {
+                    hubUrl = null;
+                }
+            }
+            if (hubUrl && typeof EventSource !== 'undefined') {
+                if (hubUrl.startsWith('/')) {
+                    hubUrl = new URL(hubUrl, window.location.origin).href;
+                }
+                const es = new EventSource(hubUrl);
+                es.onmessage = (event) => handleMercureData(event.data);
+                ['mercure', 'notification'].forEach((name) => {
+                    es.addEventListener(name, (event) => handleMercureData(event.data));
+                });
+                es.onerror = () => {
+                    /* SSE peut se couper ; le navigateur retente ; le polling complète */
+                };
+            }
+
+            const pollNewMessages = async () => {
+                if (!pollUrl) {
+                    return;
+                }
+                try {
+                    const res = await fetch(pollUrl + '?after=' + lastMessageId, {
+                        headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                        credentials: 'same-origin',
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok || !data.ok || !Array.isArray(data.messages)) {
+                        return;
+                    }
+                    data.messages.forEach((m) => appendMessage(m));
+                } catch (e) {
+                    /* ignore */
+                }
+            };
+
+            setInterval(pollNewMessages, 2500);
+            pollNewMessages();
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                hideSendError();
+                const text = (contentInput.value || '').trim();
+                if (!text) {
+                    showSendError('Saisissez un message avant d’envoyer.');
+                    return;
+                }
+                submitBtn.disabled = true;
+                const fd = new FormData(form);
+                try {
+                    const res = await fetch(chatAction, {
+                        method: 'POST',
+                        headers: {
+                            Accept: 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: fd,
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok || !data.ok) {
+                        showSendError(data.error || 'Envoi impossible. Réessayez.');
+                        submitBtn.disabled = false;
+                        return;
+                    }
+                    appendMessage(data.message);
+                    contentInput.value = '';
+                    contentInput.focus();
+                } catch (err) {
+                    showSendError('Erreur réseau. Vérifiez votre connexion.');
+                }
+                submitBtn.disabled = false;
+            });
+
+            scrollToBottom();
+        })();
+    </script>
 {% endblock %}

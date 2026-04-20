@@ -47,11 +47,63 @@ class UserManagementController extends AbstractController
     }
 
     #[Route('', name: 'admin_users_index', methods: ['GET'])]
-    public function index(UserRepository $userRepository): Response
+    public function index(Request $request, UserRepository $userRepository): Response
     {
+        $searchQuery = trim((string) $request->query->get('q', ''));
+        $users = $userRepository->findBy([], ['id' => 'ASC']);
+
+        if ($searchQuery !== '') {
+            $needle = mb_strtolower($searchQuery);
+            $users = array_values(array_filter(
+                $users,
+                static function (User $user) use ($needle): bool {
+                    return str_contains(mb_strtolower((string) $user->getEmail()), $needle)
+                        || str_contains(mb_strtolower((string) $user->getFirstName()), $needle)
+                        || str_contains(mb_strtolower((string) $user->getLastName()), $needle)
+                        || str_contains(mb_strtolower((string) $user->getRole()), $needle);
+                }
+            ));
+        }
+
         return $this->render('admin/user/index.html.twig', [
-            'users' => $userRepository->findBy([], ['id' => 'ASC']),
+            'users' => $users,
+            'search_query' => $searchQuery,
         ]);
+    }
+
+    #[Route('/{id}/toggle-block', name: 'admin_users_toggle_block', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function toggleBlock(Request $request, User $user, EntityManagerInterface $entityManager): Response
+    {
+        if (!$this->isCsrfTokenValid('admin_user_toggle_block' . $user->getId(), (string) $request->request->get('_token'))) {
+            $this->addFlash('error', FlashMessages::CSRF_INVALID);
+
+            return $this->redirectToRoute('admin_users_index');
+        }
+
+        if ($user instanceof Admin || \in_array('ROLE_ADMIN', $user->getRoles(), true)) {
+            $this->addFlash('error', 'Les comptes administrateur ne peuvent pas être bloqués.');
+
+            return $this->redirectToRoute('admin_users_index');
+        }
+
+        $me = $this->getUser();
+        if ($me instanceof User && $user->getId() === $me->getId()) {
+            $this->addFlash('error', 'Vous ne pouvez pas bloquer votre propre compte.');
+
+            return $this->redirectToRoute('admin_users_index');
+        }
+
+        $user->setBlocked(!$user->isBlocked());
+        $entityManager->flush();
+
+        $this->addFlash(
+            'success',
+            $user->isBlocked()
+                ? 'Le compte a été bloqué : cet utilisateur ne peut plus se connecter.'
+                : 'Le compte a été déverrouillé : l’utilisateur peut à nouveau se connecter.'
+        );
+
+        return $this->redirectToRoute('admin_users_index');
     }
 
     #[Route('/new', name: 'admin_users_new', methods: ['GET', 'POST'])]
@@ -106,6 +158,11 @@ class UserManagementController extends AbstractController
             if ($user instanceof Recruiter) {
                 $user->setCompanyname(trim((string) $request->request->get('companyname')) ?: null);
                 $user->setDepartement(trim((string) $request->request->get('departement')) ?: null);
+                $rne = strtoupper(preg_replace('/\s+/', '', (string) $request->request->get('companyRne')) ?? '');
+                $user->setCompanyRne('' !== $rne ? $rne : null);
+                $user->setApproved(true);
+            } else {
+                $user->setApproved(true);
             }
 
             $entityManager->persist($user);
@@ -184,11 +241,13 @@ class UserManagementController extends AbstractController
             );
 
             if ('ROLE_RECRUTEUR' === $role) {
+                $rne = strtoupper(preg_replace('/\s+/', '', (string) $request->request->get('companyRne')) ?? '');
                 $connection->executeStatement(
-                    'UPDATE `user` SET companyname = ?, departement = ? WHERE id = ?',
+                    'UPDATE `user` SET companyname = ?, departement = ?, company_rne = ? WHERE id = ?',
                     [
                         trim((string) $request->request->get('companyname')) ?: null,
                         trim((string) $request->request->get('departement')) ?: null,
+                        '' !== $rne ? $rne : null,
                         $user->getId(),
                     ]
                 );
@@ -216,6 +275,7 @@ class UserManagementController extends AbstractController
             'current_role' => $currentRole,
             'companyname' => $user instanceof Recruiter ? ($user->getCompanyname() ?? '') : '',
             'departement' => $user instanceof Recruiter ? ($user->getDepartement() ?? '') : '',
+            'company_rne' => $user instanceof Recruiter ? ($user->getCompanyRne() ?? '') : '',
         ]);
     }
 

@@ -37,20 +37,37 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $phone = null;
 
-    #[ORM\Column(length: 10, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $twoFactorCode = null;
 
-    #[ORM\Column(type: "datetime", nullable: true)]
+    #[ORM\Column(options: ['default' => false])]
+    private bool $twoFactorEnabled = false;
+
+    #[ORM\Column(name: 'profile_photo_url', length: 512, nullable: true)]
+    private ?string $profilePhotoUrl = null;
+
+    #[ORM\Column(type: "datetime_immutable", nullable: true)]
     private ?\DateTimeInterface $twoFactorExpiry = null;
 
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $resetToken = null;
 
-    #[ORM\Column(type: "datetime", nullable: true)]
+    #[ORM\Column(type: "datetime_immutable", nullable: true)]
     private ?\DateTimeInterface $resetTokenExpiry = null;
 
     #[ORM\OneToOne(mappedBy: 'user', targetEntity: Entreprise::class, cascade: ['persist', 'remove'])]
     private ?Entreprise $entreprise = null;
+
+    /** Compte bloqué par un admin : connexion refusée jusqu’au déverrouillage. */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $blocked = false;
+
+    /**
+     * Compte recruteur validé par un admin (inscription publique = false jusqu’à approbation).
+     * Candidats et admins : true par défaut.
+     */
+    #[ORM\Column(options: ['default' => true])]
+    private bool $approved = true;
 
     public function getId(): ?int
     {
@@ -163,6 +180,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function isTwoFactorEnabled(): bool
+    {
+        return $this->twoFactorEnabled;
+    }
+
+    public function setTwoFactorEnabled(bool $twoFactorEnabled): self
+    {
+        $this->twoFactorEnabled = $twoFactorEnabled;
+
+        return $this;
+    }
+
+    public function getProfilePhotoUrl(): ?string
+    {
+        return $this->profilePhotoUrl;
+    }
+
+    public function setProfilePhotoUrl(?string $profilePhotoUrl): self
+    {
+        $this->profilePhotoUrl = $profilePhotoUrl;
+
+        return $this;
+    }
+
     public function getTwoFactorExpiry(): ?\DateTimeInterface
     {
         return $this->twoFactorExpiry;
@@ -209,6 +250,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
 
         $this->entreprise = $entreprise;
+
+        return $this;
+    }
+
+    public function isBlocked(): bool
+    {
+        return $this->blocked;
+    }
+
+    public function setBlocked(bool $blocked): self
+    {
+        $this->blocked = $blocked;
+
+        return $this;
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->approved;
+    }
+
+    public function setApproved(bool $approved): self
+    {
+        $this->approved = $approved;
 
         return $this;
     }

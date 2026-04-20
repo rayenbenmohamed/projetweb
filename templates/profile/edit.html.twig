@@ -11,8 +11,31 @@
                 <h5 class="mb-0">Mes informations</h5>
             </div>
             <div class="card-body p-6">
-                <form method="post">
+                <form method="post" enctype="multipart/form-data">
                     <input type="hidden" name="_token" value="{{ csrf_token('profile_edit') }}">
+
+                    <div class="mb-4 border-bottom pb-4">
+                        <label class="form-label d-block mb-2">Photo de profil</label>
+                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                            {% if user.profilePhotoUrl %}
+                                <img
+                                    src="{{ user.profilePhotoUrl }}"
+                                    alt="Photo de profil"
+                                    class="rounded-circle border"
+                                    style="width: 88px; height: 88px; object-fit: cover;"
+                                >
+                            {% else %}
+                                <div class="rounded-circle border d-flex align-items-center justify-content-center bg-body-secondary text-secondary"
+                                     style="width: 88px; height: 88px;">
+                                    <i class="ti ti-user fs-2"></i>
+                                </div>
+                            {% endif %}
+                            <div class="flex-grow-1">
+                                <input type="file" name="profilePhoto" class="form-control" accept="image/*">
+                                <div class="form-text">Formats acceptés : JPG, PNG, GIF, WebP. Taille max : 5 Mo.</div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -31,6 +54,15 @@
                     <div class="mb-3">
                         <label class="form-label">Téléphone</label>
                         <input type="text" name="phone" class="form-control" value="{{ user.phone|default('') }}">
+                    </div>
+                    <div class="mb-4 border-top pt-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="twoFactorEnabled" name="twoFactorEnabled" value="1" {{ user.twoFactorEnabled ? 'checked' : '' }}>
+                            <label class="form-check-label" for="twoFactorEnabled">
+                                Activer la double authentification par e-mail
+                            </label>
+                        </div>
+                        <div class="form-text">Un code à 4 chiffres vous sera envoyé par e-mail à chaque connexion.</div>
                     </div>
                     {% if is_recruiter %}
                     <div class="mb-3 border-top pt-3">

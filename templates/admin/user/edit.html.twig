@@ -8,6 +8,11 @@
     <div class="col-lg-8">
         <div class="card card-lg">
             <div class="card-body p-6">
+                {% if 'ROLE_ADMIN' not in user.roles %}
+                    {% if user.blocked %}
+                        <div class="alert alert-warning border mb-4">Ce compte est <strong>bloqué</strong> : l’utilisateur ne peut pas se connecter. Utilisez « Bloquer / Déverrouiller » dans la liste des utilisateurs pour le réactiver.</div>
+                    {% endif %}
+                {% endif %}
                 <form method="post">
                     <input type="hidden" name="_token" value="{{ csrf_token('admin_user_edit' ~ user.id) }}">
 
@@ -46,6 +51,10 @@
                         <div class="mb-2">
                             <label class="form-label">Département</label>
                             <input type="text" name="departement" class="form-control" value="{{ departement|default('') }}">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">RNE / SIREN / SIRET</label>
+                            <input type="text" name="companyRne" class="form-control" maxlength="32" value="{{ company_rne|default('') }}">
                         </div>
                     </div>
                     <div class="mb-4">

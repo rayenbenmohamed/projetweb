@@ -1,5 +1,5 @@
 <?php
-$pdo = new PDO('mysql:host=127.0.0.1;dbname=devjava1', 'root', '');
+$pdo = new PDO('mysql:host=127.0.0.1;dbname=cc', 'root', '');
 
 // Fix orphaned type_contrat
 $pdo->exec("UPDATE contract 

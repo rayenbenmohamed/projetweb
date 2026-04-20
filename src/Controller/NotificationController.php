@@ -13,7 +13,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class NotificationController extends AbstractController
 {
     #[Route('/app/notifications/summary', name: 'app_notifications_summary', methods: ['GET'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[IsGranted('IS_AUTHENTICATED_REMEMBERED')]
     public function summary(SocialNotificationService $socialNotificationService): JsonResponse
     {
         return $this->json($socialNotificationService->getCounts($this->getUser()));

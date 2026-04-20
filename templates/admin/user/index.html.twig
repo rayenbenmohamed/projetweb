@@ -9,8 +9,40 @@
         <h5 class="mb-0">Tous les comptes</h5>
         <div class="d-flex flex-wrap gap-2">
             <a href="{{ path('admin_users_new') }}" class="btn btn-sm btn-primary">Ajouter un utilisateur</a>
+            <a href="{{ path('admin_recruiters_pending') }}" class="btn btn-sm btn-outline-warning">Recruteurs en attente</a>
             <a href="{{ path('admin_dashboard') }}" class="btn btn-sm btn-outline-secondary">Retour tableau de bord</a>
         </div>
+    </div>
+    <div class="card-body border-bottom py-3">
+        <form method="get" action="{{ path('admin_users_index') }}" class="row g-2 align-items-end" role="search" id="adminUsersSearchForm">
+            <div class="col-md-8 col-lg-6">
+                <label for="adminUserSearchInput" class="form-label small text-secondary mb-1">Rechercher un utilisateur</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-body-secondary border-end-0"><i class="ti ti-search"></i></span>
+                    <input
+                        type="search"
+                        id="adminUserSearchInput"
+                        name="q"
+                        value="{{ search_query|default('') }}"
+                        class="form-control border-start-0"
+                        placeholder="Nom, prénom, e-mail ou rôle..."
+                        autocomplete="off"
+                        maxlength="120"
+                    >
+                    {% if (search_query|default('')) != '' %}
+                        <a href="{{ path('admin_users_index') }}" class="btn btn-outline-secondary">Effacer</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-3">
+                <button type="submit" class="btn btn-primary w-100">Rechercher</button>
+            </div>
+            {% if (search_query|default('')) != '' %}
+                <div class="col-12 small text-secondary" id="adminUsersSearchSummary">
+                    Filtre actif : <strong>{{ search_query }}</strong> — {{ users|length }} résultat(s).
+                </div>
+            {% endif %}
+        </form>
     </div>
     <div class="table-responsive">
         <table class="table table-hover mb-0">
@@ -21,19 +53,40 @@
                     <th>E-mail</th>
                     <th>Rôle (stocké)</th>
                     <th>Type</th>
+                    <th>Accès</th>
                     <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for u in users %}
-                    <tr>
+                    {% set is_admin_account = 'ROLE_ADMIN' in u.roles %}
+                    <tr data-admin-user-row data-search="{{ (u.firstName|default('') ~ ' ' ~ u.lastName|default('') ~ ' ' ~ u.email ~ ' ' ~ u.role ~ ' ' ~ (u.roles|join(' ')) ~ (u.blocked ? ' bloqué suspendu' : ' actif') ~ (u.role == 'ROLE_RECRUTEUR' and not u.approved ? ' en attente validation recruteur' : ''))|lower }}">
                         <td>{{ u.id }}</td>
                         <td>{{ u.firstName|default('') }} {{ u.lastName|default('') }}</td>
                         <td>{{ u.email }}</td>
                         <td><code class="small">{{ u.role }}</code></td>
                         <td class="small text-secondary">{{ u.roles|join(', ') }}</td>
+                        <td>
+                            {% if is_admin_account %}
+                                <span class="badge bg-secondary-subtle text-secondary-emphasis">Admin</span>
+                            {% elseif u.blocked %}
+                                <span class="badge bg-danger-subtle text-danger-emphasis">Bloqué</span>
+                            {% elseif u.role == 'ROLE_RECRUTEUR' and not u.approved %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis">En attente</span>
+                            {% else %}
+                                <span class="badge bg-success-subtle text-success-emphasis">Actif</span>
+                            {% endif %}
+                        </td>
                         <td class="text-end">
                             <a href="{{ path('admin_users_edit', {id: u.id}) }}" class="btn btn-sm btn-primary">Modifier</a>
+                            {% if not is_admin_account %}
+                                <form class="d-inline" method="post" action="{{ path('admin_users_toggle_block', {id: u.id}) }}" onsubmit="return confirm('{{ u.blocked ? 'Déverrouiller ce compte ?' : 'Bloquer ce compte ? Cette personne ne pourra plus se connecter.' }}');">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_user_toggle_block' ~ u.id) }}">
+                                    <button type="submit" class="btn btn-sm {{ u.blocked ? 'btn-outline-success' : 'btn-outline-warning' }}">
+                                        {{ u.blocked ? 'Déverrouiller' : 'Bloquer' }}
+                                    </button>
+                                </form>
+                            {% endif %}
                             {% if app.user and u.id != app.user.id %}
                                 <form class="d-inline" method="post" action="{{ path('admin_users_delete', {id: u.id}) }}" onsubmit="return confirm('Supprimer définitivement cet utilisateur ?');">
                                     <input type="hidden" name="_token" value="{{ csrf_token('admin_user_delete' ~ u.id) }}">
@@ -43,10 +96,81 @@
                         </td>
                     </tr>
                 {% else %}
-                    <tr><td colspan="6" class="text-center py-5 text-secondary">Aucun utilisateur.</td></tr>
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-secondary">
+                            {% if (search_query|default('')) != '' %}
+                                Aucun utilisateur ne correspond à « {{ search_query }} ».
+                            {% else %}
+                                Aucun utilisateur.
+                            {% endif %}
+                        </td>
+                    </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        (() => {
+            const form = document.getElementById('adminUsersSearchForm');
+            const input = document.getElementById('adminUserSearchInput');
+            if (!form || !input) {
+                return;
+            }
+
+            const normalize = (value) => (value || '')
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .trim();
+
+            const rows = Array.from(document.querySelectorAll('[data-admin-user-row]'));
+            const emptyRow = document.querySelector('td[colspan="7"]')?.closest('tr') || null;
+            const summary = document.getElementById('adminUsersSearchSummary');
+            const submitButton = form.querySelector('button[type="submit"]');
+            const clearButton = form.querySelector('a.btn.btn-outline-secondary');
+
+            const applyFilter = () => {
+                const query = normalize(input.value);
+                let visible = 0;
+
+                rows.forEach((row) => {
+                    const haystack = normalize(row.getAttribute('data-search'));
+                    const show = query === '' || haystack.includes(query);
+                    row.classList.toggle('d-none', !show);
+                    if (show) {
+                        visible++;
+                    }
+                });
+
+                if (emptyRow) {
+                    emptyRow.classList.toggle('d-none', visible > 0);
+                }
+
+                if (summary) {
+                    summary.innerHTML = query === ''
+                        ? ''
+                        : `Filtre actif : <strong>${input.value}</strong> — ${visible} résultat(s).`;
+                    summary.classList.toggle('d-none', query === '');
+                }
+
+                if (submitButton) {
+                    submitButton.classList.add('btn-outline-primary');
+                    submitButton.classList.remove('btn-primary');
+                    submitButton.textContent = 'Filtre en direct';
+                }
+
+                if (clearButton) {
+                    clearButton.classList.toggle('d-none', query === '');
+                }
+            };
+
+            input.addEventListener('input', applyFilter);
+            applyFilter();
+        })();
+    </script>
 {% endblock %}

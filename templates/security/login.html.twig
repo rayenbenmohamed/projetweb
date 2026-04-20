@@ -57,14 +57,16 @@
 
                                 <div class="mb-4 d-flex align-items-center justify-content-between">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="_remember_me"
+                                        {# Toujours envoyer _remember_me : 0 si décoché, 1 si coché (évite ambiguïté POST). #}
+                                        <input type="hidden" name="_remember_me" value="0">
+                                        <input class="form-check-input" type="checkbox" name="_remember_me" value="1"
                                                id="rememberMeCheckbox"/>
                                         <label class="form-check-label" for="rememberMeCheckbox">
                                             Se souvenir de moi
                                         </label>
                                     </div>
                                     <div>
-                                        <a href="#" class="text-primary">Mot de passe oublié ?</a>
+                                        <a href="{{ path('app_forgot_password') }}" class="text-primary">Mot de passe oublié ?</a>
                                     </div>
                                 </div>
 

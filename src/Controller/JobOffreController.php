@@ -109,7 +109,7 @@ class JobOffreController extends AbstractController
             // On lie automatiquement à l'entreprise du recruteur
             $jobOffre->setEntreprise($entreprise);
 
-            // Dates ... (le reste du code est identique)
+            // Dates
             $publishedAtRaw = $request->request->get('published_at');
             $jobOffre->setPublishedAt($publishedAtRaw ? new \DateTime($publishedAtRaw) : new \DateTime());
 

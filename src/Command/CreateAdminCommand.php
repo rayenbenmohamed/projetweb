@@ -58,7 +58,7 @@ class CreateAdminCommand extends Command
 
         if ($existing && $reset) {
             $this->connection->executeStatement(
-                'UPDATE `user` SET discr = ?, `role` = ?, password = ?, firstName = COALESCE(firstName, ?), lastName = COALESCE(lastName, ?) WHERE email = ?',
+                'UPDATE `user` SET discr = ?, `role` = ?, password = ?, firstName = COALESCE(firstName, ?), lastName = COALESCE(lastName, ?), approved = 1 WHERE email = ?',
                 ['admin', 'ROLE_ADMIN', $hash, 'Admin', 'Syfonu', self::ADMIN_EMAIL]
             );
             $io->success('Compte ' . self::ADMIN_EMAIL . ' réinitialisé : administrateur, mot de passe **' . self::DEFAULT_PASSWORD . '**. Reconnectez-vous.');
