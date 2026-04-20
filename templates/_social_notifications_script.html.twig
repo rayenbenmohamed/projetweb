@@ -4,10 +4,79 @@
     if (!wrap || !wrap.dataset.notifyUrl) {
         return;
     }
+    var notifyTargetMessage = '{{ path('app_friends_index') }}#section-friends';
+    var notifyTargetFriend = '{{ path('app_friends_index') }}#section-incoming-requests';
     var prevDetail = {
         friend_requests: parseInt(wrap.dataset.initialFr || '0', 10) || 0,
         unread_messages: parseInt(wrap.dataset.initialUm || '0', 10) || 0
     };
+
+    function isDesktopNotificationAvailable() {
+        return typeof window !== 'undefined' && 'Notification' in window;
+    }
+
+    function requestDesktopPermission() {
+        if (!isDesktopNotificationAvailable()) {
+            return;
+        }
+        if (Notification.permission === 'default') {
+            Notification.requestPermission().catch(function () {
+            });
+        }
+    }
+
+    function ensureDesktopPermissionWithFeedback() {
+        if (!isDesktopNotificationAvailable()) {
+            showToast('SyfonuRH', 'Votre navigateur ne supporte pas les notifications desktop.');
+            return;
+        }
+        if (Notification.permission === 'granted') {
+            showDesktopNotification('SyfonuRH', 'Notifications desktop activées.', notifyTargetMessage);
+            showToast('SyfonuRH', 'Notifications desktop déjà activées.');
+            return;
+        }
+        if (Notification.permission === 'denied') {
+            showToast('SyfonuRH', 'Notifications bloquées par le navigateur. Autorisez-les depuis le cadenas de l’URL.');
+            return;
+        }
+        Notification.requestPermission().then(function (perm) {
+            if (perm === 'granted') {
+                showDesktopNotification('SyfonuRH', 'Notifications desktop activées.', notifyTargetMessage);
+                showToast('SyfonuRH', 'Notifications desktop activées.');
+            } else {
+                showToast('SyfonuRH', 'Autorisation refusée. Activez-la depuis le navigateur.');
+            }
+        }).catch(function () {
+            showToast('SyfonuRH', 'Impossible de demander la permission desktop.');
+        });
+    }
+
+    function showDesktopNotification(title, message, url) {
+        if (!isDesktopNotificationAvailable() || Notification.permission !== 'granted') {
+            return;
+        }
+        try {
+            var n = new Notification(title, {
+                body: message,
+                icon: '{{ asset('dasher/images/brand/logo/logo-icon.svg') }}',
+                tag: 'syfonurh-social'
+            });
+            n.onclick = function () {
+                window.focus();
+                if (url) {
+                    window.location.href = url;
+                }
+                n.close();
+            };
+        } catch (e) {
+        }
+    }
+
+    function shouldShowDesktopNotification() {
+        // Show desktop notifications whenever user is not actively focused on this tab/window.
+        // This covers both hidden tabs and visible tabs when another app/window is in front.
+        return document.visibilityState !== 'visible' || !document.hasFocus();
+    }
 
     function showToast(title, message) {
         var host = document.getElementById('socialNotifyToastHost');
@@ -33,12 +102,16 @@
         var um = parseInt(String(data.unread_messages || 0), 10) || 0;
         var total = fr + um;
 
-        if (document.visibilityState === 'visible') {
-            if (fr > prevDetail.friend_requests) {
-                showToast('SyfonuRH', 'Vous avez une nouvelle demande d’ami.');
+        if (fr > prevDetail.friend_requests) {
+            showToast('SyfonuRH', 'Vous avez une nouvelle demande d’ami.');
+            if (shouldShowDesktopNotification()) {
+                showDesktopNotification('SyfonuRH', 'Nouvelle demande d’ami reçue.', notifyTargetFriend);
             }
-            if (um > prevDetail.unread_messages) {
-                showToast('SyfonuRH', 'Vous avez reçu un nouveau message.');
+        }
+        if (um > prevDetail.unread_messages) {
+            showToast('SyfonuRH', 'Vous avez reçu un nouveau message.');
+            if (shouldShowDesktopNotification()) {
+                showDesktopNotification('SyfonuRH', 'Vous avez reçu un nouveau message.', notifyTargetMessage);
             }
         }
 
@@ -76,7 +149,18 @@
             });
     }
 
-    setInterval(poll, 45000);
+    var bellButton = document.getElementById('socialNotifyToggle');
+    if (bellButton) {
+        bellButton.addEventListener('click', requestDesktopPermission, {once: true});
+    }
+    var desktopButton = document.getElementById('socialNotifyEnableDesktop');
+    if (desktopButton) {
+        desktopButton.addEventListener('click', ensureDesktopPermissionWithFeedback);
+    }
+    // Ask permission on first page load if user hasn't decided yet.
+    requestDesktopPermission();
+
+    setInterval(poll, 10000);
     document.addEventListener('visibilitychange', function () {
         if (document.visibilityState === 'visible') {
             poll();
