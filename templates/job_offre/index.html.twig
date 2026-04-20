@@ -66,7 +66,7 @@
 .map-count{font-size:.75rem;color:#8a95a3;margin-top:.25rem}
 
 /* ── Scrollable feed ──────────────────────────── */
-.feed-wrapper{height:calc(100vh - 390px);min-height:420px;overflow-y:auto;padding-right:4px}
+.feed-wrapper{height:calc(100vh - 390px);min-height:420px;overflow-y:auto;overflow-x:visible;padding-right:4px}
 .feed-wrapper::-webkit-scrollbar{width:5px}
 .feed-wrapper::-webkit-scrollbar-track{background:transparent}
 .feed-wrapper::-webkit-scrollbar-thumb{background:#dde0f0;border-radius:10px}
@@ -96,18 +96,46 @@
 .jbtn-apply {border-color:#10b981;color:#10b981;background:#f0fdf4}
 .jbtn-cancel{border-color:#ef4444;color:#ef4444;background:#fff5f5}
 .jbtn-login {border-color:#6b7280;color:#6b7280;background:#f9fafb}
-.jbtn-trans {border-color:#5c67f5;color:#5c67f5;background:#f5f6ff;position:relative;overflow:hidden}
-.jbtn-trans:hover{background:#5c67f5;color:#fff}
-.jbtn-trans.loading {pointer-events:none;opacity:.7}
-.jbtn-trans.loading::after {content:"";position:absolute;bottom:0;left:0;height:2px;width:100%;background:#5c67f5;animation:load 1s infinite linear}
-@keyframes load {0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
 .jcard-title.translated {color:#059669!important;transition:all .3s}
 .jcard:hover{filter:none!important}
-.trans-dropdown-menu {z-index:1060;border:none;box-shadow:0 10px 30px rgba(0,0,0,.15);border-radius:12px;padding:.5rem;min-width:140px;background:rgba(255,255,255,.98);backdrop-filter:blur(10px)}
-.trans-dropdown-item {border-radius:8px;font-size:.8rem;font-weight:600;padding:.4rem .8rem;display:flex;align-items:center;gap:.5rem;color:#4b5563;transition:all .2s}
-.trans-dropdown-item:hover {background:#f5f6ff;color:#5c67f5}
-.trans-dropdown-item img {width:18px;border-radius:3px}
-.rotate { animation: spin 1s infinite linear; }
+
+/* ── Translation inline row ──────────────────────────────── */
+.trans-flags-row {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    background: #f3f4f6;
+    border-radius: 20px;
+    padding: .2rem .4rem;
+    flex-shrink: 0;
+}
+.trans-label {
+    font-size: .75rem;
+    color: #9ca3af;
+    padding: 0 .2rem;
+}
+.flag-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .2rem;
+    background: transparent;
+    border: 1.5px solid transparent;
+    border-radius: 20px;
+    padding: .18rem .45rem;
+    font-size: .7rem;
+    font-weight: 700;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+}
+.flag-btn img { width: 16px; border-radius: 3px; }
+.flag-btn:hover { background: #fff; border-color: #5c67f5; color: #5c67f5; transform: scale(1.08); }
+.flag-btn.active { background: #5c67f5; border-color: #5c67f5; color: #fff; }
+.flag-btn.flag-btn-reset { color: #6b7280; }
+.flag-btn.flag-btn-reset:hover { background: #fff7ed; border-color: #f97316; color: #f97316; }
+.flag-btn.loading { pointer-events:none; opacity:.5; }
+.rotate { animation: spin .7s linear infinite; }
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
 /* Results */
@@ -354,30 +382,24 @@
                             <a href="{{ path('app_login') }}" class="jbtn jbtn-login"><i class="ti ti-login"></i>Se connecter</a>
                         {% endif %}
                         
-                        {# Dropdown Traduction #}
-                        <div class="dropdown">
-                            <button type="button" class="jbtn jbtn-trans dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" data-bs-offset="0,10">
-                                <i class="ti ti-language"></i> Traduire
+                        {# Traduction inline — boutons en ligne #}
+                        <div class="trans-flags-row" id="trans-row-{{ offre.id }}">
+                            <span class="trans-label"><i class="ti ti-language"></i></span>
+                            <button class="flag-btn" title="English" onclick="translateCard(this, {{ offre.id }}, 'en')">
+                                <img src="https://flagcdn.com/w20/gb.png" alt="EN"><span>EN</span>
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end trans-dropdown-menu">
-                                <li><a class="dropdown-item trans-dropdown-item" href="javascript:void(0)" onclick="translateCard(this, {{ offre.id }}, 'en')">
-                                    <img src="https://flagcdn.com/w20/gb.png" alt="EN"> English</a>
-                                </li>
-                                <li><a class="dropdown-item trans-dropdown-item" href="javascript:void(0)" onclick="translateCard(this, {{ offre.id }}, 'ar')">
-                                    <img src="https://flagcdn.com/w20/sa.png" alt="AR"> Arabe</a>
-                                </li>
-                                <li><a class="dropdown-item trans-dropdown-item" href="javascript:void(0)" onclick="translateCard(this, {{ offre.id }}, 'es')">
-                                    <img src="https://flagcdn.com/w20/es.png" alt="ES"> Espagnol</a>
-                                </li>
-                                <li><a class="dropdown-item trans-dropdown-item" href="javascript:void(0)" onclick="translateCard(this, {{ offre.id }}, 'de')">
-                                    <img src="https://flagcdn.com/w20/de.png" alt="DE"> Allemand</a>
-                                </li>
-                                {# Option retour à l'original si déjà traduit #}
-                                <li class="back-to-original d-none"><hr class="dropdown-divider"></li>
-                                <li class="back-to-original d-none"><a class="dropdown-item trans-dropdown-item text-danger" href="javascript:void(0)" onclick="resetTranslation(this, {{ offre.id }})">
-                                    <i class="ti ti-arrow-back-up"></i> Original</a>
-                                </li>
-                            </ul>
+                            <button class="flag-btn" title="Arabe" onclick="translateCard(this, {{ offre.id }}, 'ar')">
+                                <img src="https://flagcdn.com/w20/sa.png" alt="AR"><span>AR</span>
+                            </button>
+                            <button class="flag-btn" title="Espagnol" onclick="translateCard(this, {{ offre.id }}, 'es')">
+                                <img src="https://flagcdn.com/w20/es.png" alt="ES"><span>ES</span>
+                            </button>
+                            <button class="flag-btn" title="Allemand" onclick="translateCard(this, {{ offre.id }}, 'de')">
+                                <img src="https://flagcdn.com/w20/de.png" alt="DE"><span>DE</span>
+                            </button>
+                            <button class="flag-btn flag-btn-reset d-none" title="Retour à l'original" onclick="resetTranslation(this, {{ offre.id }})">
+                                <i class="ti ti-arrow-back-up"></i><span>FR</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -768,42 +790,77 @@ offersData.forEach(function (o) { visibleIds.add(o.id); });
 // Run filter on load
 filterCards();
 
+
 // ─── Translation Feature ───────────────────────────────────
+
+// Helper: calls the translation API for a single text
+async function translateText(text, targetLang) {
+    if (!text || !text.trim()) return null;
+    const response = await fetch('/job/offre/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text.trim(), target: targetLang })
+    });
+    const data = await response.json();
+    return data.translation || null;
+}
+
 window.translateCard = async function(el, id, targetLang) {
-    const btn = el.closest('.dropdown').querySelector('.dropdown-toggle');
+    // el is the .flag-btn button
+    const btn = el;
     if (btn.classList.contains('loading')) return;
-    
+
     const card = document.getElementById('card-' + id);
     if (!card) return;
 
-    const titleEl = card.querySelector('.jcard-heading a');
-    if (!btn.dataset.original) {
-        btn.dataset.original = titleEl.innerText;
+    const row = card.querySelector('.trans-flags-row');
+
+    // Collect all translatable elements
+    const titleEl      = card.querySelector('.jcard-heading a');
+    const locationEl   = card.querySelector('.jcard-meta span:first-child i.ti-map-pin')?.closest('span');
+    const typeEl       = card.querySelector('.ibadge-type');
+    const advantagesEl = card.querySelector('.small.text-secondary.mt-1');
+
+    // Save originals on first translation (use the row as storage anchor)
+    if (!row.dataset.translated) {
+        if (titleEl)       titleEl.dataset.original       = titleEl.innerText;
+        if (locationEl)    locationEl.dataset.original    = locationEl.innerText;
+        if (typeEl)        typeEl.dataset.original        = typeEl.innerText;
+        if (advantagesEl)  advantagesEl.dataset.original  = advantagesEl.innerText;
     }
 
-    btn.classList.add('loading');
+    // Show loading on clicked button
     const originalHtml = btn.innerHTML;
-    btn.innerHTML = '<i class="ti ti-refresh rotate"></i> ...';
+    btn.classList.add('loading');
+    btn.innerHTML = '<i class="ti ti-refresh rotate"></i>';
 
     try {
-        const response = await fetch('/job/offre/translate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                text: btn.dataset.original,
-                target: targetLang
-            })
-        });
-        const data = await response.json();
+        const tasks = [
+            titleEl       ? translateText(titleEl.dataset.original       || titleEl.innerText,       targetLang) : Promise.resolve(null),
+            locationEl    ? translateText(locationEl.dataset.original    || locationEl.innerText,    targetLang) : Promise.resolve(null),
+            typeEl        ? translateText(typeEl.dataset.original        || typeEl.innerText,        targetLang) : Promise.resolve(null),
+            advantagesEl  ? translateText(advantagesEl.dataset.original  || advantagesEl.innerText,  targetLang) : Promise.resolve(null),
+        ];
 
-        if (data.translation) {
-            titleEl.innerText = data.translation;
-            titleEl.classList.add('translated');
-            
-            // Show reset options
-            el.closest('.dropdown').querySelectorAll('.back-to-original').forEach(i => i.classList.remove('d-none'));
-            btn.innerHTML = '<i class="ti ti-language"></i> ' + targetLang.toUpperCase();
-        }
+        const [titleTr, locationTr, typeTr, advantagesTr] = await Promise.all(tasks);
+
+        // Apply translations
+        if (titleTr      && titleEl)       { titleEl.innerText = titleTr; titleEl.style.color = '#059669'; }
+        if (locationTr   && locationEl)    { locationEl.innerHTML = '<i class="ti ti-map-pin"></i>' + locationTr; }
+        if (typeTr       && typeEl)        { typeEl.innerText = typeTr; }
+        if (advantagesTr && advantagesEl)  { advantagesEl.innerHTML = '<i class="ti ti-plus" style="font-size:0.65rem;"></i> ' + advantagesTr; }
+
+        // Mark active button
+        row.querySelectorAll('.flag-btn:not(.flag-btn-reset)').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        btn.innerHTML = originalHtml;
+
+        // Show reset button
+        const resetBtn = row.querySelector('.flag-btn-reset');
+        if (resetBtn) resetBtn.classList.remove('d-none');
+
+        row.dataset.translated = targetLang;
+
     } catch (e) {
         console.error('Translation error:', e);
         btn.innerHTML = originalHtml;
@@ -815,17 +872,24 @@ window.translateCard = async function(el, id, targetLang) {
 
 window.resetTranslation = function(el, id) {
     const card = document.getElementById('card-' + id);
-    const dropdown = el.closest('.dropdown');
-    const btn = dropdown.querySelector('.dropdown-toggle');
-    const titleEl = card.querySelector('.jcard-heading a');
+    const row  = card.querySelector('.trans-flags-row');
 
-    if (btn.dataset.original) {
-        titleEl.innerText = btn.dataset.original;
-        titleEl.classList.remove('translated');
-        btn.innerHTML = '<i class="ti ti-language"></i> Traduire';
-        dropdown.querySelectorAll('.back-to-original').forEach(i => i.classList.add('d-none'));
-    }
+    const titleEl      = card.querySelector('.jcard-heading a');
+    const locationEl   = card.querySelector('.jcard-meta span:first-child i.ti-map-pin')?.closest('span');
+    const typeEl       = card.querySelector('.ibadge-type');
+    const advantagesEl = card.querySelector('.small.text-secondary.mt-1');
+
+    if (titleEl?.dataset.original)      { titleEl.innerText = titleEl.dataset.original; titleEl.style.color = ''; }
+    if (locationEl?.dataset.original)   { locationEl.innerHTML = '<i class="ti ti-map-pin"></i>' + locationEl.dataset.original; }
+    if (typeEl?.dataset.original)       { typeEl.innerText = typeEl.dataset.original; }
+    if (advantagesEl?.dataset.original) { advantagesEl.innerHTML = '<i class="ti ti-plus" style="font-size:0.65rem;"></i> ' + advantagesEl.dataset.original; }
+
+    // Reset button states
+    row.querySelectorAll('.flag-btn:not(.flag-btn-reset)').forEach(b => b.classList.remove('active'));
+    el.classList.add('d-none');
+    delete row.dataset.translated;
 };
+
 
 // ─── AI Chat Interaction Logic ─────────────────────────────
 const aiChatBubble  = document.getElementById('aiChatBubble');
