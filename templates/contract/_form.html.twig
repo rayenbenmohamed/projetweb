@@ -1,26 +1,19 @@
 {% set is_edit = is_edit ?? false %}
 {% set form = form ?? {} %}
 
-<form method="post" class="needs-validation">
+<form method="post" class="needs-validation" novalidate>
   <div class="row g-4">
     <div class="col-md-6">
-      <div class="d-flex justify-content-between align-items-center mb-1">
-        <label class="form-label mb-0">Candidat *</label>
-        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" data-bs-toggle="modal" data-bs-target="#newCandidateModal">
-          <i class="ti ti-plus me-1"></i>Ajouter nouveau
-        </button>
-      </div>
-      <select class="form-select" name="candidate_id" id="candidateSelect" required data-choices>
+      <label class="form-label">Candidat *</label>
+      <select class="form-select" name="candidate_id" required data-choices>
         <option value="" disabled {{ (form.candidate_id ?? '') == '' and not contract.candidate ? 'selected' : '' }}>Sélectionner…</option>
         {% if contract.candidate %}
-          <option value="{{ contract.candidate.id }}" {{ (form.candidate_id ?? contract.candidate.id) == contract.candidate.id ? 'selected' : '' }}
-                  data-phone="{{ contract.candidate.phone ?? '' }}">
+          <option value="{{ contract.candidate.id }}" {{ (form.candidate_id ?? contract.candidate.id) == contract.candidate.id ? 'selected' : '' }}>
             {{ (contract.candidate.firstName ?? '') ~ ' ' ~ (contract.candidate.lastName ?? '') }} — {{ contract.candidate.email }}
           </option>
         {% endif %}
         {% for u in candidates %}
-          <option value="{{ u.id }}" {{ (form.candidate_id ?? (contract.candidate ? contract.candidate.id : '')) == u.id ? 'selected' : '' }}
-                  data-phone="{{ u.phone ?? '' }}">
+          <option value="{{ u.id }}" {{ (form.candidate_id ?? (contract.candidate ? contract.candidate.id : '')) == u.id ? 'selected' : '' }}>
             {{ (u.firstName ?? '') ~ ' ' ~ (u.lastName ?? '') }} — {{ u.email }}
           </option>
         {% endfor %}
@@ -28,32 +21,9 @@
       <div class="invalid-feedback">Candidat obligatoire.</div>
     </div>
 
-    {# Numéro de téléphone du candidat #}
     <div class="col-md-6">
-      <label class="form-label d-flex align-items-center gap-2">
-        <i class="ti ti-device-mobile text-success"></i> Téléphone du candidat
-        <span class="badge bg-success-subtle text-success small ms-1">WhatsApp</span>
-      </label>
-      <div class="input-group">
-        <span class="input-group-text bg-light fw-bold text-secondary">+216</span>
-        <input type="tel" class="form-control" id="candidatePhone" name="candidate_phone"
-               placeholder="Ex : 12 345 678" maxlength="12"
-               value="{{ contract.candidate and contract.candidate.phone ? contract.candidate.phone|replace({'+216': '', '+': ''}) : '' }}"
-               autocomplete="tel">
-      </div>
-      <div class="form-text text-muted">
-        <i class="ti ti-info-circle me-1"></i>Sera utilisé pour l'envoi WhatsApp. Format : 8 chiffres locaux.
-      </div>
-    </div>
-
-    <div class="col-md-6">
-      <div class="d-flex justify-content-between align-items-center mb-1">
-        <label class="form-label mb-0">Recruteur</label>
-        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" data-bs-toggle="modal" data-bs-target="#newRecruiterModal">
-          <i class="ti ti-plus me-1"></i>Ajouter nouveau
-        </button>
-      </div>
-      <select class="form-select" name="recruiter_id" id="recruiterSelect" data-choices>
+      <label class="form-label">Recruteur</label>
+      <select class="form-select" name="recruiter_id" data-choices>
         <option value="" {{ (form.recruiter_id ?? '') == '' and not contract.recruiter ? 'selected' : '' }}>—</option>
         {% if contract.recruiter %}
           <option value="{{ contract.recruiter.id }}" {{ (form.recruiter_id ?? contract.recruiter.id) == contract.recruiter.id ? 'selected' : '' }}>
@@ -98,23 +68,6 @@
         {% for t in types %}
           <option value="{{ t.id }}" {{ (form.type_contrat_id ?? (contract.typeContrat ? contract.typeContrat.id : '')) == t.id ? 'selected' : '' }}>
             {{ t.name }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div class="col-md-6">
-      <label class="form-label">Modèle PDF</label>
-      <select class="form-select" name="pdf_template_id" data-choices>
-        <option value="" {{ (form.pdf_template_id ?? '') == '' and not contract.pdfTemplate ? 'selected' : '' }}>Par défaut (Standard)</option>
-        {% if contract.pdfTemplate %}
-          <option value="{{ contract.pdfTemplate.id }}" {{ (form.pdf_template_id ?? contract.pdfTemplate.id) == contract.pdfTemplate.id ? 'selected' : '' }}>
-            {{ contract.pdfTemplate.name }}
-          </option>
-        {% endif %}
-        {% for tp in pdf_templates %}
-          <option value="{{ tp.id }}" {{ (form.pdf_template_id ?? (contract.pdfTemplate ? contract.pdfTemplate.id : '')) == tp.id ? 'selected' : '' }}>
-            {{ tp.name }}
           </option>
         {% endfor %}
       </select>
@@ -165,19 +118,19 @@
       <div class="card bg-primary-subtle border-primary-subtle h-100 shadow-sm">
         <div class="card-body p-4">
           <h6 class="mb-4 d-flex align-items-center gap-2">
-            <i class="ti ti-calculator text-primary fs-4"></i> Synthèse de la rémunération
+            <i class="ti ti-calculator text-primary fs-4"></i> Synthèse des Coûts
           </h6>
           <div class="d-flex justify-content-between mb-3">
-            <span class="text-secondary">Salaire brut annuel</span>
+            <span class="text-secondary">Salaire Brut Annuel</span>
             <span class="fw-bold fs-5" id="brutDisplay">0 TND</span>
           </div>
           <div class="d-flex justify-content-between mb-3 text-success">
-            <span class="fw-semibold">Salaire net mensuel estimé</span>
+            <span class="fw-semibold">Salaire Net Mensuel (Est.)</span>
             <span class="fw-bold fs-5" id="netDisplay">0 TND</span>
           </div>
           <hr class="my-4"/>
           <div class="d-flex justify-content-between mb-2 small">
-            <span class="text-secondary">Coût total employeur</span>
+            <span class="text-secondary">Coût de l'entreprise (Charges pat.)</span>
             <span class="fw-semibold" id="totalCostDisplay">0 TND</span>
           </div>
           <div class="progress mt-3" style="height: 8px; border-radius: 4px;">
@@ -225,12 +178,12 @@
            <i class="ti ti-sparkles fs-4"></i>
         </div>
         <div>
-          <h6 class="mb-1">Générateur de contenu du contrat</h6>
-          <p class="small text-secondary mb-0">Generate automatically the contract content (description, clauses, and conditions) based on the selected data.</p>
+          <h6 class="mb-1">Assistant de rédaction de clauses</h6>
+          <p class="small text-secondary mb-0">Rédiger automatiquement un projet de document basé sur le profil du candidat.</p>
         </div>
       </div>
       <button type="button" class="btn btn-dark px-4 py-2 shadow-sm" id="generateSuggestedContent">
-        Générer le contenu du contrat
+        Générer le texte
       </button>
     </div>
   </div>
@@ -238,12 +191,12 @@
   {# Contract Content Textarea #}
   <div class="col-12 mt-4">
     <div class="d-flex align-items-center justify-content-between mb-2">
-      <label class="form-label mb-0 fw-bold text-dark">Contenu du contrat</label>
+      <label class="form-label mb-0 fw-bold text-dark">Contenu du contrat (Clauses légales)</label>
       <span class="badge bg-light text-dark border"><i class="ti ti-edit me-1"></i> Mode Édition</span>
     </div>
     <textarea class="form-control shadow-sm" name="content" id="contractContentMain" rows="12" 
               style="border-radius: 8px; border: 1px solid #d1d9e6;"
-              placeholder="Enter the contract content manually or use the automatic generator.">{{ form.content ?? (contract.content ?? '') }}</textarea>
+              placeholder="Rédigez ici ou utilisez le bouton 'Générer le texte' ci-dessus pour un remplissage automatique...">{{ form.content ?? (contract.content ?? '') }}</textarea>
   </div>
 
   {% if candidates is empty %}
@@ -255,120 +208,30 @@
   <div class="d-flex justify-content-end gap-2 mt-6">
     <a href="{{ path('app_contract_index') }}" class="btn btn-outline-secondary">Annuler</a>
     <button type="submit" class="btn btn-primary">
-      {{ is_edit ? 'Enregistrer' : 'Enregistrer le contrat' }}
+      {{ is_edit ? 'Enregistrer' : 'Créer le contrat' }}
     </button>
   </div>
 </form>
 
-{# Modal pour nouveau candidat #}
-<div class="modal fade" id="newCandidateModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg">
-      <div class="modal-header bg-primary text-white border-0">
-        <h5 class="modal-title"><i class="ti ti-user-plus me-2"></i>Nouveau Candidat</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <form id="newCandidateForm">
-        <div class="modal-body p-4">
-          <div class="row g-3">
-            <div class="col-6">
-              <label class="form-label">Prénom *</label>
-              <input type="text" class="form-control" name="firstName" required>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Nom *</label>
-              <input type="text" class="form-control" name="lastName" required>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Email *</label>
-              <input type="email" class="form-control" name="email" required>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Téléphone</label>
-              <input type="text" class="form-control" name="phone">
-            </div>
-          </div>
-          <div id="candidateFormError" class="alert alert-danger mt-3 d-none"></div>
-        </div>
-        <div class="modal-footer border-0">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
-          <button type="submit" class="btn btn-primary" id="saveCandidateBtn">
-            <span class="spinner-border spinner-border-sm d-none me-2"></span>Enregistrer
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-{# Modal pour nouveau recruteur #}
-<div class="modal fade" id="newRecruiterModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg">
-      <div class="modal-header bg-success text-white border-0">
-        <h5 class="modal-title"><i class="ti ti-building me-2"></i>Nouveau Recruteur</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <form id="newRecruiterForm">
-        <div class="modal-body p-4">
-          <div class="row g-3">
-            <div class="col-6">
-              <label class="form-label">Prénom *</label>
-              <input type="text" class="form-control" name="firstName" required>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Nom *</label>
-              <input type="text" class="form-control" name="lastName" required>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Email *</label>
-              <input type="email" class="form-control" name="email" required>
-            </div>
-            <div class="col-12">
-              <label class="form-label">Téléphone</label>
-              <input type="text" class="form-control" name="phone">
-            </div>
-            <div class="col-6">
-              <label class="form-label">Entreprise</label>
-              <input type="text" class="form-control" name="company">
-            </div>
-            <div class="col-6">
-              <label class="form-label">Département</label>
-              <input type="text" class="form-control" name="department">
-            </div>
-          </div>
-          <div id="recruiterFormError" class="alert alert-danger mt-3 d-none"></div>
-        </div>
-        <div class="modal-footer border-0">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
-          <button type="submit" class="btn btn-success" id="saveRecruiterBtn">
-            <span class="spinner-border spinner-border-sm d-none me-2"></span>Enregistrer
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-{# Modal pour le contenu généré par l'IA #}
+{# Modal pour le contenu suggéré #}
 <div class="modal fade" id="suggestionModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content border-0 shadow-lg">
       <div class="modal-header bg-dark text-white border-0">
         <h5 class="modal-title d-flex align-items-center gap-2">
-          <i class="ti ti-sparkles text-warning"></i> Aperçu du contenu généré
+          <i class="ti ti-file-text text-white"></i> Assistant de Rédaction
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body p-4">
         <div class="alert alert-info border-0 bg-info-subtle small mb-4">
-          <i class="ti ti-info-circle me-1"></i> Le contenu ci-dessous a été généré automatiquement. Vous pouvez le modifier avant de l'insérer dans le contrat.
+          Le module d'assistance a généré ce projet de contrat en se basant sur les informations saisies.
         </div>
         <textarea id="suggestedText" class="form-control bg-light" rows="12" style="font-family: 'Courier New', Courier, monospace; font-size: 14px;"></textarea>
       </div>
       <div class="modal-footer border-0 p-4 pt-0">
         <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Annuler</button>
-        <button type="button" class="btn btn-primary px-4" id="useAiText">Appliquer au contrat</button>
+        <button type="button" class="btn btn-primary px-4" id="useAiText">Valider & Insérer</button>
       </div>
     </div>
   </div>

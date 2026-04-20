@@ -9,7 +9,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/type-contrat')]
 class TypeContratController extends AbstractController
@@ -33,22 +32,20 @@ class TypeContratController extends AbstractController
     }
 
     #[Route('/new', name: 'app_type_contrat_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager, ValidatorInterface $validator): Response
+    public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
         $type = new TypeContrat();
 
         if ($request->isMethod('POST')) {
-            $type->setName(trim((string) $request->request->get('name')));
+            $name = trim((string) $request->request->get('name'));
             $description = trim((string) $request->request->get('description'));
-            $type->setDescription($description !== '' ? $description : null);
 
-            $violations = $validator->validate($type);
-
-            if (count($violations) > 0) {
-                foreach ($violations as $violation) {
-                    $this->addFlash('error', $violation->getMessage());
-                }
+            if ($name === '') {
+                $this->addFlash('error', 'Le nom est obligatoire.');
             } else {
+                $type->setName($name);
+                $type->setDescription($description !== '' ? $description : null);
+
                 $entityManager->persist($type);
                 $entityManager->flush();
 
@@ -63,20 +60,18 @@ class TypeContratController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_type_contrat_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, TypeContrat $type, EntityManagerInterface $entityManager, ValidatorInterface $validator): Response
+    public function edit(Request $request, TypeContrat $type, EntityManagerInterface $entityManager): Response
     {
         if ($request->isMethod('POST')) {
-            $type->setName(trim((string) $request->request->get('name')));
+            $name = trim((string) $request->request->get('name'));
             $description = trim((string) $request->request->get('description'));
-            $type->setDescription($description !== '' ? $description : null);
 
-            $violations = $validator->validate($type);
-
-            if (count($violations) > 0) {
-                foreach ($violations as $violation) {
-                    $this->addFlash('error', $violation->getMessage());
-                }
+            if ($name === '') {
+                $this->addFlash('error', 'Le nom est obligatoire.');
             } else {
+                $type->setName($name);
+                $type->setDescription($description !== '' ? $description : null);
+
                 $entityManager->flush();
 
                 $this->addFlash('success', 'Type mis à jour.');
@@ -101,3 +96,4 @@ class TypeContratController extends AbstractController
         return $this->redirectToRoute('app_type_contrat_index');
     }
 }
+

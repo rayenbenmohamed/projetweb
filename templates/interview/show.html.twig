@@ -6,7 +6,7 @@
 {% block content %}
 <div class="row g-6 mt-2 justify-content-center">
     <div class="col-xl-8">
-        <div class="card card-lg border-0 shadow-sm overflow-hidden">
+        <div class="card card-lg border-0 shadow-sm overflow-hidden mb-6">
             <div class="bg-primary p-6 py-8 border-bottom border-primary-subtle">
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center gap-4">
@@ -27,6 +27,7 @@
             </div>
             
             <div class="card-body p-6">
+                <!-- Infos principales -->
                 <div class="row g-6 mb-8">
                     <div class="col-md-6">
                         <div class="p-4 rounded-4 bg-light border border-dashed border-secondary-subtle h-100">
@@ -47,13 +48,11 @@
                             <a href="{{ path('app_interview_video', {id: interview.id}) }}" class="btn btn-primary btn-lg w-100 shadow-sm">
                                 <i class="ti ti-phone-call me-2"></i> Rejoindre l'appel
                             </a>
-                            <p class="mt-3 mb-0 text-primary-emphasis small">
-                                <i class="ti ti-info-circle me-1"></i> Réunion sécurisée sur la plateforme
-                            </p>
                         </div>
                     </div>
                 </div>
 
+                <!-- Notes -->
                 <div class="mb-8">
                     <h5 class="mb-4 d-flex align-items-center gap-2">
                         <i class="ti ti-notes fs-4 text-primary"></i>
@@ -66,6 +65,52 @@
                     </div>
                 </div>
 
+                <!-- Évaluation (Si déjà faite) -->
+                {% if interview.finalVerdict %}
+                <div class="mt-8 p-6 bg-success-subtle rounded-4 border border-success border-opacity-25">
+                    <h5 class="mb-4 text-success d-flex align-items-center gap-2">
+                        <i class="ti ti-award fs-4"></i> Évaluation de l'entretien
+                    </h5>
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-4">
+                            <label class="small text-uppercase fw-bold text-secondary d-block">Technique</label>
+                            <div class="text-warning fs-4">
+                                {% for i in 1..5 %}<i class="ti ti-star{{ i <= interview.technicalRating ? '-filled' : '' }}"></i>{% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="small text-uppercase fw-bold text-secondary d-block">Communication</label>
+                            <div class="text-warning fs-4">
+                                {% for i in 1..5 %}<i class="ti ti-star{{ i <= interview.communicationRating ? '-filled' : '' }}"></i>{% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="small text-uppercase fw-bold text-secondary d-block">Motivation</label>
+                            <div class="text-warning fs-4">
+                                {% for i in 1..5 %}<i class="ti ti-star{{ i <= interview.motivationRating ? '-filled' : '' }}"></i>{% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-white rounded-3 shadow-sm mb-3">
+                        <h6 class="fw-bold mb-2">Verdict final :</h6>
+                        <p class="mb-0 text-secondary-emphasis italic">"{{ interview.finalVerdict }}"</p>
+                    </div>
+                    
+                    <div class="d-flex align-items-center justify-content-between p-3 bg-white rounded-3 shadow-sm">
+                        <span class="fw-bold">Décision :</span>
+                        {% if interview.outcome == 'ACCEPTED' %}
+                            <span class="badge bg-success px-3 py-2"><i class="ti ti-check me-1"></i> Accepté</span>
+                        {% elseif interview.outcome == 'READY_FOR_CONTRACT' %}
+                            <span class="badge bg-indigo text-white px-3 py-2"><i class="ti ti-file-text me-1"></i> Prêt pour contrat</span>
+                        {% elseif interview.outcome == 'REJECTED' %}
+                            <span class="badge bg-danger px-3 py-2"><i class="ti ti-x me-1"></i> Refusé</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark px-3 py-2"><i class="ti ti-clock me-1"></i> En attente</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
                 <hr class="my-8 opacity-10">
 
                 <div class="d-flex align-items-center justify-content-between">
@@ -74,18 +119,30 @@
                             <i class="ti ti-user fs-4 text-secondary"></i>
                         </div>
                         <div>
-                            <h6 class="mb-0 fw-bold">Candidat : {{ interview.application.candidat.firstName }} {{ interview.application.candidat.lastName }}</h6>
+                            <h6 class="mb-0 fw-bold">{{ interview.application.candidat.firstName }} {{ interview.application.candidat.lastName }}</h6>
                             <span class="small text-secondary">{{ interview.application.candidat.email }}</span>
                         </div>
                     </div>
                     <div class="d-flex gap-3">
-                        <a href="{{ path('app_job_application_index') }}" class="btn btn-outline-secondary px-5">
-                            <i class="ti ti-arrow-left me-2"></i> Retour
-                        </a>
-                        {% if app.user and interview.application.jobOffre.user and interview.application.jobOffre.user.id == app.user.id %}
-                            <a href="{{ path('app_interview_edit', {id: interview.id}) }}" class="btn btn-warning px-5 text-white">
-                                <i class="ti ti-pencil me-2"></i> Modifier
+                        <a href="{{ path('app_job_application_index') }}" class="btn btn-outline-secondary px-4">Retour</a>
+                        {% if app.user and interview.application.jobOffre.user and interview.application.jobOffre.user.id == app.user.id and not interview.finalVerdict %}
+                            <button type="button" class="btn btn-success px-4" data-bs-toggle="modal" data-bs-target="#evaluateModal">
+                                <i class="ti ti-award me-2"></i>Évaluer le candidat
+                            </button>
+                        {% elseif interview.outcome == 'READY_FOR_CONTRACT' %}
+                            <a href="{{ path('app_contract_new', {
+                                candidate_id: interview.application.candidat.id,
+                                job_offre_id: interview.application.jobOffre.id,
+                                recruiter_id: interview.application.jobOffre.user.id
+                            }) }}" class="btn btn-indigo text-white px-4 fw-bold shadow-sm" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">
+                                <i class="ti ti-file-certificate me-2"></i>Générer le Contrat
                             </a>
+                        {% elseif interview.status == 'Réalisée' %}
+                            <form action="{{ path('app_interview_archive', {id: interview.id}) }}" method="post" style="display:inline;">
+                                <button type="submit" class="btn btn-dark px-4">
+                                    <i class="ti ti-archive me-2"></i>Archiver
+                                </button>
+                            </form>
                         {% endif %}
                     </div>
                 </div>
@@ -93,4 +150,120 @@
         </div>
     </div>
 </div>
+
+<!-- Modal d'évaluation -->
+<div class="modal fade" id="evaluateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <form action="{{ path('app_interview_evaluate', {id: interview.id}) }}" method="post">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="ti ti-award me-2"></i>Fiche d'Évaluation</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-5">
+                    <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-primary-subtle rounded-3">
+                        <div>
+                            <span class="fw-bold text-primary"><i class="ti ti-sparkles me-1"></i> Besoin d'aide ?</span>
+                            <p class="mb-0 small text-muted">L'IA peut analyser le CV et vos notes pour suggérer des scores.</p>
+                        </div>
+                        <button type="button" id="btnAISuggest" class="btn btn-primary btn-sm rounded-pill px-3">
+                            <span class="spinner-border spinner-border-sm d-none me-1" id="aiSpinner"></span>
+                            <i class="ti ti-wand me-1"></i> Suggérer par IA
+                        </button>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Compétences Techniques</label>
+                        <select id="technicalRating" name="technicalRating" class="form-select">
+                            <option value="1">1 - Insuffisant</option>
+                            <option value="2">2 - Passable</option>
+                            <option value="3" selected>3 - Moyen</option>
+                            <option value="4">4 - Bon</option>
+                            <option value="5">5 - Excellent</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Communication & Soft Skills</label>
+                        <select id="communicationRating" name="communicationRating" class="form-select">
+                            <option value="1">1 - Insuffisant</option>
+                            <option value="2">2 - Passable</option>
+                            <option value="3" selected>3 - Moyen</option>
+                            <option value="4">4 - Bon</option>
+                            <option value="5">5 - Excellent</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Motivation & Fit Culturel</label>
+                        <select id="motivationRating" name="motivationRating" class="form-select">
+                            <option value="1">1 - Insuffisant</option>
+                            <option value="2">2 - Passable</option>
+                            <option value="3" selected>3 - Moyen</option>
+                            <option value="4">4 - Bon</option>
+                            <option value="5">5 - Excellent</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-primary">Décision de l'entretien</label>
+                        <select name="outcome" class="form-select border-primary">
+                            <option value="PENDING_DECISION">En attente de décision</option>
+                            <option value="ACCEPTED">Accepter pour la suite (Revue Finale)</option>
+                            <option value="READY_FOR_CONTRACT">Prêt pour Signature de Contrat</option>
+                            <option value="REJECTED">Rejeter le profil</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label fw-bold">Verdict / Commentaires finaux</label>
+                        <textarea id="finalVerdict" name="finalVerdict" class="form-control" rows="4" placeholder="Résumé de vos impressions..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-success px-4">Valider l'évaluation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('btnAISuggest').addEventListener('click', function() {
+    const btn = this;
+    const spinner = document.getElementById('aiSpinner');
+    
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+
+    fetch("{{ path('app_interview_ai_suggest', {id: interview.id}) }}", {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.technicalRating) document.getElementById('technicalRating').value = data.technicalRating;
+        if (data.communicationRating) document.getElementById('communicationRating').value = data.communicationRating;
+        if (data.motivationRating) document.getElementById('motivationRating').value = data.motivationRating;
+        if (data.suggestedVerdict) document.getElementById('finalVerdict').value = data.suggestedVerdict;
+        
+        // Notification de succès visuel
+        btn.classList.replace('btn-primary', 'btn-success');
+        btn.innerHTML = '<i class="ti ti-check-double me-1"></i> Suggestion appliquée !';
+    })
+    .catch(error => {
+        console.error('Erreur IA:', error);
+        alert("L'IA n'a pas pu générer de suggestion pour le moment.");
+    })
+    .finally(() => {
+        spinner.classList.add('d-none');
+        setTimeout(() => {
+            btn.disabled = false;
+            btn.classList.replace('btn-success', 'btn-primary');
+            btn.innerHTML = '<i class="ti ti-wand me-1"></i> Suggérer par IA';
+        }, 3000);
+    });
+});
+</script>
 {% endblock %}

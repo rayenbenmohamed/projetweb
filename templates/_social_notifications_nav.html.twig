@@ -1,12 +1,13 @@
-{# Cloche + menu : demandes d’ami et messages non lus (compteurs mis à jour au chargement et par polling) #}
+{# Cloche + menu : demandes d'ami, messages non lus, et notifications RH #}
 {% set sn = sn|default(social_notifications()) %}
 <div class="dropdown" id="socialNotifyWrap"
      data-notify-url="{{ path('app_notifications_summary') }}"
      data-initial-fr="{{ sn.friend_requests }}"
-     data-initial-um="{{ sn.unread_messages }}">
+     data-initial-um="{{ sn.unread_messages }}"
+     data-initial-hr="{{ sn.hr_notifications }}">
     <button class="btn btn-light btn-sm position-relative border-0 rounded-circle p-2" type="button"
             id="socialNotifyToggle" data-bs-toggle="dropdown" aria-expanded="false"
-            aria-label="Notifications sociales">
+            aria-label="Notifications">
         <i class="ti ti-bell fs-5"></i>
         <span id="socialNotifyBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ sn.total > 0 ? '' : 'd-none' }}"
               data-count="{{ sn.total }}">{{ sn.total > 99 ? '99+' : sn.total }}</span>
@@ -15,7 +16,7 @@
         <li class="px-3 py-2 border-bottom small text-secondary">Notifications</li>
         <li>
             <a class="dropdown-item d-flex justify-content-between align-items-center py-2" href="{{ path('app_friends_index') }}#section-incoming-requests">
-                <span><i class="ti ti-user-plus me-2 text-primary"></i> Demandes d’ami</span>
+                <span><i class="ti ti-user-plus me-2 text-primary"></i> Demandes d'ami</span>
                 <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill" data-sn-friend-requests>{{ sn.friend_requests }}</span>
             </a>
         </li>
@@ -25,7 +26,13 @@
                 <span class="badge bg-success-subtle text-success-emphasis rounded-pill" data-sn-unread-messages>{{ sn.unread_messages }}</span>
             </a>
         </li>
-        <li class="border-top"><a class="dropdown-item small py-2" href="{{ path('app_friends_index') }}">Ouvrir la page Amis</a></li>
+        <li>
+            <a class="dropdown-item d-flex justify-content-between align-items-center py-2" href="{{ path('app_notifications_index') }}">
+                <span><i class="ti ti-briefcase me-2 text-warning"></i> Candidatures & Entretiens</span>
+                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill {{ sn.hr_notifications == 0 ? 'd-none' : '' }}" data-sn-hr-notifications>{{ sn.hr_notifications }}</span>
+            </a>
+        </li>
+        <li class="border-top"><a class="dropdown-item small py-2" href="{{ path('app_notifications_index') }}">Voir toutes les notifications</a></li>
     </ul>
 </div>
 <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090;" id="socialNotifyToastHost"></div>

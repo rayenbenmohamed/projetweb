@@ -29,16 +29,62 @@ class InterviewService
      */
     public function getInterviewHistory(User $user): array
     {
-        // Ported logic: Find interviews where user is recruiter OR candidate
+        // Find interviews where user is recruiter OR candidate
         return $this->interviewRepository->createQueryBuilder('i')
             ->join('i.application', 'a')
             ->join('a.jobOffre', 'jo')
             ->where('jo.user = :user OR a.candidat = :user')
-            ->andWhere('i.scheduledAt < :now OR i.status IN (:pastStatuses)')
+            ->andWhere('i.completedAt IS NOT NULL OR i.status IN (:pastStatuses)')
             ->setParameter('user', $user)
-            ->setParameter('now', new \DateTime())
-            ->setParameter('pastStatuses', ['Réalisée', 'Annulée'])
-            ->orderBy('i.scheduledAt', 'DESC')
+            ->setParameter('pastStatuses', ['Réalisée', 'Annulée', 'Archivée'])
+            ->orderBy('i.completedAt', 'DESC')
+            ->addOrderBy('i.scheduledAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return Interview[]
+     */
+    public function getAllInterviews(User $user): array
+    {
+        return $this->interviewRepository->createQueryBuilder('i')
+            ->join('i.application', 'a')
+            ->join('a.jobOffre', 'jo')
+            ->where('jo.user = :user OR a.candidat = :user')
+            ->setParameter('user', $user)
+            ->orderBy('i.scheduledAt', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Entretiens pour lesquels l'utilisateur EST le recruteur (candidatures reçues).
+     * @return Interview[]
+     */
+    public function getInterviewsAsRecruiter(User $user): array
+    {
+        return $this->interviewRepository->createQueryBuilder('i')
+            ->join('i.application', 'a')
+            ->join('a.jobOffre', 'jo')
+            ->where('jo.user = :user')
+            ->setParameter('user', $user)
+            ->orderBy('i.scheduledAt', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Entretiens pour lesquels l'utilisateur EST le candidat (candidatures envoyées).
+     * @return Interview[]
+     */
+    public function getInterviewsAsCandidate(User $user): array
+    {
+        return $this->interviewRepository->createQueryBuilder('i')
+            ->join('i.application', 'a')
+            ->where('a.candidat = :user')
+            ->setParameter('user', $user)
+            ->orderBy('i.scheduledAt', 'ASC')
             ->getQuery()
             ->getResult();
     }

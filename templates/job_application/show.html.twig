@@ -1,153 +1,632 @@
 {% extends 'layout/admin.html.twig' %}
 
-{% block title %}Candidature #{{ job_application.id }} | SyfonuRH{% endblock %}
-{% block page_title %}Détails de la candidature{% endblock %}
+{% block title %}Candidature — {{ job_application.candidat.firstName }} {{ job_application.candidat.lastName }} | SyfonuRH{% endblock %}
+{% block page_title %}Dossier Candidat{% endblock %}
 
 {% block content %}
-<div class="row g-6 mt-2">
-    <div class="col-xl-8">
-        <div class="card card-lg mb-6">
-            <div class="card-body p-6">
-                <div class="d-flex justify-content-between align-items-start mb-6">
-                    <div>
-                        <h2 class="mb-1">Candidature de {{ job_application.candidat.firstName }} {{ job_application.candidat.lastName }}</h2>
-                        <div class="d-flex gap-4 text-secondary small">
-                            <span><i class="ti ti-mail me-1"></i>{{ job_application.candidat.email }}</span>
-                            <span><i class="ti ti-calendar me-1"></i>Postulé le {{ job_application.applyDate|date('d/m/Y') }}</span>
-                        </div>
-                    </div>
-                    <span class="badge bg-{{ job_application.status == 'ACCEPTED' ? 'success' : (job_application.status == 'REJECTED' ? 'danger' : 'info') }}-subtle text-{{ job_application.status == 'ACCEPTED' ? 'success' : (job_application.status == 'REJECTED' ? 'danger' : 'info') }}-emphasis px-3 py-2">
-                        {{ job_application.status }}
-                    </span>
-                </div>
 
-                <div class="mb-8 p-4 rounded-3 bg-light">
-                    <h5 class="mb-3">Lettre de motivation</h5>
-                    <div class="text-secondary lh-lg">
-                        {{ job_application.coverLetter|nl2br|default('Aucune lettre fournie.') }}
-                    </div>
-                </div>
+{% set statusMap = {
+    'PENDING':              {label: 'En attente',       color: 'secondary', icon: 'ti-clock'},
+    'HR_SCREENING':         {label: 'Tri RH',           color: 'info',      icon: 'ti-search'},
+    'INTERVIEW_SCHEDULED':  {label: 'Entretien prévu',  color: 'warning',   icon: 'ti-calendar'},
+    'TECHNICAL_TEST':       {label: 'Test technique',   color: 'purple',    icon: 'ti-code'},
+    'FINAL_REVIEW':         {label: 'Revue finale',     color: 'indigo',    icon: 'ti-eye'},
+    'READY_FOR_CONTRACT':   {label: 'Prêt pour contrat', color: 'indigo',   icon: 'ti-file-text'},
+    'ACCEPTED':             {label: 'Accepté ✓',        color: 'success',   icon: 'ti-circle-check'},
+    'REJECTED':             {label: 'Refusé',           color: 'danger',    icon: 'ti-circle-x'},
+} %}
+{% set currentStatus = statusMap[job_application.status] ?? {label: job_application.status, color: 'secondary', icon: 'ti-info-circle'} %}
 
-                <div class="mb-0">
-                    <h5 class="mb-3">Pièces jointes</h5>
-                    {% if job_application.cvPath %}
-                        <div class="d-flex align-items-center justify-content-between p-4 rounded-3 border">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="icon-shape icon-md rounded-3 bg-danger-subtle text-danger">
-                                    <i class="ti ti-file-pdf fs-3"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-0">Curriculum Vitae</h6>
-                                    <span class="small text-secondary">Hébergé sur Cloudinary</span>
-                                </div>
-                            </div>
-                            <a href="{{ job_application.cvPath }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                                <i class="ti ti-eye me-1"></i> Consulter le CV
-                            </a>
-                        </div>
-                    {% else %}
-                        <div class="alert alert-warning mb-0">Aucun CV n'a été téleversé pour cette candidature.</div>
-                    {% endif %}
-                </div>
+<style>
+    /* ── Premium Hero ── */
+    .candidate-hero {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #0d4f8b 100%);
+        border-radius: 20px;
+        padding: 2rem 2.5rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    .candidate-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 350px;
+        height: 350px;
+        background: radial-gradient(circle, rgba(99,102,241,0.25) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+    .candidate-avatar-xl {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 700;
+        color: white;
+        border: 3px solid rgba(255,255,255,0.3);
+        box-shadow: 0 8px 24px rgba(99,102,241,0.4);
+        flex-shrink: 0;
+    }
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 16px;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    /* ── Score Ring ── */
+    .score-ring-container {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin: 0 auto;
+    }
+    .score-ring-svg {
+        transform: rotate(-90deg);
+    }
+    .score-ring-bg { fill: none; stroke: #e2e8f0; stroke-width: 10; }
+    .score-ring-fill { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 1.5s ease; }
+    .score-ring-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+    /* ── Timeline ── */
+    .timeline-wrap { position: relative; padding-left: 2rem; }
+    .timeline-wrap::before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 8px;
+        bottom: 8px;
+        width: 2px;
+        background: linear-gradient(to bottom, #6366f1, #e2e8f0);
+        border-radius: 2px;
+    }
+    .timeline-item { position: relative; margin-bottom: 1.75rem; }
+    .timeline-dot {
+        position: absolute;
+        left: -26px;
+        top: 3px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.6rem;
+        color: white;
+        box-shadow: 0 0 0 3px white;
+        z-index: 1;
+    }
+    /* ── Skill Bar ── */
+    .skill-bar-wrap { margin-bottom: 14px; }
+    .skill-bar-track {
+        height: 8px;
+        background: #f1f5f9;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .skill-bar-fill {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 1.2s cubic-bezier(.25,.8,.25,1);
+    }
+    /* ── Action Card ── */
+    .action-card-header {
+        background: linear-gradient(135deg, #1e3a5f 0%, #0d4f8b 100%);
+        color: white;
+        padding: 1.25rem 1.5rem;
+        border-radius: 15px 15px 0 0;
+    }
+    .premium-card {
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+        overflow: hidden;
+    }
+    /* ── CV File Card ── */
+    .cv-file-card {
+        background: linear-gradient(135deg, #fef3f2 0%, #fff7f0 100%);
+        border: 1px solid #fecaca;
+        border-radius: 14px;
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .cv-icon-wrap {
+        width: 52px;
+        height: 52px;
+        background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+    /* ── Verdict chips ── */
+    .verdict-chip {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        margin-bottom: 8px;
+    }
+    .verdict-chip-success { background: #f0fdf4; border-left: 3px solid #22c55e; color: #166534; }
+    .verdict-chip-danger  { background: #fff1f2; border-left: 3px solid #ef4444; color: #991b1b; }
+</style>
+
+{# ── Hero Header ── #}
+<div class="candidate-hero">
+    <div class="d-flex align-items-center gap-4">
+        <div class="candidate-avatar-xl">
+            {{ job_application.candidat.firstName|first|upper }}{{ job_application.candidat.lastName|first|upper }}
+        </div>
+        <div class="flex-grow-1">
+            <h2 class="fw-bold text-white mb-1">{{ job_application.candidat.firstName }} {{ job_application.candidat.lastName }}</h2>
+            <div class="d-flex flex-wrap gap-3 align-items-center mt-2">
+                <span class="text-white-50 small"><i class="ti ti-mail me-1"></i>{{ job_application.candidat.email }}</span>
+                <span class="text-white-50 small"><i class="ti ti-calendar me-1"></i>Postulé le {{ job_application.applyDate|date('d M Y') }}</span>
+                <span class="text-white-50 small"><i class="ti ti-briefcase me-1"></i>{{ job_application.jobOffre.title }}</span>
             </div>
         </div>
-
-        <div class="card card-lg">
-            <div class="card-body p-6">
-                <h5 class="mb-4">Détails de l'offre</h5>
-                <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                        <h6 class="mb-1">{{ job_application.jobOffre.title }}</h6>
-                        <span class="small text-secondary">{{ job_application.jobOffre.location }} • {{ job_application.jobOffre.employmentType }}</span>
-                    </div>
-                    <a href="{{ path('app_job_offre_show', {id: job_application.jobOffre.id}) }}" class="btn btn-link btn-sm">Voir l'offre</a>
+        <div class="text-end">
+            <span class="status-pill bg-{{ currentStatus.color }}-subtle text-{{ currentStatus.color }}-emphasis">
+                <i class="ti {{ currentStatus.icon }}"></i>{{ currentStatus.label }}
+            </span>
+            {% if job_application.aiScore is not null %}
+                <div class="mt-3">
+                    <div class="display-6 fw-bold text-white">{{ job_application.aiScore }}%</div>
+                    <div class="text-white-50 small">Match IA</div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-4">
-        <div class="card card-lg mb-6">
-            <div class="card-body p-6">
-                <h5 class="mb-4">Actions</h5>
-                <div class="d-grid gap-3">
-
-                    {# Actions réservées au recruteur propriétaire de l'offre ou l'admin #}
-                    {% if app.user and job_application.jobOffre.user and job_application.jobOffre.user.id == app.user.id %}
-                        {% if job_application.status != 'ACCEPTED' %}
-                        <form method="post" action="{{ path('app_job_application_status', {id: job_application.id}) }}">
-                            <input type="hidden" name="status" value="ACCEPTED">
-                            <button type="submit" class="btn btn-success w-100">
-                                <i class="ti ti-check me-1"></i> Accepter la candidature
-                            </button>
-                        </form>
-                        {% endif %}
-
-                        {% if job_application.status == 'ACCEPTED' %}
-                            {% set interview = job_application.interviews|first %}
-                            {% if interview %}
-                                <a href="{{ path('app_interview_edit', {id: interview.id}) }}" class="btn btn-primary w-100">
-                                    <i class="ti ti-calendar me-1"></i> Gérer l'entretien
-                                </a>
-                            {% else %}
-                            <a href="{{ path('app_interview_new', {jobApplication: job_application.id}) }}" class="btn btn-primary w-100">
-                                <i class="ti ti-calendar-plus me-1"></i> Planifier l'entretien
-                            </a>
-                        {% endif %}
-                        {% endif %}
-
-                        {% if job_application.status != 'REJECTED' %}
-                        <form method="post" action="{{ path('app_job_application_status', {id: job_application.id}) }}">
-                            <input type="hidden" name="status" value="REJECTED">
-                            <button type="submit" class="btn btn-danger w-100">
-                                <i class="ti ti-x me-1"></i> Refuser la candidature
-                            </button>
-                        </form>
-                        {% endif %}
-
-                        <hr class="my-2">
-                        <a href="{{ path('app_job_application_edit', {id: job_application.id}) }}" class="btn btn-outline-secondary w-100">
-                            <i class="ti ti-pencil me-1"></i> Modifier / Annoter
-                        </a>
-                        <form method="post" action="{{ path('app_job_application_delete', {id: job_application.id}) }}"
-                              onsubmit="return confirm('Confirmer la suppression ?');" class="mt-2">
-                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ job_application.id) }}">
-                            <button type="submit" class="btn btn-outline-danger w-100">
-                                <i class="ti ti-trash me-1" style="pointer-events: none;"></i> Supprimer
-                            </button>
-                        </form>
-                    {% elseif app.user and job_application.candidat and job_application.candidat.id == app.user.id %}
-                        {# Bouton Supprimer pour le candidat (retrait de candidature) #}
-                        <form method="post" action="{{ path('app_job_application_delete', {id: job_application.id}) }}"
-                              onsubmit="return confirm('Voulez-vous vraiment retirer votre candidature ?');">
-                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ job_application.id) }}">
-                            <button type="submit" class="btn btn-danger w-100">
-                                <i class="ti ti-trash me-1" style="pointer-events: none;"></i> Retirer ma candidature
-                            </button>
-                        </form>
-                    {% endif %}
-
-                    <a href="{{ path('app_job_application_index') }}" class="btn btn-link btn-sm text-secondary w-100 text-center">
-                        <i class="ti ti-arrow-left me-1"></i> Retour à la liste
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="card card-lg">
-            <div class="card-body p-6 text-center">
-                <div class="avatar avatar-xl rounded-circle bg-primary-subtle text-primary mb-4 mx-auto">
-                    <i class="ti ti-user fs-1"></i>
-                </div>
-                <h6 class="mb-1">{{ job_application.candidat.firstName }} {{ job_application.candidat.lastName }}</h6>
-                <p class="small text-secondary mb-4">Candidat externe</p>
-                <div class="d-grid">
-                    <a href="mailto:{{ job_application.candidat.email }}" class="btn btn-light btn-sm">
-                        <i class="ti ti-mail me-1"></i> Contacter par email
-                    </a>
-                </div>
-            </div>
+            {% endif %}
         </div>
     </div>
 </div>
+
+<div class="row g-4">
+
+    {# ── Main Column ── #}
+    <div class="col-xl-8">
+
+        {# Lettre de motivation #}
+        <div class="card premium-card mb-4">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3 d-flex align-items-center">
+                    <span class="me-2 p-2 rounded-circle bg-primary-subtle"><i class="ti ti-message-2 text-primary fs-5"></i></span>
+                    Lettre de motivation
+                </h5>
+                <div class="p-4 bg-light rounded-4 text-secondary lh-lg border-start border-4 border-primary" style="max-height:250px;overflow-y:auto;">
+                    {{ job_application.coverLetter|nl2br|default('<em class="text-muted">Aucune lettre fournie.</em>')|raw }}
+                </div>
+            </div>
+        </div>
+
+        {# CV #}
+        <div class="card premium-card mb-4">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3 d-flex align-items-center">
+                    <span class="me-2 p-2 rounded-circle bg-danger-subtle"><i class="ti ti-file-type-pdf text-danger fs-5"></i></span>
+                    Curriculum Vitae
+                </h5>
+                {% if job_application.cvPath %}
+                    <div class="cv-file-card">
+                        <div class="cv-icon-wrap"><i class="ti ti-file-type-pdf"></i></div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold text-dark">CV du candidat</div>
+                            <div class="text-muted small">Hébergé sur Cloudinary</div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ job_application.cvPath }}" target="_blank" class="btn btn-danger btn-sm rounded-pill px-3">
+                                <i class="ti ti-eye me-1"></i> Voir
+                            </a>
+                            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#manualEntryModal">
+                                <i class="ti ti-edit me-1"></i> Texte manuel
+                            </button>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning rounded-3 mb-0"><i class="ti ti-alert-circle me-2"></i>Aucun CV joint à cette candidature.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Analyse IA SyfonuMatch — auto-triggered ONLY for the recruiter if no score yet and not already attempted #}
+        {% if app.user and job_application.jobOffre.user and job_application.jobOffre.user.id == app.user.id 
+           and job_application.aiScore is null and job_application.cvPath and app.request.query.get('scanned') != '1' %}
+        <div class="card premium-card mb-4 text-center p-5" id="autoAnalyzeCard">
+            <div class="p-3 rounded-circle d-inline-flex mx-auto mb-3" style="background:linear-gradient(135deg,#ede9fe,#dbeafe);width:72px;height:72px;align-items:center;justify-content:center;">
+                <i class="ti ti-brain text-primary" style="font-size:2rem;"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Analyse IA en cours...</h5>
+            <p class="text-muted small mb-3">SyfonuMatch™ scanne le CV automatiquement.</p>
+            <div class="spinner-border text-primary" role="status" style="width:2rem;height:2rem;"></div>
+            {# Formulaire soumis automatiquement #}
+            <form id="autoAnalyzeForm" method="post" action="{{ path('app_job_application_analyze', {id: job_application.id}) }}" class="d-none">
+            </form>
+        </div>
+        <script>
+            // Déclencher automatiquement l'analyse IA dès que la page est chargée (une seule fois pour le recruteur)
+            window.addEventListener('DOMContentLoaded', function() {
+                setTimeout(function() {
+                    let form = document.getElementById('autoAnalyzeForm');
+                    if (form) form.submit();
+                }, 800);
+            });
+        </script>
+        {% elseif app.user and job_application.jobOffre.user and job_application.jobOffre.user.id == app.user.id
+           and job_application.aiScore is null and job_application.cvPath and app.request.query.get('scanned') == '1' %}
+        <div class="card premium-card mb-4 text-center p-5">
+            <div class="p-3 rounded-circle d-inline-flex mx-auto mb-3" style="background:#fff1f2;width:72px;height:72px;align-items:center;justify-content:center;">
+                <i class="ti ti-alert-triangle text-danger" style="font-size:2rem;"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Analyse IA interrompue</h5>
+            <p class="text-muted small mb-4">Le scan automatique a échoué. Vous pouvez réessayer manuellement.</p>
+            <div class="d-flex gap-2 justify-content-center mt-2">
+                <form method="post" action="{{ path('app_job_application_analyze', {id: job_application.id}) }}">
+                    <button type="submit" class="btn btn-outline-primary rounded-pill px-4 fw-bold">
+                        <i class="ti ti-refresh me-1"></i>Réessayer le scan IA
+                    </button>
+                </form>
+                <button class="btn btn-warning rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#manualEntryModal">
+                    <i class="ti ti-edit me-1"></i>Saisie manuelle
+                </button>
+            </div>
+        </div>
+        {% elseif job_application.aiScore is not null %}
+        {% set analysis = job_application.aiAnalysis|json_decode %}
+        <div class="card premium-card mb-4">
+            <div class="action-card-header d-flex align-items-center justify-content-between">
+                <h5 class="mb-0 d-flex align-items-center">
+                    <i class="ti ti-sparkles me-2"></i>Analyse SyfonuMatch™
+                </h5>
+                <span class="badge bg-white text-primary fw-bold fs-6 px-3">{{ job_application.aiScore }}%</span>
+            </div>
+            <div class="card-body p-4">
+                {# Score Ring #}
+                <div class="text-center mb-5">
+                    {% set r = 50 %}
+                    {% set circ = 2 * 3.14159 * r %}
+                    {% set dash = (circ * job_application.aiScore / 100)|round(2) %}
+                    {% set scoreColor = job_application.aiScore >= 70 ? '#22c55e' : (job_application.aiScore >= 40 ? '#f59e0b' : '#ef4444') %}
+                    <div class="score-ring-container">
+                        <svg class="score-ring-svg" viewBox="0 0 120 120" width="120" height="120">
+                            <circle class="score-ring-bg" cx="60" cy="60" r="{{ r }}"/>
+                            <circle class="score-ring-fill" cx="60" cy="60" r="{{ r }}"
+                                stroke="{{ scoreColor }}"
+                                stroke-dasharray="{{ dash }} {{ circ }}"
+                                stroke-dashoffset="0"/>
+                        </svg>
+                        <div class="score-ring-text">
+                            <div class="fw-black" style="font-size:1.8rem;color:{{ scoreColor }}">{{ job_application.aiScore }}%</div>
+                            <div class="text-muted" style="font-size:0.6rem;text-transform:uppercase;letter-spacing:1px;">Match</div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Breakdown Bars #}
+                {% if analysis.score_breakdown is defined %}
+                <div class="mb-5">
+                    <h6 class="fw-bold text-dark mb-3">Décomposition du Score</h6>
+                    {% set breakdownLabels = {technical: 'Technique', experience: 'Expérience', soft_skills: 'Soft Skills', potential: 'Potentiel'} %}
+                    {% set breakdownColors = {technical: '#6366f1', experience: '#0ea5e9', soft_skills: '#f59e0b', potential: '#22c55e'} %}
+                    {% for key, val in analysis.score_breakdown %}
+                    <div class="skill-bar-wrap">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small fw-bold text-dark">{{ breakdownLabels[key] ?? key }}</span>
+                            <span class="small fw-bold" style="color:{{ breakdownColors[key] ?? '#6366f1' }}">{{ val }}%</span>
+                        </div>
+                        <div class="skill-bar-track">
+                            <div class="skill-bar-fill" style="width:{{ val }}%;background:{{ breakdownColors[key] ?? '#6366f1' }};"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {# Summary #}
+                <div class="p-4 rounded-4 mb-4 border-start border-4 border-primary" style="background:#f8faff;">
+                    <h6 class="fw-bold text-dark mb-2"><i class="ti ti-user-check me-1 text-primary"></i>Résumé Personnalisé</h6>
+                    <p class="text-secondary mb-0 small lh-lg">{{ analysis.summary|default('—') }}</p>
+                </div>
+
+                {# Verdict #}
+                {% if analysis.verdict is defined %}
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-4" style="background:#f0fdf4;">
+                            <h6 class="fw-bold text-success mb-3 small"><i class="ti ti-circle-check me-1"></i>Points Forts</h6>
+                            {% for pro in analysis.verdict.pros %}
+                                <div class="verdict-chip verdict-chip-success">
+                                    <i class="ti ti-check mt-1 flex-shrink-0"></i><span>{{ pro }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-4" style="background:#fff1f2;">
+                            <h6 class="fw-bold text-danger mb-3 small"><i class="ti ti-alert-triangle me-1"></i>Points de Vigilance</h6>
+                            {% for con in analysis.verdict.cons %}
+                                <div class="verdict-chip verdict-chip-danger">
+                                    <i class="ti ti-alert-circle mt-1 flex-shrink-0"></i><span>{{ con }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {# Recommendation #}
+                <div class="p-4 bg-warning-subtle rounded-4 border-start border-4 border-warning d-flex align-items-start gap-3">
+                    <i class="ti ti-bulb text-warning fs-4 mt-1"></i>
+                    <div>
+                        <div class="fw-bold text-dark mb-1">Recommandation Stratégique</div>
+                        <p class="mb-0 text-dark-emphasis small">{{ analysis.recommendation|default('Analyse en cours...') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% elseif job_application.cvPath %}
+        <div class="card premium-card mb-4 text-center p-5">
+            <div class="p-3 rounded-circle d-inline-flex mx-auto mb-3" style="background:linear-gradient(135deg,#ede9fe,#dbeafe);width:72px;height:72px;align-items:center;justify-content:center;">
+                <i class="ti ti-brain text-primary fs-1"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Analyse IA Disponible</h5>
+            <p class="text-muted small mb-4">Déclenchez l'IA SyfonuMatch pour obtenir un score et un résumé détaillé en quelques secondes.</p>
+            <form method="post" action="{{ path('app_job_application_analyze', {id: job_application.id}) }}">
+                <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold">
+                    <i class="ti ti-sparkles me-2"></i>Lancer l'analyse intelligente
+                </button>
+            </form>
+        </div>
+        {% endif %}
+
+        {# Timeline #}
+        <div class="card premium-card mb-4">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4 d-flex align-items-center">
+                    <span class="me-2 p-2 rounded-circle bg-info-subtle"><i class="ti ti-history text-info fs-5"></i></span>
+                    Historique & Parcours
+                </h5>
+                <div class="timeline-wrap">
+                    <div class="timeline-item">
+                        <div class="timeline-dot" style="background:#6366f1;">
+                            <i class="ti ti-plus"></i>
+                        </div>
+                        <div class="fw-bold text-dark">Candidature déposée</div>
+                        <div class="text-muted small">{{ job_application.applyDate|date('d M Y à H:i') }} • Postulation externe</div>
+                    </div>
+                    {% if job_application.aiAnalyzedAt %}
+                    <div class="timeline-item">
+                        <div class="timeline-dot" style="background:#0ea5e9;">
+                            <i class="ti ti-brain"></i>
+                        </div>
+                        <div class="fw-bold text-dark">Analyse SyfonuMatch™ effectuée</div>
+                        <div class="text-muted small">Score : <b>{{ job_application.aiScore }}%</b> • {{ job_application.aiAnalyzedAt|date('d M Y à H:i') }}</div>
+                    </div>
+                    {% endif %}
+                    {% for interview in job_application.interviews|sort((a,b) => a.scheduledAt <=> b.scheduledAt) %}
+                    <div class="timeline-item">
+                        <div class="timeline-dot" style="background:{{ interview.status == 'Réalisée' ? '#22c55e' : (interview.status == 'Annulée' ? '#ef4444' : '#f59e0b') }}">
+                            <i class="ti ti-{{ interview.status == 'Réalisée' ? 'check' : (interview.status == 'Annulée' ? 'x' : 'calendar') }}"></i>
+                        </div>
+                        <div class="fw-bold text-dark">Entretien {{ loop.index }} — {{ interview.status }}</div>
+                        <div class="text-muted small">{{ interview.scheduledAt|date('d M Y à H:i') }}</div>
+                        {% if interview.outcome %}
+                            <span class="badge bg-{{ interview.outcome == 'ACCEPTED' ? 'success' : 'danger' }}-subtle text-{{ interview.outcome == 'ACCEPTED' ? 'success' : 'danger' }} mt-1">
+                                Verdict : {{ interview.outcome == 'ACCEPTED' ? '✓ Réussi' : '✗ Non retenu' }}
+                            </span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% if job_application.status == 'REJECTED' %}
+                    <div class="timeline-item">
+                        <div class="timeline-dot" style="background:#ef4444;"><i class="ti ti-x"></i></div>
+                        <div class="fw-bold text-danger">Candidature refusée</div>
+                        {% if job_application.rejectionReason %}
+                            <div class="text-muted small mt-1"><i class="ti ti-message me-1"></i>{{ job_application.rejectionReason }}</div>
+                        {% endif %}
+                    </div>
+                    {% elseif job_application.status == 'ACCEPTED' %}
+                    <div class="timeline-item">
+                        <div class="timeline-dot" style="background:#22c55e;"><i class="ti ti-star"></i></div>
+                        <div class="fw-bold text-success">🎉 Candidat recruté !</div>
+                        <div class="text-muted small">Candidature acceptée avec succès.</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {# Offre liée #}
+        <div class="card premium-card">
+            <div class="card-body p-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="fw-bold text-dark mb-1"><i class="ti ti-briefcase me-2 text-primary"></i>{{ job_application.jobOffre.title }}</h6>
+                    <span class="text-muted small">{{ job_application.jobOffre.location }} • {{ job_application.jobOffre.employmentType }}</span>
+                </div>
+                <a href="{{ path('app_job_offre_show', {id: job_application.jobOffre.id}) }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                    Voir l'offre <i class="ti ti-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    {# ── Sidebar ── #}
+    <div class="col-xl-4">
+
+        {# Profil Candidat #}
+        <div class="card premium-card mb-4">
+            <div class="card-body p-4 text-center">
+                <div class="candidate-avatar-xl mx-auto mb-3" style="width:72px;height:72px;font-size:1.5rem;">
+                    {{ job_application.candidat.firstName|first|upper }}{{ job_application.candidat.lastName|first|upper }}
+                </div>
+                <h5 class="fw-bold mb-1">{{ job_application.candidat.firstName }} {{ job_application.candidat.lastName }}</h5>
+                <p class="text-muted small mb-4">{{ job_application.candidat.email }}</p>
+                <a href="mailto:{{ job_application.candidat.email }}" class="btn btn-outline-primary btn-sm w-100 rounded-pill">
+                    <i class="ti ti-send me-1"></i>Contacter par email
+                </a>
+            </div>
+        </div>
+
+        {# Actions Recruteur #}
+        {% if app.user and job_application.jobOffre.user and job_application.jobOffre.user.id == app.user.id %}
+        <div class="card premium-card mb-4">
+            <div class="action-card-header">
+                <h6 class="mb-0 fw-bold"><i class="ti ti-bolt me-2"></i>Actions Recruteur</h6>
+            </div>
+            <div class="card-body p-4 d-grid gap-3">
+                {% if job_application.status != 'ACCEPTED' and job_application.status != 'READY_FOR_CONTRACT' %}
+                <form method="post" action="{{ path('app_job_application_status', {id: job_application.id}) }}">
+                    <input type="hidden" name="status" value="ACCEPTED">
+                    <button type="submit" class="btn btn-success w-100 rounded-pill fw-bold">
+                        <i class="ti ti-circle-check me-1"></i> Accepter la candidature
+                    </button>
+                </form>
+                {% endif %}
+
+                {% if job_application.status == 'READY_FOR_CONTRACT' or job_application.status == 'ACCEPTED' %}
+                <a href="{{ path('app_contract_new', {
+                    candidate_id: job_application.candidat.id,
+                    job_offre_id: job_application.jobOffre.id,
+                    recruiter_id: job_application.jobOffre.user.id
+                }) }}" class="btn btn-indigo w-100 rounded-pill fw-bold text-white shadow-sm" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">
+                    <i class="ti ti-file-certificate me-1"></i> Générer le Contrat
+                </a>
+                {% endif %}
+                {% if job_application.status != 'REJECTED' %}
+                <button type="button" class="btn btn-danger w-100 rounded-pill fw-bold" data-bs-toggle="modal" data-bs-target="#rejectionModal">
+                    <i class="ti ti-circle-x me-1"></i> Refuser la candidature
+                </button>
+                {% endif %}
+
+                <hr class="my-1">
+
+                {% if job_application.status in ['ACCEPTED', 'FINAL_REVIEW', 'HR_SCREENING', 'INTERVIEW_SCHEDULED', 'TECHNICAL_TEST'] %}
+                <div>
+                    <h6 class="small fw-bold text-uppercase text-muted mb-2">Entretiens</h6>
+                    {% for interview in job_application.interviews %}
+                    <a href="{{ path('app_interview_show', {id: interview.id}) }}" class="btn btn-sm btn-outline-primary w-100 mb-2 d-flex justify-content-between">
+                        <span><i class="ti ti-calendar-event me-1"></i>{{ interview.scheduledAt|date('d/m/Y') }}</span>
+                        {% if interview.outcome == 'ACCEPTED' %}
+                            <span class="badge bg-success-subtle text-success">OK</span>
+                        {% elseif interview.outcome == 'REJECTED' %}
+                            <span class="badge bg-danger-subtle text-danger">KO</span>
+                        {% else %}
+                            <span class="badge bg-info-subtle text-info">{{ interview.status }}</span>
+                        {% endif %}
+                    </a>
+                    {% endfor %}
+                    <a href="{{ path('app_interview_new', {jobApplication: job_application.id}) }}" class="btn btn-primary w-100 rounded-pill">
+                        <i class="ti ti-calendar-plus me-1"></i> Planifier un entretien
+                    </a>
+                </div>
+                {% endif %}
+
+                <div class="d-grid gap-2 mt-1">
+                    <a href="{{ path('app_job_application_edit', {id: job_application.id}) }}" class="btn btn-outline-secondary rounded-pill">
+                        <i class="ti ti-pencil me-1"></i> Modifier / Annoter
+                    </a>
+                    <form method="post" action="{{ path('app_job_application_delete', {id: job_application.id}) }}"
+                          onsubmit="return confirm('Supprimer définitivement cette candidature ?')">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ job_application.id) }}">
+                        <button type="submit" class="btn btn-outline-danger w-100 rounded-pill">
+                            <i class="ti ti-trash me-1"></i> Supprimer
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% elseif app.user and job_application.candidat and job_application.candidat.id == app.user.id %}
+        <div class="card premium-card mb-4">
+            <div class="card-body p-4">
+                <form method="post" action="{{ path('app_job_application_delete', {id: job_application.id}) }}"
+                      onsubmit="return confirm('Retirer votre candidature définitivement ?')">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ job_application.id) }}">
+                    <button type="submit" class="btn btn-danger w-100 rounded-pill fw-bold">
+                        <i class="ti ti-trash me-1"></i> Retirer ma candidature
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <a href="{{ path('app_job_application_index') }}" class="btn btn-light w-100 rounded-pill">
+            <i class="ti ti-arrow-left me-1"></i> Retour à la liste
+        </a>
+    </div>
+</div>
+
+{# ── Modals ── #}
+<div class="modal fade" id="rejectionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <form action="{{ path('app_job_application_status', {id: job_application.id}) }}" method="post">
+                <input type="hidden" name="status" value="REJECTED">
+                <div class="modal-header" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:white;">
+                    <h5 class="modal-title fw-bold"><i class="ti ti-circle-x me-2"></i>Refuser la candidature</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-danger-subtle border border-danger-subtle rounded-3 mb-3 small">
+                        <i class="ti ti-info-circle me-1"></i>Cette action enverra une notification au candidat.
+                    </div>
+                    <label class="form-label fw-bold">Motif du refus <span class="text-muted fw-normal">(optionnel)</span></label>
+                    <textarea name="rejection_reason" class="form-control rounded-3" rows="4" placeholder="Ex: Manque d'expérience React, profil trop junior pour ce poste..."></textarea>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">Confirmer le refus</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="manualEntryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <form action="{{ path('app_job_application_analyze_manual', {id: job_application.id}) }}" method="post">
+                <div class="modal-header" style="background:linear-gradient(135deg,#f59e0b,#f97316);color:white;">
+                    <h5 class="modal-title fw-bold"><i class="ti ti-edit me-2"></i>Saisie manuelle du texte CV</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-info rounded-3 small mb-3">
+                        <i class="ti ti-info-circle me-1"></i>Si l'analyse automatique ne vous semble pas exacte, vous pouvez coller manuellement le texte du CV ici pour relancer une analyse ciblée.
+                    </div>
+                    <label class="form-label fw-bold">Contenu textuel du CV</label>
+                    <textarea name="cv_text" class="form-control rounded-3" rows="12"
+                        placeholder="Collez ici le texte extrait du CV..."
+                        required></textarea>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-warning rounded-pill px-4 fw-bold">
+                        <i class="ti ti-sparkles me-1"></i>Lancer l'analyse
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
