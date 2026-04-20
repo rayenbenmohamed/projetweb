@@ -6,6 +6,7 @@ use App\Repository\CvRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: CvRepository::class)]
+#[ORM\Table(name: 'cv')]
 class Cv
 {
     #[ORM\Id]

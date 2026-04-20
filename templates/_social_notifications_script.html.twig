@@ -1,0 +1,86 @@
+<script>
+(function () {
+    var wrap = document.getElementById('socialNotifyWrap');
+    if (!wrap || !wrap.dataset.notifyUrl) {
+        return;
+    }
+    var prevDetail = {
+        friend_requests: parseInt(wrap.dataset.initialFr || '0', 10) || 0,
+        unread_messages: parseInt(wrap.dataset.initialUm || '0', 10) || 0
+    };
+
+    function showToast(title, message) {
+        var host = document.getElementById('socialNotifyToastHost');
+        if (!host || typeof bootstrap === 'undefined' || !bootstrap.Toast) {
+            return;
+        }
+        var el = document.createElement('div');
+        el.className = 'toast';
+        el.setAttribute('role', 'alert');
+        el.innerHTML = '<div class="toast-header"><i class="ti ti-bell me-2"></i><strong class="me-auto">'
+            + title + '</strong><button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Fermer"></button></div>'
+            + '<div class="toast-body">' + message + '</div>';
+        host.appendChild(el);
+        var t = new bootstrap.Toast(el, {delay: 7000});
+        el.addEventListener('hidden.bs.toast', function () {
+            el.remove();
+        });
+        t.show();
+    }
+
+    function apply(data) {
+        var fr = parseInt(String(data.friend_requests || 0), 10) || 0;
+        var um = parseInt(String(data.unread_messages || 0), 10) || 0;
+        var total = fr + um;
+
+        if (document.visibilityState === 'visible') {
+            if (fr > prevDetail.friend_requests) {
+                showToast('SyfonuRH', 'Vous avez une nouvelle demande d’ami.');
+            }
+            if (um > prevDetail.unread_messages) {
+                showToast('SyfonuRH', 'Vous avez reçu un nouveau message.');
+            }
+        }
+
+        prevDetail = {friend_requests: fr, unread_messages: um};
+
+        var badge = document.getElementById('socialNotifyBadge');
+        if (badge) {
+            badge.dataset.count = String(total);
+            badge.textContent = total > 99 ? '99+' : String(total);
+            badge.classList.toggle('d-none', total === 0);
+        }
+        document.querySelectorAll('[data-sn-friend-requests]').forEach(function (el) {
+            el.textContent = String(fr);
+        });
+        document.querySelectorAll('[data-sn-unread-messages]').forEach(function (el) {
+            el.textContent = String(um);
+        });
+        document.querySelectorAll('[data-sidebar-social-total]').forEach(function (el) {
+            el.textContent = total > 99 ? '99+' : String(total);
+            el.classList.toggle('d-none', total === 0);
+        });
+    }
+
+    function poll() {
+        fetch(wrap.dataset.notifyUrl, {headers: {'Accept': 'application/json'}, credentials: 'same-origin'})
+            .then(function (r) {
+                return r.ok ? r.json() : null;
+            })
+            .then(function (data) {
+                if (data) {
+                    apply(data);
+                }
+            })
+            .catch(function () {
+            });
+    }
+
+    setInterval(poll, 45000);
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') {
+            poll();
+        }
+    });
+})();
+</script>

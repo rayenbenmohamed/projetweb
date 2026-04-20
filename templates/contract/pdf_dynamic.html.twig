@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Contrat — SyfonuRH</title>
+    <style>
+        @page {
+            margin: 0cm 0cm;
+        }
+        body {
+            font-family: 'DejaVu Sans', sans-serif;
+            font-size: 11pt;
+            color: #333;
+            margin-top: 3cm;
+            margin-bottom: 2cm;
+            margin-left: 1.5cm;
+            margin-right: 1.5cm;
+        }
+        header {
+            position: fixed;
+            top: 0cm;
+            left: 0cm;
+            right: 0cm;
+            height: 3cm;
+            background-color: {{ templateData.primaryColor }};
+            color: white;
+            line-height: 1.5cm;
+        }
+        footer {
+            position: fixed;
+            bottom: 0cm;
+            left: 0cm;
+            right: 0cm;
+            height: 2cm;
+            background-color: #f8f9fa;
+            border-top: 1px solid {{ templateData.secondaryColor }};
+        }
+        .header-content {
+            padding: 0.5cm 1.5cm;
+        }
+        .footer-content {
+            padding: 0.3cm 1.5cm;
+            font-size: 8pt;
+            color: #666;
+            text-align: center;
+        }
+        .logo {
+            max-height: 50px;
+            float: right;
+        }
+        .content {
+            line-height: 1.6;
+        }
+        .signature-zone {
+            margin-top: 2cm;
+            width: 100%;
+        }
+        .signature-box {
+            width: 45%;
+            display: inline-block;
+            vertical-align: top;
+            border: 1px solid #ddd;
+            padding: 15px;
+            min-height: 120px;
+        }
+        .sig-img {
+            max-height: 70px;
+            display: block;
+            margin: 10px auto;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            {% if templateData.logo %}
+                <img src="{{ public_dir ~ templateData.logo }}" class="logo">
+            {% endif %}
+            {{ templateData.header|raw }}
+        </div>
+    </header>
+
+    <footer>
+        <div class="footer-content">
+            {{ templateData.footer|raw }}
+        </div>
+    </footer>
+
+    <main class="content">
+        {{ templateData.body|raw }}
+
+        <div class="signature-zone">
+            <div class="signature-box">
+                <div style="font-size: 8pt; color: {{ templateData.secondaryColor }}; text-transform: uppercase;">Cachet Employeur</div>
+                <div style="margin-top: 20px; font-weight: bold;">SyfonuRH Corp.</div>
+                <div style="font-size: 8pt; color: #999;">Généré numériquement</div>
+            </div>
+            <div class="signature-box" style="margin-left: 5%;">
+                <div style="font-size: 8pt; color: {{ templateData.secondaryColor }}; text-transform: uppercase;">Signature Salarié</div>
+                {% if contract.signatureBase64 %}
+                    <img src="{{ contract.signatureBase64 }}" class="sig-img">
+                {% else %}
+                    <div style="margin-top: 40px; color: #ccc; font-style: italic; text-align: center;">Non signé</div>
+                {% endif %}
+                <div style="font-weight: bold; text-align: center;">{{ contract.candidate ? (contract.candidate.firstName ~ ' ' ~ contract.candidate.lastName) : 'Candidat' }}</div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

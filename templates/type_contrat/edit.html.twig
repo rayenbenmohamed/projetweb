@@ -1,52 +1,30 @@
 {% extends 'layout/admin.html.twig' %}
 
-{% block title %}Modifier Type de Contrat | SyfonuRH{% endblock %}
+{% block title %}Modifier le type {{ type.name }} | SyfonuRH{% endblock %}
 {% block page_title %}Modifier le type de contrat{% endblock %}
 
 {% block content %}
-<style>
-    .glass-card {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 15px;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
-    }
-    .hero-gradient {
-        background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
-        color: white;
-        padding: 3rem;
-        border-radius: 15px;
-        margin-bottom: -2rem;
-        position: relative;
-        z-index: 1;
-    }
-    .btn-premium {
-        border-radius: 10px;
-        padding: 0.6rem 1.5rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
-</style>
-
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="hero-gradient shadow-lg text-center">
-                <h1 class="display-6 fw-bold mb-1">Modifier Type: {{ type_contrat.name }}</h1>
-                <p class="opacity-75 mb-0">Mise à jour des informations de la catégorie.</p>
-            </div>
-            
-            <div class="glass-card p-5 pt-7 mt-n4">
-                {{ include('type_contrat/_form.html.twig', {'button_label': 'Enregistrer les modifications'}) }}
-            </div>
-
-            <div class="mt-4 text-center">
-                <a href="{{ path('app_type_contrat_index') }}" class="text-muted text-decoration-none small">
-                    <i class="fas fa-chevron-left me-1"></i>Retour à la liste
-                </a>
-            </div>
+<div class="row g-6 mt-2">
+  <div class="col-12">
+    <div class="card card-lg">
+      <div class="card-body p-6">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-5">
+          <h5 class="mb-0">Type : {{ type.name }}</h5>
+          <div class="d-flex gap-2">
+            <form method="post" action="{{ path('app_type_contrat_delete', {id: type.id}) }}"
+                  onsubmit="return confirm('Confirmer la suppression ?');">
+              <input type="hidden" name="_token" value="{{ csrf_token('delete_type_contrat_' ~ type.id) }}">
+              <button class="btn btn-outline-danger btn-sm">
+                <i class="ti ti-trash me-1"></i> Supprimer
+              </button>
+            </form>
+            <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_type_contrat_index') }}">Retour</a>
+          </div>
         </div>
+        {% include 'type_contrat/_form.html.twig' with { type: type, is_edit: true } %}
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}
+

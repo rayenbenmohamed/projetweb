@@ -1,0 +1,77 @@
+{% extends 'layout/front.html.twig' %}
+
+{% block title %}Mon espace | SyfonuRH{% endblock %}
+{% block page_title %}Mon espace{% endblock %}
+
+{% block content %}
+<div class="row mb-6 g-6 mt-2">
+    <div class="col-xl-8 col-lg-6">
+        <div class="bg-gradient-mixed p-8 py-10 rounded-3 p-lg-7">
+            <h1 class="fs-3">Bienvenue{% if app.user %}, {{ app.user.firstName|default(app.user.email) }}{% endif %}</h1>
+            <p class="mb-0">Front-office : consultez les offres, gérez vos candidatures ou publiez des annonces.</p>
+            <a href="{{ path('app_job_offre_index') }}" class="btn btn-dark mt-3">Parcourir les offres</a>
+        </div>
+    </div>
+    <div class="col-xl-4 col-lg-6">
+        <div class="card card-lg h-100">
+            <div class="card-body d-flex flex-column justify-content-center gap-3">
+                <h5 class="mb-0">Raccourcis</h5>
+                {% if is_granted('ROLE_RECRUTEUR') %}
+                    <a href="{{ path('app_job_offre_new') }}" class="btn btn-outline-primary btn-sm">Nouvelle offre</a>
+                    <a href="{{ path('app_job_application_index') }}" class="btn btn-outline-success btn-sm">Candidatures</a>
+                    <a href="{{ path('app_contract_index') }}" class="btn btn-outline-info btn-sm">Contrats</a>
+                    <a href="{{ path('app_type_contrat_index') }}" class="btn btn-outline-secondary btn-sm">Configuration contrats</a>
+                {% endif %}
+                {% if is_granted('ROLE_CANDIDAT') %}
+                    <a href="{{ path('app_job_application_index') }}" class="btn btn-outline-primary btn-sm">Mes candidatures</a>
+                    <a href="{{ path('app_cv_index') }}" class="btn btn-outline-secondary btn-sm">Mon CV</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-xl-3 row-cols-md-2 mb-6 g-6">
+    <div class="col">
+        <div class="card card-lg">
+            <div class="card-body">
+                <h6 class="text-secondary">Offres publiées</h6>
+                <div class="fs-2 fw-bold">{{ count_offres }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card card-lg">
+            <div class="card-body">
+                <h6 class="text-secondary">{% if is_granted('ROLE_RECRUTEUR') %}Candidatures (toutes){% else %}Mes candidatures{% endif %}</h6>
+                <div class="fs-2 fw-bold">{{ count_applications }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card card-lg">
+    <div class="card-header border-bottom-0 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Dernières offres</h5>
+        <a href="{{ path('app_job_offre_index') }}" class="small">Tout voir</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr><th>Titre</th><th>Lieu</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for job in latest_jobs %}
+                <tr>
+                    <td>{{ job.title }}</td>
+                    <td>{{ job.location }}</td>
+                    <td><a href="{{ path('app_job_offre_show', {id: job.id}) }}" class="btn btn-sm btn-outline-primary">Voir</a></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3" class="text-center py-4 text-secondary">Aucune offre.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

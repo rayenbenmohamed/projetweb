@@ -9,7 +9,7 @@
             <div class="row mb-8">
                 <div class="col-xl-4 offset-xl-4 col-md-12 col-12">
                     <div class="text-center">
-                        <a href="{{ path('app_dashboard') }}"
+                        <a href="{{ path('app_home') }}"
                            class="fs-2 fw-bold d-flex align-items-center gap-2 justify-content-center mb-6">
                             <img src="{{ asset('dasher/images/brand/logo/logo-icon.svg') }}" alt="Logo"/>
                             <span>SyfonuRH</span>
@@ -25,9 +25,11 @@
 
             <div class="row justify-content-center">
                 <div class="col-xl-5 col-lg-6 col-md-8 col-12">
+                    <div class="mb-4">{% include '_flashes.html.twig' %}</div>
                     <div class="card card-lg mb-6">
                         <div class="card-body p-6">
-                            <form class="needs-validation" method="post" novalidate>
+                            <form class="needs-validation" method="post" action="{{ path('app_register') }}" novalidate>
+                                <input type="hidden" name="_token" value="{{ csrf_token('register') }}">
 
                                 <div class="row">
                                     <div class="col-md-6 mb-3">

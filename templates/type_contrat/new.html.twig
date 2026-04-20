@@ -1,52 +1,18 @@
 {% extends 'layout/admin.html.twig' %}
 
-{% block title %}{{ type_contrat.id ? 'Modifier' : 'Nouveau' }} Type de Contrat | SyfonuRH{% endblock %}
-{% block page_title %}{{ type_contrat.id ? 'Modifier' : 'Nouveau' }} Type de Contrat{% endblock %}
+{% block title %}Nouveau type de contrat | SyfonuRH{% endblock %}
+{% block page_title %}Nouveau type de contrat{% endblock %}
 
 {% block content %}
-<style>
-    .glass-card {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 15px;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
-    }
-    .hero-gradient {
-        background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
-        color: white;
-        padding: 3rem;
-        border-radius: 15px;
-        margin-bottom: -2rem;
-        position: relative;
-        z-index: 1;
-    }
-    .btn-premium {
-        border-radius: 10px;
-        padding: 0.6rem 1.5rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
-</style>
-
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="hero-gradient shadow-lg text-center">
-                <h1 class="display-6 fw-bold mb-1">{{ type_contrat.id ? 'Modifier le Type' : 'Nouveau Type de Contrat' }}</h1>
-                <p class="opacity-75 mb-0">Définissez les catégories de contrats pour votre entreprise.</p>
-            </div>
-            
-            <div class="glass-card p-5 pt-7 mt-n4">
-                {{ include('type_contrat/_form.html.twig', {'button_label': type_contrat.id ? 'Mettre à jour le type' : 'Créer le type'}) }}
-            </div>
-
-            <div class="mt-4 text-center">
-                <a href="{{ path('app_type_contrat_index') }}" class="text-muted text-decoration-none small">
-                    <i class="fas fa-chevron-left me-1"></i>Retour à la liste
-                </a>
-            </div>
-        </div>
+<div class="row g-6 mt-2">
+  <div class="col-12">
+    <div class="card card-lg">
+      <div class="card-body p-6">
+        <h5 class="mb-5">Créer un type</h5>
+        {% include 'type_contrat/_form.html.twig' with { type: type, is_edit: false } %}
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}
+

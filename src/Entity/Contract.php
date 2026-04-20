@@ -15,24 +15,26 @@ class Contract
     private ?int $id = null;
 
     #[ORM\Column(type: 'date')]
-    #[Assert\NotBlank(message: "La date de début est obligatoire")]
-    #[Assert\Type("\DateTimeInterface")]
+    #[Assert\NotNull(message: 'La date de début est obligatoire.')]
     private ?\DateTimeInterface $startDate = null;
 
     #[ORM\Column(type: 'date', nullable: true)]
-    #[Assert\GreaterThan(propertyPath: "startDate", message: "La date de fin doit être après la date de début")]
     private ?\DateTimeInterface $endDate = null;
 
     #[ORM\Column]
-    #[Assert\NotBlank(message: "Le salaire est obligatoire")]
-    #[Assert\Positive(message: "Le salaire doit être positif")]
+    #[Assert\NotNull(message: 'Le salaire est obligatoire.')]
+    #[Assert\PositiveOrZero(message: 'Le salaire doit être un nombre positif ou nul.')]
     private ?int $salary = null;
 
     #[ORM\Column(nullable: true)]
     private ?float $salaireNet = null;
 
     #[ORM\Column(length: 50)]
-    #[Assert\Choice(choices: ["En Attente", "Valide", "Refuse"], message: "Statut invalide")]
+    #[Assert\NotBlank(message: 'Le statut est obligatoire.')]
+    #[Assert\Choice(
+        choices: ['En Attente', 'Actif', 'Suspendu', 'Terminé'],
+        message: 'Statut invalide. Choisissez parmi : En Attente, Actif, Suspendu, Terminé.'
+    )]
     private ?string $status = 'En Attente';
 
     #[ORM\Column]
@@ -54,21 +56,29 @@ class Contract
     private ?string $googleEventIdTrial = null;
 
     #[ORM\ManyToOne(targetEntity: TypeContrat::class, inversedBy: 'contracts')]
-    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
-    #[Assert\NotBlank(message: "Le type de contrat est obligatoire")]
+    #[ORM\JoinColumn(name: 'contract_type_id', nullable: true, onDelete: 'SET NULL')]
     private ?TypeContrat $typeContrat = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(name: 'candidate_id', nullable: false, onDelete: 'CASCADE')]
+    #[Assert\NotNull(message: 'Veuillez sélectionner un candidat.')]
     private ?User $candidate = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    #[ORM\JoinColumn(name: 'recruiter_id', nullable: true, onDelete: 'SET NULL')]
     private ?User $recruiter = null;
 
     #[ORM\ManyToOne(targetEntity: JobOffre::class)]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(name: 'job_offer_id', nullable: false, onDelete: 'CASCADE')]
+    #[Assert\NotNull(message: "Veuillez sélectionner une offre d'emploi.")]
     private ?JobOffre $jobOffre = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $content = null;
+
+    #[ORM\ManyToOne(targetEntity: PdfTemplate::class)]
+    #[ORM\JoinColumn(name: 'pdf_template_id', nullable: true, onDelete: 'SET NULL')]
+    private ?PdfTemplate $pdfTemplate = null;
 
     public function getId(): ?int
     {
@@ -105,7 +115,8 @@ class Contract
     public function setSalary(int $salary): self
     {
         $this->salary = $salary;
-        $this->salaireNet = $salary * 0.77;
+        // Approximation réaliste tunisienne (CNSS + IRPP) basée sur les données utilisateur
+        $this->salaireNet = $salary * 0.82;
         return $this;
     }
 
@@ -199,6 +210,28 @@ class Contract
     public function setJobOffre(?JobOffre $jobOffre): self
     {
         $this->jobOffre = $jobOffre;
+        return $this;
+    }
+
+    public function getContent(): ?string
+    {
+        return $this->content;
+    }
+
+    public function setContent(?string $content): self
+    {
+        $this->content = $content;
+        return $this;
+    }
+
+    public function getPdfTemplate(): ?PdfTemplate
+    {
+        return $this->pdfTemplate;
+    }
+
+    public function setPdfTemplate(?PdfTemplate $pdfTemplate): self
+    {
+        $this->pdfTemplate = $pdfTemplate;
         return $this;
     }
 }

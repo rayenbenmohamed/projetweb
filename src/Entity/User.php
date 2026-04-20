@@ -11,7 +11,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[ORM\Table(name: '`user`')]
 #[ORM\InheritanceType("SINGLE_TABLE")]
 #[ORM\DiscriminatorColumn(name: "discr", type: "string")]
-#[ORM\DiscriminatorMap(["user" => "User", "admin" => "Admin", "candidat" => "Candidat", "recruiter" => "Recruiter"])]
+#[ORM\DiscriminatorMap(["user" => User::class, "admin" => Admin::class, "candidat" => Candidat::class, "recruiter" => Recruiter::class])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -22,10 +22,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 180, unique: true)]
     private ?string $email = null;
 
-    #[ORM\Column(length: 50)]
+    #[ORM\Column(length: 80)]
     private ?string $role = null;
 
-    #[ORM\Column]
+    #[ORM\Column(length: 255)]
     private ?string $password = null;
 
     #[ORM\Column(name: "firstName", length: 255, nullable: true)]
@@ -48,6 +48,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: "datetime", nullable: true)]
     private ?\DateTimeInterface $resetTokenExpiry = null;
+
+    #[ORM\Column(type: "text", nullable: true)]
+    private ?string $googleAccessToken = null;
+
+    #[ORM\Column(type: "text", nullable: true)]
+    private ?string $googleRefreshToken = null;
+
+    #[ORM\Column(type: "datetime", nullable: true)]
+    private ?\DateTimeInterface $googleTokenExpiresAt = null;
 
     public function getId(): ?int
     {
@@ -72,7 +81,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getRoles(): array
     {
-        return [$this->role ?: 'ROLE_USER'];
+        $stored = (string) ($this->role ?? '');
+        $primary = match (true) {
+            $stored !== '' && str_starts_with($stored, 'ROLE_') => $stored,
+            $stored === 'Candidat' => 'ROLE_CANDIDAT',
+            $stored === 'Recruteur' => 'ROLE_RECRUTEUR',
+            $stored === 'Admin', strcasecmp($stored, 'admin') === 0 => 'ROLE_ADMIN',
+            default => 'ROLE_USER',
+        };
+
+        return array_values(array_unique(array_merge([$primary, 'ROLE_USER'])));
     }
 
     public function setRoles(array $roles): self
@@ -181,6 +199,39 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setResetTokenExpiry(?\DateTimeInterface $resetTokenExpiry): self
     {
         $this->resetTokenExpiry = $resetTokenExpiry;
+        return $this;
+    }
+
+    public function getGoogleAccessToken(): ?string
+    {
+        return $this->googleAccessToken;
+    }
+
+    public function setGoogleAccessToken(?string $googleAccessToken): self
+    {
+        $this->googleAccessToken = $googleAccessToken;
+        return $this;
+    }
+
+    public function getGoogleRefreshToken(): ?string
+    {
+        return $this->googleRefreshToken;
+    }
+
+    public function setGoogleRefreshToken(?string $googleRefreshToken): self
+    {
+        $this->googleRefreshToken = $googleRefreshToken;
+        return $this;
+    }
+
+    public function getGoogleTokenExpiresAt(): ?\DateTimeInterface
+    {
+        return $this->googleTokenExpiresAt;
+    }
+
+    public function setGoogleTokenExpiresAt(?\DateTimeInterface $googleTokenExpiresAt): self
+    {
+        $this->googleTokenExpiresAt = $googleTokenExpiresAt;
         return $this;
     }
 }

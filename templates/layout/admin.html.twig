@@ -1,19 +1,34 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
+{% set sn = social_notifications() %}
 <div id="miniSidebar">
     <div class="brand-logo">
-        <a class="d-none d-md-flex align-items-center gap-2" href="{{ path('app_dashboard') }}">
+        <a class="d-none d-md-flex align-items-center gap-2" href="{{ path('admin_dashboard') }}">
             <img src="{{ asset('dasher/images/brand/logo/logo-icon.svg') }}" alt="Logo"/>
             <span class="fw-bold fs-4 site-logo-text">SyfonuRH</span>
         </a>
     </div>
     <ul class="navbar-nav flex-column">
 
+        <li class="nav-item">
+            <a class="nav-link" href="{{ path('app_home') }}">
+                <span class="nav-icon"><i class="ti ti-world"></i></span>
+                <span class="text">Site public</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_friends' or app.request.attributes.get('_route') starts with 'app_chat' ? 'active' }}"
+               href="{{ path('app_friends_index') }}">
+                <span class="nav-icon"><i class="ti ti-users-group"></i></span>
+                <span class="text">Amis &amp; messages</span>
+                <span class="badge bg-danger rounded-pill ms-1 {{ sn.total > 0 ? '' : 'd-none' }}" data-sidebar-social-total>{{ sn.total > 99 ? '99+' : sn.total }}</span>
+            </a>
+        </li>
         {# --- Tableau de bord --- #}
         <li class="nav-item">
-            <a class="nav-link {{ app.request.attributes.get('_route') == 'app_dashboard' ? 'active' }}"
-               href="{{ path('app_dashboard') }}">
+            <a class="nav-link {{ app.request.attributes.get('_route') == 'admin_dashboard' ? 'active' }}"
+               href="{{ path('admin_dashboard') }}">
                 <span class="nav-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
@@ -33,9 +48,9 @@
             <hr class="mx-5 nav-line mb-1"/>
         </li>
 
-        {# Utilisateurs #}
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <li class="nav-item">
+            <a class="nav-link {{ app.request.attributes.get('_route') starts with 'admin_users' ? 'active' }}"
+               href="{{ path('admin_users_index') }}">
                 <span class="nav-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
@@ -49,11 +64,6 @@
                 </span>
                 <span class="text">Utilisateurs</span>
             </a>
-            <ul class="dropdown-menu flex-column">
-                <li class="nav-item"><a class="nav-link" href="#">Liste</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">Candidats</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">Recruteurs</a></li>
-            </ul>
         </li>
 
         {# Contrats #}
@@ -72,8 +82,9 @@
                 <span class="text">Contrats</span>
             </a>
             <ul class="dropdown-menu flex-column">
-                <li class="nav-item"><a class="nav-link" href="{{ path('app_contract_index') }}">Liste</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ path('app_type_contrat_index') }}">Types</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ path('app_contract_index') }}">Liste des contrats</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ path('app_type_contrat_index') }}">Type de contrat</a></li>
+                <li class="nav-item"><a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_pdf_template' ? 'active' }}" href="{{ path('app_pdf_template_index') }}">Modèles PDF</a></li>
             </ul>
         </li>
 
@@ -143,7 +154,7 @@
             <hr class="mx-5 nav-line mb-1"/>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="#">
+            <a class="nav-link" href="{{ path('app_profile') }}">
                 <span class="nav-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
@@ -154,11 +165,11 @@
                         <path d="M6.168 18.849a4 4 0 0 1 3.832 -2.849h4a4 4 0 0 1 3.834 2.855"/>
                     </svg>
                 </span>
-                <span class="text">Profil</span>
+                <span class="text">Mon profil</span>
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="{{ path('app_login') }}">
+            <a class="nav-link" href="{{ path('app_logout') }}">
                 <span class="nav-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
@@ -189,6 +200,7 @@
         </button>
         <span class="navbar-brand fw-semibold">{% block page_title 'Tableau de bord' %}</span>
         <div class="ms-auto d-flex align-items-center gap-3">
+            {% include '_social_notifications_nav.html.twig' with { sn: sn } only %}
             <span class="badge bg-primary-subtle text-primary-emphasis">SyfonuRH</span>
             <img src="{{ asset('dasher/images/avatar/avatar-1.jpg') }}" alt="Avatar" class="avatar avatar-sm rounded-circle"/>
         </div>
@@ -196,14 +208,7 @@
 
     {# Flash Messages #}
     <div class="custom-container mt-3">
-        {% for type, messages in app.flashes %}
-            {% for message in messages %}
-                <div class="alert alert-{{ type == 'error' ? 'danger' : type }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            {% endfor %}
-        {% endfor %}
+        {% include '_flashes.html.twig' %}
     </div>
 
     {# Page Content #}
@@ -211,4 +216,9 @@
         {% block content %}{% endblock %}
     </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% include '_social_notifications_script.html.twig' %}
 {% endblock %}

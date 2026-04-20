@@ -32,8 +32,8 @@ class JobOffre
     #[ORM\Column(name: 'publishedAt', type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $publishedAt = null;
 
-    #[ORM\Column(length: 20, type: 'string', enumType: OfferStatus::class)]
-    private OfferStatus $status = OfferStatus::DRAFT;
+    #[ORM\Column(length: 20)]
+    private ?string $status = 'DRAFT';
 
     #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $createdAt = null;
@@ -54,7 +54,7 @@ class JobOffre
     private ?string $advantages = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'user_id', nullable: true)]
     private ?User $user = null;
 
     #[ORM\OneToMany(mappedBy: 'jobOffre', targetEntity: JobApplication::class, orphanRemoval: true)]
@@ -126,12 +126,12 @@ class JobOffre
         return $this;
     }
 
-    public function getStatus(): OfferStatus
+    public function getStatus(): ?string
     {
         return $this->status;
     }
 
-    public function setStatus(OfferStatus $status): self
+    public function setStatus(string $status): self
     {
         $this->status = $status;
         return $this;

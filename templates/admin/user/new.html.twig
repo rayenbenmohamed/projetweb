@@ -1,0 +1,76 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Nouvel utilisateur | Admin{% endblock %}
+{% block page_title %}Ajouter un utilisateur{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-2">
+    <div class="col-lg-8">
+        <div class="card card-lg">
+            <div class="card-body p-6">
+                <form method="post">
+                    <input type="hidden" name="_token" value="{{ csrf_token('admin_user_new') }}">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Prénom</label>
+                            <input type="text" name="firstName" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nom</label>
+                            <input type="text" name="lastName" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">E-mail <span class="text-danger">*</span></label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Téléphone</label>
+                        <input type="text" name="phone" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mot de passe initial <span class="text-danger">*</span></label>
+                        <input type="password" name="password" class="form-control" required minlength="4" autocomplete="new-password">
+                        <div class="form-text">Minimum 4 caractères.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rôle</label>
+                        <select name="role" class="form-select" id="newUserRole">
+                            {% for value, label in role_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-4 border-top pt-3" id="recruiterExtraFields">
+                        <h6 class="text-secondary small">Données recruteur (optionnel)</h6>
+                        <div class="mb-2">
+                            <label class="form-label">Entreprise</label>
+                            <input type="text" name="companyname" class="form-control">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Département</label>
+                            <input type="text" name="departement" class="form-control">
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Créer le compte</button>
+                        <a href="{{ path('admin_users_index') }}" class="btn btn-outline-secondary">Annuler</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    var role = document.getElementById('newUserRole');
+    var extra = document.getElementById('recruiterExtraFields');
+    function toggle() {
+        extra.style.display = role.value === 'ROLE_RECRUTEUR' ? 'block' : 'none';
+    }
+    role.addEventListener('change', toggle);
+    toggle();
+})();
+</script>
+{% endblock %}
