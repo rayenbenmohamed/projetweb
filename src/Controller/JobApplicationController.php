@@ -87,6 +87,32 @@ class JobApplicationController extends AbstractController
             $entityManager->flush();
 
             $this->addFlash('success', 'Votre candidature a été envoyée avec succès !');
+
+            // --- WhatsApp Redirection Logic ---
+            $entreprise = $jobOffre->getEntreprise();
+            
+            // Fallback : Si l'offre n'est pas liée directement, on cherche l'entreprise du créateur de l'offre
+            if (!$entreprise && $jobOffre->getUser()) {
+                $entreprise = $jobOffre->getUser()->getEntreprise();
+            }
+
+            if ($entreprise && $entreprise->getPhone()) {
+                // Nettoyer le numéro (garder seulement les chiffres)
+                $phoneNumber = preg_replace('/[^0-9]/', '', $entreprise->getPhone());
+                
+                if (!empty($phoneNumber)) {
+                    /** @var \App\Entity\User $user */
+                    $user = $this->getUser();
+                    $candidateName = $user->getFirstName() . ' ' . $user->getLastName();
+                    $jobTitle = $jobOffre->getTitle();
+                    
+                    $message = "Bonjour, je suis $candidateName. Je viens de postuler à votre offre d'emploi \"$jobTitle\" sur la plateforme SyfonuRH. Dans l'attente de votre retour, je vous souhaite une excellente journée.";
+                    $whatsappUrl = "https://wa.me/$phoneNumber?text=" . urlencode($message);
+                    
+                    return $this->redirect($whatsappUrl);
+                }
+            }
+
             return $this->redirectToRoute('app_job_offre_index');
         }
 

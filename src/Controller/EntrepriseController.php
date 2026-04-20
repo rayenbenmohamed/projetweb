@@ -53,6 +53,13 @@ class EntrepriseController extends AbstractController
             $entreprise->setDescription((string) $request->request->get('description', ''));
             $entreprise->setWebsite((string) $request->request->get('website', ''));
             $entreprise->setAddress((string) $request->request->get('address', ''));
+            $entreprise->setSector((string) $request->request->get('sector', ''));
+            $entreprise->setSize((string) $request->request->get('size', ''));
+            $entreprise->setFoundedAt($request->request->get('foundedAt') ? (int) $request->request->get('foundedAt') : null);
+            $entreprise->setPhone((string) $request->request->get('phone', ''));
+            $entreprise->setContactEmail((string) $request->request->get('contactEmail', ''));
+            $entreprise->setSocialLinkedin((string) $request->request->get('socialLinkedin', ''));
+            $entreprise->setSlogan((string) $request->request->get('slogan', ''));
             $entreprise->setUser($user);
 
             // Upload logo
@@ -105,6 +112,13 @@ class EntrepriseController extends AbstractController
             $entreprise->setDescription((string) $request->request->get('description', ''));
             $entreprise->setWebsite((string) $request->request->get('website', ''));
             $entreprise->setAddress((string) $request->request->get('address', ''));
+            $entreprise->setSector((string) $request->request->get('sector', ''));
+            $entreprise->setSize((string) $request->request->get('size', ''));
+            $entreprise->setFoundedAt($request->request->get('foundedAt') ? (int) $request->request->get('foundedAt') : null);
+            $entreprise->setPhone((string) $request->request->get('phone', ''));
+            $entreprise->setContactEmail((string) $request->request->get('contactEmail', ''));
+            $entreprise->setSocialLinkedin((string) $request->request->get('socialLinkedin', ''));
+            $entreprise->setSlogan((string) $request->request->get('slogan', ''));
 
             // Upload logo
             $logoFile = $request->files->get('logo');
@@ -137,5 +151,62 @@ class EntrepriseController extends AbstractController
             'entreprise' => $entreprise,
             'errors' => $errors,
         ]);
+    }
+
+    #[Route('/generate-description-ai', name: 'app_entreprise_generate_ai', methods: ['POST'])]
+    public function generateDescriptionAi(Request $request, \App\Service\JobOffreAiService $aiService): Response
+    {
+        $data = [
+            'name'      => $request->request->get('name'),
+            'sector'    => $request->request->get('sector'),
+            'slogan'    => $request->request->get('slogan'),
+            'size'      => $request->request->get('size'),
+            'address'   => $request->request->get('address'),
+            'foundedAt' => $request->request->get('foundedAt'),
+        ];
+
+        try {
+            $description = $aiService->generateEntrepriseDescription($data);
+            return $this->json(['description' => $description]);
+        } catch (\Exception $e) {
+            return $this->json(['error' => $e->getMessage()], 500);
+        }
+    }
+    #[Route('/delete', name: 'app_entreprise_delete', methods: ['POST'])]
+    public function delete(Request $request, EntityManagerInterface $entityManager, CloudinaryUploader $uploader): Response
+    {
+        /** @var \App\Entity\User $user */
+        $user = $this->getUser();
+        $entreprise = $user->getEntreprise();
+
+        if (!$entreprise) {
+            $this->addFlash('error', 'Entreprise non trouvée.');
+            return $this->redirectToRoute('app_home');
+        }
+
+        if ($this->isCsrfTokenValid('delete_entreprise', $request->request->get('_token'))) {
+            // Supprimer le logo sur Cloudinary
+            if ($entreprise->getLogoPublicId()) {
+                try {
+                    $uploader->deleteLogo($entreprise->getLogoPublicId());
+                } catch (\Exception $e) {
+                    // Log error if needed
+                }
+            }
+
+            // Supprimer explicitement les offres pour éviter tout problème de contrainte
+            foreach ($entreprise->getJobOffres() as $offre) {
+                $entityManager->remove($offre);
+            }
+
+            $entityManager->remove($entreprise);
+            $entityManager->flush();
+
+            $this->addFlash('success', 'Votre entreprise et toutes ses offres ont été supprimées avec succès.');
+            return $this->redirectToRoute('app_home');
+        }
+
+        $this->addFlash('error', 'Erreur de sécurité (CSRF). Veuillez réessayer.');
+        return $this->redirectToRoute('app_entreprise_my');
     }
 }

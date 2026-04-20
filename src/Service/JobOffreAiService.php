@@ -119,6 +119,57 @@ PROMPT;
         return $content;
     }
 
+    public function generateEntrepriseDescription(array $data): string
+    {
+        if (empty($this->groqApiKey)) {
+            return "Veuillez configurer une clé API Groq pour utiliser cette fonctionnalité d'IA.";
+        }
+        
+        $prompt = "Tu es un expert en communication corporate. Rédige une présentation d'entreprise professionnelle, inspirante et convaincante pour une plateforme de recrutement, en te basant sur ces informations :\n" .
+                  "- Nom de l'entreprise : " . ($data['name'] ?? 'Non précisé') . "\n" .
+                  "- Secteur : " . ($data['sector'] ?? 'Non précisé') . "\n" .
+                  "- Slogan : " . ($data['slogan'] ?? 'Non précisé') . "\n" .
+                  "- Taille : " . ($data['size'] ?? 'Non précisé') . "\n" .
+                  "- Lieu : " . ($data['address'] ?? 'Non précisé') . "\n" .
+                  "- Année de création : " . ($data['foundedAt'] ?? 'Non précisé') . "\n\n" .
+                  "Consignes strictes :\n" .
+                  "- Ne retourne QUE le texte de la présentation.\n" .
+                  "- N'ajoute aucune introduction ni balise Markdown (```).\n" .
+                  "- Organise le texte de manière fluide et professionnelle (environ 2-3 paragraphes).\n" .
+                  "- Mets en avant les valeurs et l'expertise de l'entreprise.";
+
+        $response = $this->httpClient->request('POST', self::GROQ_URL, [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $this->groqApiKey,
+                'Content-Type'  => 'application/json',
+            ],
+            'json' => [
+                'model'       => self::MODEL,
+                'temperature' => 0.7,
+                'max_tokens'  => 1000,
+                'messages'    => [
+                    ['role' => 'system', 'content' => "Tu es un rédacteur spécialisé dans le branding d'entreprise et la communication RH."],
+                    ['role' => 'user',   'content' => $prompt],
+                ],
+            ],
+            'timeout' => 20,
+        ]);
+
+        $responseData = $response->toArray(false);
+        
+        if (isset($responseData['error'])) {
+            throw new \RuntimeException('Groq API Error: ' . ($responseData['error']['message'] ?? 'Unknown error'));
+        }
+
+        $content = $responseData['choices'][0]['message']['content'] ?? '';
+        
+        if (empty($content)) {
+            throw new \RuntimeException('L\'IA n\'a pas pu générer de description.');
+        }
+
+        return preg_replace('/^```(?:markdown|text)?\s*/i', '', trim($content));
+    }
+
     // ─── Groq API ────────────────────────────────────────────────────────────
 
     private function callGroq(string $userMessage): array

@@ -22,8 +22,11 @@
                     <div class="mt-4 mt-sm-0 flex-grow-1">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <h2 class="fw-bold mb-1" style="color:#1e2343;">{{ entreprise.name }}</h2>
-                                <div class="d-flex flex-wrap gap-4 text-secondary small">
+                                <h2 class="fw-bold mb-0" style="color:#1e2343;">{{ entreprise.name }}</h2>
+                                {% if entreprise.slogan %}
+                                    <p class="text-primary fw-600 small mb-2">{{ entreprise.slogan }}</p>
+                                {% endif %}
+                                <div class="d-flex flex-wrap gap-4 text-secondary small mt-1">
                                     {% if entreprise.website %}
                                         <span><i class="ti ti-world me-1"></i><a href="{{ entreprise.website }}" target="_blank" class="text-secondary">{{ entreprise.website|replace({'https://': '', 'http://': ''}) }}</a></span>
                                     {% endif %}
@@ -32,17 +35,72 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <a href="{{ path('app_entreprise_edit') }}" class="btn btn-white btn-sm border shadow-sm">
-                                <i class="ti ti-edit me-1"></i>Modifier
-                            </a>
+                            <div class="d-flex gap-2">
+                                <a href="{{ path('app_entreprise_edit') }}" class="btn btn-white btn-sm border shadow-sm">
+                                    <i class="ti ti-edit me-1"></i>Modifier
+                                </a>
+                                <form method="post" action="{{ path('app_entreprise_delete') }}" style="display:inline-block;">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete_entreprise') }}">
+                                    <button type="submit" class="btn btn-danger btn-sm shadow-sm">
+                                        <i class="ti ti-trash me-1"></i>Supprimer
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="p-6">
-                    <h5 class="fw-bold mb-3"><i class="ti ti-info-circle me-2 text-primary"></i>À propos</h5>
-                    <div class="text-secondary lh-lg mb-0">
-                        {{ entreprise.description ? entreprise.description|nl2br : "Aucune description fournie." }}
+                    <div class="row g-6">
+                        <div class="col-md-7">
+                            <h5 class="fw-bold mb-3"><i class="ti ti-info-circle me-2 text-primary"></i>À propos</h5>
+                            <div class="text-secondary lh-lg mb-0">
+                                {{ entreprise.description ? entreprise.description|nl2br : "Aucune description fournie." }}
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <h5 class="fw-bold mb-3"><i class="ti ti-list-details me-2 text-primary"></i>Informations</h5>
+                            <div class="card bg-light border-0 rounded-4 p-4">
+                                <div class="d-flex flex-column gap-3">
+                                    {% if entreprise.sector %}
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="icon-shape icon-sm bg-white rounded-circle shadow-sm"><i class="ti ti-category text-primary"></i></div>
+                                            <div><p class="small text-secondary mb-0">Secteur</p><p class="small fw-bold mb-0 text-dark">{{ entreprise.sector }}</p></div>
+                                        </div>
+                                    {% endif %}
+                                    {% if entreprise.size %}
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="icon-shape icon-sm bg-white rounded-circle shadow-sm"><i class="ti ti-users text-primary"></i></div>
+                                            <div><p class="small text-secondary mb-0">Taille</p><p class="small fw-bold mb-0 text-dark">{{ entreprise.size }}</p></div>
+                                        </div>
+                                    {% endif %}
+                                    {% if entreprise.foundedAt %}
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="icon-shape icon-sm bg-white rounded-circle shadow-sm"><i class="ti ti-calendar-event text-primary"></i></div>
+                                            <div><p class="small text-secondary mb-0">Création</p><p class="small fw-bold mb-0 text-dark">{{ entreprise.foundedAt }}</p></div>
+                                        </div>
+                                    {% endif %}
+                                    {% if entreprise.phone %}
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="icon-shape icon-sm bg-white rounded-circle shadow-sm"><i class="ti ti-phone text-primary"></i></div>
+                                            <div><p class="small text-secondary mb-0">Téléphone</p><p class="small fw-bold mb-0 text-dark">{{ entreprise.phone }}</p></div>
+                                        </div>
+                                    {% endif %}
+                                    {% if entreprise.contactEmail %}
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="icon-shape icon-sm bg-white rounded-circle shadow-sm"><i class="ti ti-mail text-primary"></i></div>
+                                            <div><p class="small text-secondary mb-0">Email</p><p class="small fw-bold mb-0 text-dark"><a href="mailto:{{ entreprise.contactEmail }}" class="text-dark">{{ entreprise.contactEmail }}</a></p></div>
+                                        </div>
+                                    {% endif %}
+                                    {% if entreprise.socialLinkedin %}
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="icon-shape icon-sm bg-white rounded-circle shadow-sm"><i class="ti ti-brand-linkedin text-primary"></i></div>
+                                            <div><p class="small text-secondary mb-0">LinkedIn</p><p class="small fw-bold mb-0 text-dark"><a href="{{ entreprise.socialLinkedin }}" target="_blank" class="text-dark">Profil Entreprise</a></p></div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

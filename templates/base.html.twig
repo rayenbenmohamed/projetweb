@@ -18,6 +18,7 @@
 
     {# Dasher Theme CSS #}
     <link rel="stylesheet" href="{{ asset('dasher/css/theme.css') }}"/>
+    {{ importmap('app') }}
 
     {% block stylesheets %}{% endblock %}
 
@@ -40,5 +41,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ asset('dasher/js/main.js') }}"></script>
 {% block javascripts %}{% endblock %}
+            {% block importmap %}{{ importmap('app') }}{% endblock %}
 </body>
 </html>

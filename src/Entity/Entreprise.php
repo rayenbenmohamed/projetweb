@@ -37,11 +37,34 @@ class Entreprise
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $address = null;
 
-    #[ORM\OneToOne(inversedBy: 'entreprise', targetEntity: User::class, cascade: ['persist', 'remove'])]
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $sector = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $size = null;
+
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    private ?int $foundedAt = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $phone = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Email(message: 'L\'adresse email de contact n\'est pas valide.')]
+    private ?string $contactEmail = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Url(message: 'L\'URL LinkedIn n\'est pas valide.')]
+    private ?string $socialLinkedin = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $slogan = null;
+
+    #[ORM\OneToOne(inversedBy: 'entreprise', targetEntity: User::class, cascade: ['persist'])]
     #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false)]
     private ?User $user = null;
 
-    #[ORM\OneToMany(mappedBy: 'entreprise', targetEntity: JobOffre::class)]
+    #[ORM\OneToMany(mappedBy: 'entreprise', targetEntity: JobOffre::class, cascade: ['remove'], orphanRemoval: true)]
     private Collection $jobOffres;
 
     public function __construct()
@@ -117,6 +140,83 @@ class Entreprise
     public function setAddress(?string $address): self
     {
         $this->address = $address;
+        return $this;
+    }
+
+    public function getSector(): ?string
+    {
+        return $this->sector;
+    }
+
+    public function setSector(?string $sector): self
+    {
+        $this->sector = $sector;
+        return $this;
+    }
+
+    public function getSize(): ?string
+    {
+        return $this->size;
+    }
+
+    public function setSize(?string $size): self
+    {
+        $this->size = $size;
+        return $this;
+    }
+
+    public function getFoundedAt(): ?int
+    {
+        return $this->foundedAt;
+    }
+
+    public function setFoundedAt(?int $foundedAt): self
+    {
+        $this->foundedAt = $foundedAt;
+        return $this;
+    }
+
+    public function getPhone(): ?string
+    {
+        return $this->phone;
+    }
+
+    public function setPhone(?string $phone): self
+    {
+        $this->phone = $phone;
+        return $this;
+    }
+
+    public function getContactEmail(): ?string
+    {
+        return $this->contactEmail;
+    }
+
+    public function setContactEmail(?string $contactEmail): self
+    {
+        $this->contactEmail = $contactEmail;
+        return $this;
+    }
+
+    public function getSocialLinkedin(): ?string
+    {
+        return $this->socialLinkedin;
+    }
+
+    public function setSocialLinkedin(?string $socialLinkedin): self
+    {
+        $this->socialLinkedin = $socialLinkedin;
+        return $this;
+    }
+
+    public function getSlogan(): ?string
+    {
+        return $this->slogan;
+    }
+
+    public function setSlogan(?string $slogan): self
+    {
+        $this->slogan = $slogan;
         return $this;
     }
 
