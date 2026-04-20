@@ -4,178 +4,178 @@
 {% block page_title %}Amis &amp; demandes{% endblock %}
 
 {% block content %}
-{% if is_granted('ROLE_ADMIN') %}
-<div class="alert alert-light border d-flex flex-wrap align-items-center justify-content-between gap-2 mb-0">
-    <span class="small text-secondary">Vous êtes connecté en administrateur.</span>
-    <a href="{{ path('admin_dashboard') }}" class="btn btn-sm btn-outline-dark">Retour au back-office</a>
-</div>
-{% endif %}
+<section class="social-shell">
+    {% if is_granted('ROLE_ADMIN') %}
+        <div class="alert social-glass-card d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <span class="small social-subtitle">Mode administrateur actif.</span>
+            <a href="{{ path('admin_dashboard') }}" class="btn btn-sm btn-outline-dark social-soft-btn">Retour au back-office</a>
+        </div>
+    {% endif %}
 
-<div class="card card-lg mb-4 mt-1">
-    <div class="card-body py-3">
-        <form method="get" action="{{ path('app_friends_index') }}" class="row g-2 align-items-end" role="search" id="friendsSearchForm">
-            <div class="col-md-8 col-lg-6">
-                <label for="friendSearchInput" class="form-label small text-secondary mb-1">Rechercher des membres ou filtrer vos amis</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-body-secondary border-end-0"><i class="ti ti-search"></i></span>
-                    <input type="search" id="friendSearchInput" name="q" value="{{ search_query }}"
-                           class="form-control border-start-0"
-                           placeholder="Prénom, nom ou e-mail…" autocomplete="off" maxlength="120">
-                    {% if search_query != '' %}
-                        <a href="{{ path('app_friends_index') }}" class="btn btn-outline-secondary" type="button">Effacer</a>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="col-md-4 col-lg-3">
-                <button type="submit" class="btn btn-primary w-100">Rechercher</button>
-            </div>
-            {% if search_query != '' %}
-                <div class="col-12 small text-secondary" id="friendSearchSummary">
-                    Filtre actif : <strong>{{ search_query }}</strong>
-                    — {{ friends|length }} ami(s) affiché(s), {{ directory|length }} profil(s) dans l’annuaire.
-                </div>
-            {% endif %}
-        </form>
-    </div>
-</div>
-
-<div class="row g-4 mt-1">
-    <div class="col-lg-5">
-        <div class="card card-lg h-100" id="section-incoming-requests">
-            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <h5 class="mb-0">Demandes reçues</h5>
-                {% if incoming_requests|length > 0 %}
-                    <span class="badge bg-primary rounded-pill">{{ incoming_requests|length }}</span>
-                {% endif %}
-            </div>
-            <div class="list-group list-group-flush">
-                {% for r in incoming_requests %}
-                    <div class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">
-                        <div>
-                            <strong>{{ r.sender.firstName|default('') }} {{ r.sender.lastName|default('') }}</strong>
-                            <span class="text-secondary small d-block">{{ r.sender.email }}</span>
-                        </div>
-                        <div class="d-flex gap-1">
-                            <form method="post" action="{{ path('app_friends_accept', {id: r.id}) }}" class="d-inline">
-                                <input type="hidden" name="_token" value="{{ csrf_token('friend_accept' ~ r.id) }}">
-                                <button type="submit" class="btn btn-sm btn-success">Accepter</button>
-                            </form>
-                            <form method="post" action="{{ path('app_friends_reject', {id: r.id}) }}" class="d-inline">
-                                <input type="hidden" name="_token" value="{{ csrf_token('friend_reject' ~ r.id) }}">
-                                <button type="submit" class="btn btn-sm btn-outline-secondary">Refuser</button>
-                            </form>
-                        </div>
+    <div class="card social-glass-card mb-4 mt-1">
+        <div class="card-body py-3">
+            <form method="get" action="{{ path('app_friends_index') }}" class="row g-2 align-items-end" role="search" id="friendsSearchForm">
+                <div class="col-md-8">
+                    <label for="friendSearchInput" class="form-label small social-subtitle mb-1">Rechercher dans vos amis et dans l’annuaire</label>
+                    <div class="input-group social-search-group">
+                        <span class="input-group-text border-end-0"><i class="ti ti-search"></i></span>
+                        <input type="search" id="friendSearchInput" name="q" value="{{ search_query }}"
+                               class="form-control border-start-0"
+                               placeholder="Prénom, nom ou e-mail" autocomplete="off" maxlength="120">
                     </div>
-                {% else %}
-                    <div class="list-group-item text-secondary small">Aucune demande en attente.</div>
-                {% endfor %}
-            </div>
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary social-soft-btn flex-grow-1">Rechercher</button>
+                    <a href="{{ path('app_friends_index') }}" class="btn btn-outline-secondary social-soft-btn d-none" id="friendsClearBtn">Effacer</a>
+                </div>
+                <div class="col-12 small social-subtitle d-none" id="friendSearchSummary"></div>
+            </form>
         </div>
     </div>
-    <div class="col-lg-7">
-        <div class="card card-lg mb-4" id="section-friends">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Mes amis</h5>
+
+    <div class="row g-4 mt-1">
+        <div class="col-xl-4">
+            <div class="card social-glass-card h-100" id="section-incoming-requests">
+                <div class="card-header social-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h5 class="mb-0 social-title">Demandes reçues</h5>
+                    <span class="badge rounded-pill social-soft-badge">{{ incoming_requests|length }}</span>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for r in incoming_requests %}
+                        <div class="list-group-item social-list-item d-flex flex-wrap justify-content-between align-items-center gap-2">
+                            <div>
+                                <strong>{{ r.sender.firstName|default('') }} {{ r.sender.lastName|default('') }}</strong>
+                                <span class="social-subtitle small d-block">{{ r.sender.email }}</span>
+                            </div>
+                            <div class="d-flex gap-1">
+                                <form method="post" action="{{ path('app_friends_accept', {id: r.id}) }}" class="d-inline">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('friend_accept' ~ r.id) }}">
+                                    <button type="submit" class="btn btn-sm btn-success social-soft-btn">Accepter</button>
+                                </form>
+                                <form method="post" action="{{ path('app_friends_reject', {id: r.id}) }}" class="d-inline">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('friend_reject' ~ r.id) }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary social-soft-btn">Refuser</button>
+                                </form>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="list-group-item social-empty small">Aucune demande en attente.</div>
+                    {% endfor %}
+                </div>
             </div>
-            <ul class="list-group list-group-flush">
-                {% for f in friends %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2"
-                        data-friend-row
-                        data-search="{{ (f.firstName|default('') ~ ' ' ~ f.lastName|default('') ~ ' ' ~ f.email)|lower }}">
-                        <div>
-                            <strong>{{ f.firstName|default('') }} {{ f.lastName|default('') }}</strong>
-                            <span class="text-secondary small d-block">{{ f.email }}</span>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            {% set unread = unread_by_friend[f.id] ?? 0 %}
-                            {% if unread > 0 %}
-                                <span class="badge bg-danger rounded-pill" title="Messages non lus">{{ unread > 99 ? '99+' : unread }}</span>
-                            {% endif %}
-                            <a href="{{ path('app_chat_with', {id: f.id}) }}" class="btn btn-sm btn-primary">Discuter</a>
-                        </div>
-                    </li>
-                {% else %}
-                    <li class="list-group-item text-secondary small">
-                        {% if search_query != '' %}
-                            Aucun ami ne correspond à « {{ search_query }} ».
-                        {% else %}
-                            Pas encore d’amis — envoyez une demande ci-dessous.
-                        {% endif %}
-                    </li>
-                {% endfor %}
-            </ul>
         </div>
 
-        <div class="card card-lg mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">En attente (envoyées)</h5>
-            </div>
-            <ul class="list-group list-group-flush">
-                {% for r in outgoing_requests %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>{{ r.receiver.email }}</span>
-                        <form method="post" action="{{ path('app_friends_cancel', {id: r.id}) }}" class="d-inline">
-                            <input type="hidden" name="_token" value="{{ csrf_token('friend_cancel' ~ r.id) }}">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Annuler</button>
-                        </form>
-                    </li>
-                {% else %}
-                    <li class="list-group-item text-secondary small">Aucune demande envoyée en attente.</li>
-                {% endfor %}
-            </ul>
-        </div>
-
-        <div class="card card-lg" id="section-directory">
-            <div class="card-header">
-                <h5 class="mb-0">Trouver des personnes</h5>
-                <p class="small text-secondary mb-0 mt-1">Envoyer une demande d’ami (si la personne vous a déjà invité, accepter se fait automatiquement).</p>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle">
-                    <thead class="table-light">
-                        <tr><th>Membre</th><th></th></tr>
-                    </thead>
-                    <tbody>
-                        {% for u in directory %}
-                            <tr data-directory-row
-                                data-search="{{ (u.firstName|default('') ~ ' ' ~ u.lastName|default('') ~ ' ' ~ u.email)|lower }}">
-                                <td>
-                                    <strong>{{ u.firstName|default('') }} {{ u.lastName|default('') }}</strong>
-                                    <span class="text-secondary small d-block">{{ u.email }}</span>
-                                </td>
-                                <td class="text-end">
-                                    {% if friend_id_set[u.id] is defined %}
-                                        <a href="{{ path('app_chat_with', {id: u.id}) }}" class="btn btn-sm btn-primary">Chat</a>
-                                    {% elseif pending_to_me[u.id] is defined %}
-                                        <form method="post" action="{{ path('app_friends_accept', {id: pending_to_me[u.id].id}) }}" class="d-inline">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('friend_accept' ~ pending_to_me[u.id].id) }}">
-                                            <button type="submit" class="btn btn-sm btn-success">Accepter</button>
-                                        </form>
-                                    {% elseif pending_from_me[u.id] is defined %}
-                                        <span class="badge bg-secondary-subtle text-secondary-emphasis">En attente</span>
-                                    {% else %}
-                                        <form method="post" action="{{ path('app_friends_request', {id: u.id}) }}" class="d-inline">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('friend_request' ~ u.id) }}">
-                                            <button type="submit" class="btn btn-sm btn-outline-primary">Ajouter</button>
-                                        </form>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% else %}
-                            <tr><td colspan="2" class="text-secondary small">
-                                {% if search_query != '' %}
-                                    Aucun autre membre ne correspond à « {{ search_query }} ».
-                                {% else %}
-                                    Aucun autre utilisateur.
+        <div class="col-xl-8">
+            <div class="card social-glass-card mb-4" id="section-friends">
+                <div class="card-header social-card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 social-title">Mes amis</h5>
+                    <span class="small social-subtitle">{{ friends|length }} contact(s)</span>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for f in friends %}
+                        <li class="list-group-item social-list-item d-flex justify-content-between align-items-center flex-wrap gap-2"
+                            data-friend-row
+                            data-search="{{ (f.firstName|default('') ~ ' ' ~ f.lastName|default('') ~ ' ' ~ f.email)|lower }}">
+                            <div>
+                                <strong>{{ f.firstName|default('') }} {{ f.lastName|default('') }}</strong>
+                                <span class="social-subtitle small d-block">{{ f.email }}</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                {% set unread = unread_by_friend[f.id] ?? 0 %}
+                                {% if unread > 0 %}
+                                    <span class="badge rounded-pill bg-danger" title="Messages non lus">{{ unread > 99 ? '99+' : unread }}</span>
                                 {% endif %}
-                            </td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                                <a href="{{ path('app_chat_with', {id: f.id}) }}" class="btn btn-sm btn-primary social-soft-btn">Discuter</a>
+                            </div>
+                        </li>
+                    {% else %}
+                        <li class="list-group-item social-empty small">
+                            {% if search_query != '' %}
+                                Aucun ami ne correspond à « {{ search_query }} ».
+                            {% else %}
+                                Pas encore d’amis. Commencez par ajouter un contact.
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="card social-glass-card mb-4">
+                <div class="card-header social-card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 social-title">Demandes envoyées</h5>
+                    <span class="badge rounded-pill social-soft-badge">{{ outgoing_requests|length }}</span>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for r in outgoing_requests %}
+                        <li class="list-group-item social-list-item d-flex justify-content-between align-items-center">
+                            <span class="social-subtitle">{{ r.receiver.email }}</span>
+                            <form method="post" action="{{ path('app_friends_cancel', {id: r.id}) }}" class="d-inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('friend_cancel' ~ r.id) }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger social-soft-btn">Annuler</button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="list-group-item social-empty small">Aucune demande envoyée en attente.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="card social-glass-card" id="section-directory">
+                <div class="card-header social-card-header">
+                    <h5 class="mb-0 social-title">Découvrir des personnes</h5>
+                    <p class="small social-subtitle mb-0 mt-1">Ajoutez un contact, ou acceptez directement sa demande si elle existe déjà.</p>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead>
+                            <tr>
+                                <th class="social-subtitle">Membre</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in directory %}
+                                <tr data-directory-row data-search="{{ (u.firstName|default('') ~ ' ' ~ u.lastName|default('') ~ ' ' ~ u.email)|lower }}">
+                                    <td>
+                                        <strong>{{ u.firstName|default('') }} {{ u.lastName|default('') }}</strong>
+                                        <span class="social-subtitle small d-block">{{ u.email }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        {% if friend_id_set[u.id] is defined %}
+                                            <a href="{{ path('app_chat_with', {id: u.id}) }}" class="btn btn-sm btn-primary social-soft-btn">Chat</a>
+                                        {% elseif pending_to_me[u.id] is defined %}
+                                            <form method="post" action="{{ path('app_friends_accept', {id: pending_to_me[u.id].id}) }}" class="d-inline">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('friend_accept' ~ pending_to_me[u.id].id) }}">
+                                                <button type="submit" class="btn btn-sm btn-success social-soft-btn">Accepter</button>
+                                            </form>
+                                        {% elseif pending_from_me[u.id] is defined %}
+                                            <span class="badge rounded-pill social-soft-badge">En attente</span>
+                                        {% else %}
+                                            <form method="post" action="{{ path('app_friends_request', {id: u.id}) }}" class="d-inline">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('friend_request' ~ u.id) }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-primary social-soft-btn">Ajouter</button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="2" class="social-empty small">
+                                        {% if search_query != '' %}
+                                            Aucun profil ne correspond à « {{ search_query }} ».
+                                        {% else %}
+                                            Aucun autre utilisateur.
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
-</div>
+</section>
 {% endblock %}
 
 {% block javascripts %}
@@ -200,7 +200,7 @@
             const summary = document.getElementById('friendSearchSummary');
             const form = document.getElementById('friendsSearchForm');
             const submitButton = form ? form.querySelector('button[type="submit"]') : null;
-            const clearButton = form ? form.querySelector('a.btn.btn-outline-secondary') : null;
+            const clearButton = document.getElementById('friendsClearBtn');
 
             const applyFilter = () => {
                 const query = normalize(input.value);
@@ -243,7 +243,7 @@
                 if (submitButton) {
                     submitButton.classList.add('btn-outline-primary');
                     submitButton.classList.remove('btn-primary');
-                    submitButton.textContent = 'Filtre en direct';
+                    submitButton.textContent = query === '' ? 'Rechercher' : 'Filtre en direct';
                 }
 
                 if (clearButton) {

@@ -132,5 +132,137 @@
             </div>
         </div>
     </div>
+    <div class="col-xl-4">
+        <div class="card card-lg">
+            <div class="card-header border-bottom-0">
+                <h5 class="mb-0">Utilisateurs par rôle</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="adminUsersRoleChart" style="height: 260px;"></canvas>
+            </div>
+        </div>
+    </div>
 </div>
+
+<div class="row g-6 mb-6">
+    <div class="col-xl-8">
+        <div class="card card-lg">
+            <div class="card-header border-bottom-0">
+                <h5 class="mb-0">Évolution mensuelle (6 derniers mois)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="adminMonthlyEvolutionChart" style="height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="card card-lg">
+            <div class="card-header border-bottom-0">
+                <h5 class="mb-0">Statut des contrats</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="adminContractStatusChart" style="height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        (() => {
+            const data = {{ admin_chart_data|json_encode|raw }};
+            if (!data) {
+                return;
+            }
+
+            const usersCtx = document.getElementById('adminUsersRoleChart');
+            if (usersCtx) {
+                new Chart(usersCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.roles.labels,
+                        datasets: [{
+                            data: data.roles.values,
+                            backgroundColor: ['#2563eb', '#16a34a', '#f59e0b', '#8b5cf6', '#ef4444'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+            }
+
+            const monthlyCtx = document.getElementById('adminMonthlyEvolutionChart');
+            if (monthlyCtx) {
+                new Chart(monthlyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: data.monthly.labels,
+                        datasets: [
+                            {
+                                label: 'Offres',
+                                data: data.monthly.offres,
+                                borderColor: '#f59e0b',
+                                backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                                fill: true,
+                                tension: 0.35
+                            },
+                            {
+                                label: 'Candidatures',
+                                data: data.monthly.candidatures,
+                                borderColor: '#0ea5e9',
+                                backgroundColor: 'rgba(14, 165, 233, 0.15)',
+                                fill: true,
+                                tension: 0.35
+                            },
+                            {
+                                label: 'Contrats',
+                                data: data.monthly.contrats,
+                                borderColor: '#16a34a',
+                                backgroundColor: 'rgba(22, 163, 74, 0.15)',
+                                fill: true,
+                                tension: 0.35
+                            }
+                        ]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'top' } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { precision: 0 } }
+                        }
+                    }
+                });
+            }
+
+            const contractsCtx = document.getElementById('adminContractStatusChart');
+            if (contractsCtx) {
+                new Chart(contractsCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.contract_status.labels,
+                        datasets: [{
+                            label: 'Contrats',
+                            data: data.contract_status.values,
+                            backgroundColor: ['#16a34a', '#f59e0b', '#ef4444', '#0ea5e9', '#8b5cf6']
+                        }]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { precision: 0 } }
+                        }
+                    }
+                });
+            }
+        })();
+    </script>
 {% endblock %}
