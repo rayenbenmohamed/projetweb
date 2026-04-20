@@ -11,6 +11,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Service\CVParserService;
 use App\Service\CVKeywordScorerService;
 use App\Service\CVAnalyzerService;
@@ -30,20 +31,29 @@ class JobApplicationController extends AbstractController
     public function index(Request $request, JobApplicationRepository $jobApplicationRepository): Response
     {
         $user = $this->getUser();
+        $limit = 10;
 
+        // --- PIPELINE RECRUTEUR (Candidatures reçues) ---
         $recvStatus = $request->query->get('recv_status');
         $recvOffer = $request->query->get('recv_offer');
+        $recvPage = max(1, $request->query->getInt('recv_page', 1));
+        $recvOffset = ($recvPage - 1) * $limit;
 
+        $totalRecv = $jobApplicationRepository->countByRecruiter($user, $recvStatus, $recvOffer);
+        $maxRecvPage = ceil($totalRecv / $limit);
+        $asRecruiter = $jobApplicationRepository->findByRecruiter($user, $recvStatus, $recvOffer, $limit, $recvOffset);
+
+        // --- MES CANDIDATURES (Candidatures envoyées) ---
         $sentStatus = $request->query->get('sent_status');
         $sentOffer = $request->query->get('sent_offer');
+        $sentPage = max(1, $request->query->getInt('sent_page', 1));
+        $sentOffset = ($sentPage - 1) * $limit;
 
-        // Candidatures où l'utilisateur EST le propriétaire de l'offre
-        $asRecruiter = $jobApplicationRepository->findByRecruiter($user, $recvStatus, $recvOffer);
+        $totalSent = $jobApplicationRepository->countForCandidate($user, $sentStatus, $sentOffer);
+        $maxSentPage = ceil($totalSent / $limit);
+        $asCandidat = $jobApplicationRepository->findForCandidate($user, $sentStatus, $sentOffer, $limit, $sentOffset);
 
-        // Candidatures où l'utilisateur a postulé
-        $asCandidat = $jobApplicationRepository->findForCandidate($user, $sentStatus, $sentOffer);
-
-        // Grouper les candidatures reçues (en tant que recruteur) par offre et trier par score
+        // Grouper les candidatures reçues par offre
         $applicationsByOffer = [];
         foreach ($asRecruiter as $app) {
             $offerTitle = $app->getJobOffre()?->getTitle() ?? 'Offre inconnue';
@@ -63,8 +73,12 @@ class JobApplicationController extends AbstractController
             'my_applications'       => $asCandidat,
             'recvStatus'            => $recvStatus,
             'recvOffer'             => $recvOffer,
+            'recvPage'              => $recvPage,
+            'maxRecvPage'           => $maxRecvPage,
             'sentStatus'            => $sentStatus,
-            'sentOffer'             => $sentOffer
+            'sentOffer'             => $sentOffer,
+            'sentPage'              => $sentPage,
+            'maxSentPage'           => $maxSentPage,
         ]);
     }
 
@@ -106,26 +120,7 @@ class JobApplicationController extends AbstractController
                 $jobApplication->setCvPath($cvUrl);
                 
                 // --- ANALYSE AUTOMATIQUE OPTIMISÉE (Text-First) ---
-                try {
-                    $jobDesc = $jobOffre->getDescription() ?? '';
-                    $cvText = $cvParser->extractText($cvUrl);
-                    
-                    if ($cvText && !str_starts_with($cvText, 'Erreur') && strlen(trim($cvText)) > 100) {
-                        // Cas 1 : Le texte a pu être extrait (PDF standard) -> Analyse textuelle IA
-                        $result = $cvAnalyzer->analyze($jobDesc, $cvText);
-                    } else {
-                        // Cas 2 : Pas de texte (Scan/Image) -> Analyse visuelle Multimodale
-                        $result = $cvAnalyzer->analyzeDocument($jobDesc, $cvUrl);
-                    }
-                    
-                    if ($result && !isset($result['error'])) {
-                        $jobApplication->setAiScore($result['score']);
-                        $jobApplication->setAiAnalysis(json_encode($result, JSON_UNESCAPED_UNICODE));
-                        $jobApplication->setAiAnalyzedAt(new \DateTime());
-                    }
-                } catch (\Exception $e) {
-                    // Erreur silencieuse lors de l'upload
-                }
+                $this->performAutoAnalysis($jobApplication, $cvParser, $cvAnalyzer, $entityManager);
             } else {
                 $jobApplication->setCvPath($request->request->get('cv_path'));
             }
@@ -142,27 +137,22 @@ class JobApplicationController extends AbstractController
 
     /** Voir une candidature */
     #[Route('/{id}', name: 'app_job_application_show', methods: ['GET'])]
-    public function show(JobApplication $jobApplication, CVParserService $cvParser): Response
+    public function show(
+        JobApplication $jobApplication, 
+        CVParserService $cvParser, 
+        CVAnalyzerService $cvAnalyzer,
+        EntityManagerInterface $entityManager
+    ): Response
     {
         $this->assertCanAccess($jobApplication);
 
-        // Extraction automatique du texte du CV UNIQUEMENT si l'analyse n'a pas encore été faite
-        // Cela accélère le chargement de la page pour les dossiers déjà traités
-        $extractedCvText = null;
+        // Déclencher l'analyse automatique SI elle n'a pas encore été faite (Analyse au premier regard)
         if ($jobApplication->getCvPath() && $jobApplication->getAiScore() === null) {
-            try {
-                $text = $cvParser->extractText($jobApplication->getCvPath());
-                if ($text && !str_starts_with($text, 'Erreur') && strlen(trim($text)) > 10) {
-                    $extractedCvText = $text;
-                }
-            } catch (\Exception $e) {
-                // Silencieux
-            }
+            $this->performAutoAnalysis($jobApplication, $cvParser, $cvAnalyzer, $entityManager);
         }
 
         return $this->render('job_application/show.html.twig', [
             'job_application'  => $jobApplication,
-            'extracted_cv_text' => $extractedCvText,
         ]);
     }
 
@@ -267,33 +257,15 @@ class JobApplicationController extends AbstractController
     ): Response {
         $this->assertIsOfferOwner($jobApplication);
 
-        $jobDescription = $jobApplication->getJobOffre()?->getDescription() ?? '';
-        
-        // --- ANALYSE OPTIMISÉE (Text-First) ---
-        $cvUrl = $jobApplication->getCvPath();
-        $cvText = $cvParser->extractText($cvUrl);
-        
-        if ($cvText && !str_starts_with($cvText, 'Erreur') && strlen(trim($cvText)) > 100) {
-            // Analyse textuelle
-            $result = $cvAnalyzer->analyze($jobDescription, $cvText);
-        } else {
-            // Analyse visuelle (OCR + Vision)
-            $result = $cvAnalyzer->analyzeDocument($jobDescription, $cvUrl);
-        }
+        // --- ANALYSE AUTOMATIQUE ---
+        $result = $this->performAutoAnalysis($jobApplication, $cvParser, $cvAnalyzer, $entityManager);
         
         if (isset($result['error'])) {
-            $this->addFlash('danger', "Échec du scan IA : " . $result['error']);
+            $this->addFlash('danger', "Échec de l'analyse IA : " . $result['error']);
             return $this->redirectToRoute('app_job_application_show', ['id' => $jobApplication->getId(), 'scanned' => 1]);
         }
-        
-        $jobApplication->setAiScore($result['score']);
-        $jobApplication->setAiAnalysis(json_encode($result, JSON_UNESCAPED_UNICODE));
-        $jobApplication->setAiAnalyzedAt(new \DateTime());
 
-        $entityManager->flush();
-
-        $this->addFlash('success', 'Analyse automatique terminée ! Score : ' . $result['score'] . '%');
-
+        $this->addFlash('success', 'Analyse automatique terminée ! Score : ' . $jobApplication->getAiScore() . '%');
         return $this->redirectToRoute('app_job_application_show', ['id' => $jobApplication->getId()]);
     }
 
@@ -334,6 +306,52 @@ class JobApplicationController extends AbstractController
         $this->addFlash('success', 'Analyse manuelle terminée ! Score : ' . $result['score'] . '%');
 
         return $this->redirectToRoute('app_job_application_show', ['id' => $jobApplication->getId()]);
+    }
+
+    // ─── CSV Export ───────────────────────────────────────────────────────────
+
+    /**
+     * Exports all received job applications to CSV.
+     */
+    #[Route('/export/csv', name: 'app_job_application_export_csv', methods: ['GET'])]
+    public function exportCsv(JobApplicationRepository $jobApplicationRepository): StreamedResponse
+    {
+        $user = $this->getUser();
+        $applications = $jobApplicationRepository->findByRecruiter($user, null, null, 9999, 0);
+
+        $response = new StreamedResponse(function () use ($applications) {
+            $handle = fopen('php://output', 'w');
+            // BOM for Excel UTF-8
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            // Headers
+            fputcsv($handle, [
+                'ID', 'Candidat', 'Email', 'Offre', 'Statut',
+                'Score IA (%)', 'Date de candidature', 'Recommandation IA'
+            ], ';');
+
+            foreach ($applications as $app) {
+                $analysis = $app->getAiAnalysis() ? json_decode($app->getAiAnalysis(), true) : [];
+                fputcsv($handle, [
+                    $app->getId(),
+                    $app->getCandidat()->getFirstName() . ' ' . $app->getCandidat()->getLastName(),
+                    $app->getCandidat()->getEmail(),
+                    $app->getJobOffre()?->getTitle() ?? '-',
+                    $app->getStatus(),
+                    $app->getAiScore() ?? 'N/A',
+                    $app->getApplyDate()?->format('d/m/Y') ?? '-',
+                    $analysis['recommendation'] ?? '-',
+                ], ';');
+            }
+
+            fclose($handle);
+        });
+
+        $filename = 'candidatures_syfonu_' . date('Y-m-d') . '.csv';
+        $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
+        $response->headers->set('Content-Disposition', 'attachment; filename="' . $filename . '"');
+
+        return $response;
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -383,6 +401,46 @@ class JobApplicationController extends AbstractController
         if (!$isCandidat && !$isOfferOwner) {
             $this->addFlash('danger', "Vous n'avez pas le droit de supprimer cette candidature.");
             throw $this->createAccessDeniedException();
+        }
+    }
+
+    /**
+     * Helper method to perform AI analysis for a CV.
+     * Combines text extraction and multimodal vision fallback.
+     */
+    private function performAutoAnalysis(
+        JobApplication $jobApplication,
+        CVParserService $cvParser,
+        CVAnalyzerService $cvAnalyzer,
+        EntityManagerInterface $entityManager
+    ): ?array {
+        $cvUrl = $jobApplication->getCvPath();
+        $jobDesc = $jobApplication->getJobOffre()?->getDescription() ?? '';
+        
+        if (!$cvUrl) return ['error' => 'Aucun CV trouvé.'];
+
+        try {
+            $cvText = $cvParser->extractText($cvUrl);
+            
+            if ($cvText && !str_starts_with($cvText, 'Erreur') && strlen(trim($cvText)) > 100) {
+                // Analyse textuelle IA
+                $result = $cvAnalyzer->analyze($jobDesc, $cvText);
+            } else {
+                // Analyse visuelle Multimodale (Vision)
+                $result = $cvAnalyzer->analyzeDocument($jobDesc, $cvUrl);
+            }
+
+            if ($result && !isset($result['error'])) {
+                $jobApplication->setAiScore($result['score']);
+                $jobApplication->setAiAnalysis(json_encode($result, JSON_UNESCAPED_UNICODE));
+                $jobApplication->setAiAnalyzedAt(new \DateTime());
+                
+                $entityManager->flush();
+            }
+            
+            return $result;
+        } catch (\Exception $e) {
+            return ['error' => $e->getMessage()];
         }
     }
 }

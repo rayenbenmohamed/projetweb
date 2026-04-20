@@ -4,7 +4,7 @@
 {% set sn = social_notifications() %}
 <div id="miniSidebar">
     <div class="brand-logo">
-        <a class="d-none d-md-flex align-items-center gap-2" href="{{ path('admin_dashboard') }}">
+        <a class="d-none d-md-flex align-items-center gap-2" href="{{ path('app_app_dashboard') }}">
             <img src="{{ asset('dasher/images/brand/logo/logo-icon.svg') }}" alt="Logo"/>
             <span class="fw-bold fs-4 site-logo-text">SyfonuRH</span>
         </a>
@@ -27,8 +27,8 @@
         </li>
         {# --- Tableau de bord --- #}
         <li class="nav-item">
-            <a class="nav-link {{ app.request.attributes.get('_route') == 'admin_dashboard' ? 'active' }}"
-               href="{{ path('admin_dashboard') }}">
+            <a class="nav-link {{ app.request.attributes.get('_route') == 'app_app_dashboard' ? 'active' }}"
+               href="{{ path('app_app_dashboard') }}">
                 <span class="nav-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
@@ -222,4 +222,23 @@
 
 {% block javascripts %}
     {% include '_social_notifications_script.html.twig' %}
+    <script>
+        // Notification Polling (Temps réel)
+        setInterval(function() {
+            fetch("{{ path('app_notifications_summary') }}")
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.querySelector('[data-sidebar-social-total]');
+                    if (badge && data.total !== undefined) {
+                        badge.innerText = data.total > 99 ? '99+' : data.total;
+                        if (data.total > 0) {
+                            badge.classList.remove('d-none');
+                        } else {
+                            badge.classList.add('d-none');
+                        }
+                    }
+                })
+                .catch(err => console.error("Erreur polling notifications:", err));
+        }, 60000); // Toutes les minutes
+    </script>
 {% endblock %}

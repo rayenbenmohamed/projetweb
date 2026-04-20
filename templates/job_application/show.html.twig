@@ -610,20 +610,13 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
-                    {% if extracted_cv_text %}
-                        <div class="alert mb-3 d-flex align-items-center gap-2 rounded-3" style="background:#f0fdf4;border:1px solid #86efac;color:#166534;">
-                            <i class="ti ti-circle-check fs-5 flex-shrink-0"></i>
-                            <span class="small"><strong>Texte extrait automatiquement depuis le PDF.</strong> Vous pouvez le corriger avant de lancer l'analyse.</span>
-                        </div>
-                    {% else %}
-                        <div class="alert alert-info rounded-3 small mb-3">
-                            <i class="ti ti-scan me-1"></i>Le CV est une image ou protégé — l'extraction automatique a échoué. Copiez-collez le texte manuellement ci-dessous.
-                        </div>
-                    {% endif %}
+                    <div class="alert alert-info rounded-3 small mb-3">
+                        <i class="ti ti-info-circle me-1"></i>Si l'analyse automatique ne vous semble pas exacte, vous pouvez coller manuellement le texte du CV ici pour relancer une analyse ciblée.
+                    </div>
                     <label class="form-label fw-bold">Contenu textuel du CV</label>
                     <textarea name="cv_text" class="form-control rounded-3" rows="12"
                         placeholder="Collez ici le texte extrait du CV..."
-                        required>{{ extracted_cv_text ?? '' }}</textarea>
+                        required></textarea>
                 </div>
                 <div class="modal-footer bg-light border-0">
                     <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>

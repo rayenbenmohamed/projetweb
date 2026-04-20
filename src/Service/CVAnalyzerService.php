@@ -64,7 +64,8 @@ PROMPT;
                     ],
                     'generationConfig' => [
                         'temperature'     => 0.2,
-                        'maxOutputTokens' => 512,
+                        'maxOutputTokens' => 2048,
+                        'response_mime_type' => 'application/json',
                     ],
                 ]
             ]);
@@ -77,23 +78,13 @@ PROMPT;
 
             $aiText = $data['candidates'][0]['content']['parts'][0]['text'];
 
-            // ── Nettoyage robuste des balises markdown ────────────────────────
-            $aiText = trim($aiText);
+            $result = $this->decodeAiResponse($aiText);
 
-            // Supprimer ```json ... ``` ou ``` ... ```
-            if (preg_match('/^```(?:json)?\s*([\s\S]*?)\s*```$/m', $aiText, $matches)) {
-                $aiText = trim($matches[1]);
-            }
-
-            // Extraire le premier objet JSON s'il y a du texte autour
-            if (preg_match('/\{[\s\S]*\}/m', $aiText, $jsonMatches)) {
-                $aiText = $jsonMatches[0];
-            }
-
-            $result = json_decode($aiText, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return ['error' => 'JSON invalide reçu de Gemini : ' . json_last_error_msg() . ' — Réponse brute : ' . substr($aiText, 0, 200)];
+            if (!$result || isset($result['error'])) {
+                return [
+                    'error' => 'JSON invalide reçu de Gemini' . (isset($result['error']) ? ' : ' . $result['error'] : '') . 
+                               ' — Réponse brute complète : ' . $aiText
+                ];
             }
 
             // Ajouter le texte brut pour le diagnostic UI
@@ -113,7 +104,7 @@ PROMPT;
      */
     public function suggestEvaluation(string $jobDescription, string $cvText, string $recruiterNotes): ?array
     {
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . $this->apiKey;
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=" . $this->apiKey;
 
         $prompt = <<<PROMPT
 Tu es un recruteur senior. Analyse la cohérence entre le poste, le CV et les notes prises pendant l'entretien.
@@ -132,17 +123,19 @@ PROMPT;
             $response = $this->httpClient->request('POST', $url, [
                 'json' => [
                     'contents' => [['parts' => [['text' => $prompt]]]],
-                    'generationConfig' => ['temperature' => 0.2, 'maxOutputTokens' => 512]
+                    'generationConfig' => [
+                        'temperature' => 0.2, 
+                        'maxOutputTokens' => 1024,
+                        'response_mime_type' => 'application/json'
+                    ]
                 ]
             ]);
 
             $data = $response->toArray();
             $aiText = $data['candidates'][0]['content']['parts'][0]['text'];
             
-            if (preg_match('/\{[\s\S]*\}/m', $aiText, $jsonMatches)) {
-                return json_decode($jsonMatches[0], true);
-            }
-            return null;
+            $result = $this->decodeAiResponse($aiText);
+            return $result ?: null;
         } catch (\Exception $e) {
             return ['error' => $e->getMessage()];
         }
@@ -226,7 +219,8 @@ PROMPT;
                     ],
                     'generationConfig' => [
                         'temperature' => 0.1,
-                        'maxOutputTokens' => 1024,
+                        'maxOutputTokens' => 2048,
+                        'response_mime_type' => 'application/json',
                     ],
                 ]
             ]);
@@ -242,13 +236,10 @@ PROMPT;
 
             $aiText = $data['candidates'][0]['content']['parts'][0]['text'];
             
-            // Nettoyage et décodage JSON
-            if (preg_match('/\{[\s\S]*\}/m', $aiText, $jsonMatches)) {
-                $result = json_decode($jsonMatches[0], true);
-                if ($result) {
-                    $result['raw_text_analyzed'] = "[Document analysé visuellement par l'IA]";
-                    return $result;
-                }
+            $result = $this->decodeAiResponse($aiText);
+            if ($result) {
+                $result['raw_text_analyzed'] = "[Document analysé visuellement par l'IA]";
+                return $result;
             }
 
             return ['error' => 'L\'IA a renvoyé un format illisible.'];
@@ -256,6 +247,39 @@ PROMPT;
         } catch (\Exception $e) {
             return ['error' => "Erreur de scan automatique : " . $e->getMessage()];
         }
+    }
+
+    /**
+     * Robustly decodes a JSON string from AI, stripping common noise and control characters.
+     */
+    private function decodeAiResponse(string $aiText): ?array
+    {
+        $aiText = trim($aiText);
+
+        // Strip markdown code blocks if present (though response_mime_type should prevent them)
+        if (preg_match('/^```(?:json)?\s*([\s\S]*?)\s*```$/m', $aiText, $matches)) {
+            $aiText = trim($matches[1]);
+        }
+
+        // Strip control characters (0-31 and 127) that break json_decode
+        // This handles the "Control character error" specifically.
+        $aiText = preg_replace('/[\x00-\x1F\x7F]/', '', $aiText);
+
+        $result = json_decode($aiText, true);
+
+        if (json_last_error() === JSON_ERROR_NONE) {
+            return $result;
+        }
+
+        // Fallback: try to extract { ... } if there's still noise
+        if (preg_match('/\{[\s\S]*\}/m', $aiText, $jsonMatches)) {
+            $result = json_decode($jsonMatches[0], true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return $result;
+            }
+        }
+
+        return ['error' => json_last_error_msg(), 'debug_text' => substr($aiText, 0, 500)];
     }
 }
 

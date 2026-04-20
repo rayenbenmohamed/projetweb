@@ -193,31 +193,42 @@ class InterviewController extends AbstractController
             return $this->redirectToRoute('app_login');
         }
 
-        $allInterviews = $this->interviewService->getAllInterviews($user);
-        
-        $upcoming = [];
-        $completed = [];
-
-        foreach ($allInterviews as $interview) {
-            $isCompleted = ($interview->getStatus() === 'Réalisée' || $interview->getStatus() === 'Archivée');
-            
-            if ($isCompleted && $interview->getFinalVerdict()) {
-                // Calcul du score moyen
-                $totalPoints = $interview->getTechnicalRating() + $interview->getCommunicationRating() + $interview->getMotivationRating();
-                $averageScore = round(($totalPoints / 15) * 100, 1);
-                $interview->averageScore = $averageScore; // Propriété temporaire pour le tri
-                $completed[] = $interview;
+        // ── Interviews en tant que RECRUTEUR (candidatures reçues) ──────────
+        $recruiterInterviews = $this->interviewService->getInterviewsAsRecruiter($user);
+        $recruiterUpcoming   = [];
+        $recruiterCompleted  = [];
+        foreach ($recruiterInterviews as $interview) {
+            $isDone = in_array($interview->getStatus(), ['Réalisée', 'Archivée']);
+            if ($isDone && $interview->getFinalVerdict()) {
+                $tp = $interview->getTechnicalRating() + $interview->getCommunicationRating() + $interview->getMotivationRating();
+                $interview->averageScore = round(($tp / 15) * 100, 1);
+                $recruiterCompleted[] = $interview;
             } else {
-                $upcoming[] = $interview;
+                $recruiterUpcoming[] = $interview;
+            }
+        }
+        usort($recruiterCompleted, fn($a, $b) => $b->averageScore <=> $a->averageScore);
+
+        // ── Interviews en tant que CANDIDAT (candidatures envoyées) ─────────
+        $candidateInterviews = $this->interviewService->getInterviewsAsCandidate($user);
+        $candidateUpcoming   = [];
+        $candidatePast       = [];
+        foreach ($candidateInterviews as $interview) {
+            $isDone = in_array($interview->getStatus(), ['Réalisée', 'Archivée']);
+            if ($isDone) {
+                $candidatePast[] = $interview;
+            } else {
+                $candidateUpcoming[] = $interview;
             }
         }
 
-        // Tri des complétés par score moyen décroissant
-        usort($completed, fn($a, $b) => $b->averageScore <=> $a->averageScore);
-
         return $this->render('interview/index.html.twig', [
-            'upcoming' => $upcoming,
-            'completed' => $completed,
+            // Section recruteur
+            'recruiterUpcoming'  => $recruiterUpcoming,
+            'recruiterCompleted' => $recruiterCompleted,
+            // Section candidat
+            'candidateUpcoming'  => $candidateUpcoming,
+            'candidatePast'      => $candidatePast,
         ]);
     }
 

@@ -57,4 +57,35 @@ class InterviewService
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * Entretiens pour lesquels l'utilisateur EST le recruteur (candidatures reçues).
+     * @return Interview[]
+     */
+    public function getInterviewsAsRecruiter(User $user): array
+    {
+        return $this->interviewRepository->createQueryBuilder('i')
+            ->join('i.application', 'a')
+            ->join('a.jobOffre', 'jo')
+            ->where('jo.user = :user')
+            ->setParameter('user', $user)
+            ->orderBy('i.scheduledAt', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Entretiens pour lesquels l'utilisateur EST le candidat (candidatures envoyées).
+     * @return Interview[]
+     */
+    public function getInterviewsAsCandidate(User $user): array
+    {
+        return $this->interviewRepository->createQueryBuilder('i')
+            ->join('i.application', 'a')
+            ->where('a.candidat = :user')
+            ->setParameter('user', $user)
+            ->orderBy('i.scheduledAt', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }

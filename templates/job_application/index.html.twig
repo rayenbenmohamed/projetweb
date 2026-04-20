@@ -38,48 +38,56 @@
         box-shadow: 0 4px 12px rgba(99,102,241,0.35);
     }
 
-    /* ── Smart Badge ── */
-    .badge-smart-rank {
-        background: linear-gradient(135deg, #6610f2, #fd7e14);
-        color: white; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 0.5px; padding: 3px 10px; border-radius: 50px;
-        font-size: 0.6rem; display: inline-flex; align-items: center;
-        box-shadow: 0 3px 10px rgba(102,16,242,0.3);
+    /* ── Smart Badges (Screenshot specific) ── */
+    .badge-top-match {
+        background: linear-gradient(135deg, #f59e0b, #ea580c);
+        color: white; font-weight: 800; text-transform: uppercase;
+        letter-spacing: 0.8px; padding: 4px 12px; border-radius: 8px;
+        font-size: 0.65rem; display: inline-flex; align-items: center;
+        box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);
+    }
+    .badge-ai-fav {
+        background: linear-gradient(135deg, #8b5cf6, #ec4899);
+        color: white; font-weight: 800; text-transform: uppercase;
+        letter-spacing: 0.8px; padding: 4px 12px; border-radius: 8px;
+        font-size: 0.65rem; display: inline-flex; align-items: center;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
     }
     .pulse-rank-1 { animation: pulse-rank 2s infinite; }
     @keyframes pulse-rank {
-        0%   { box-shadow: 0 0 0 0 rgba(102,16,242,0.6); }
-        70%  { box-shadow: 0 0 0 8px rgba(102,16,242,0); }
-        100% { box-shadow: 0 0 0 0 rgba(102,16,242,0); }
+        0%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.6); }
+        70%  { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(234, 88, 12, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(234, 88, 12, 0); }
     }
 
     /* ── Pipeline Steps ── */
-    .pipeline-stepper { position: relative; display: flex; justify-content: space-between; }
+    .pipeline-stepper { position: relative; display: flex; justify-content: space-between; gap: 4px; }
     .pipeline-stepper::before {
-        content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 2px;
+        content: ''; position: absolute; left: 10px; right: 10px; top: 50%; height: 3px;
         background: #e2e8f0; transform: translateY(-50%); z-index: 0;
     }
     .step-circle {
-        width: 30px; height: 30px; border-radius: 50%; background: #fff;
+        width: 32px; height: 32px; border-radius: 50%; background: #fff;
         border: 2px solid #e2e8f0; display: flex; align-items: center;
-        justify-content: center; color: #cbd5e1; font-size: 12px;
-        z-index: 1; position: relative; transition: all .25s ease;
+        justify-content: center; color: #cbd5e1; font-size: 13px;
+        z-index: 1; position: relative; transition: all .3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .step-item.past .step-circle  { background: #22c55e; border-color: #22c55e; color: white; }
-    .step-item.active .step-circle { background: #fff; border-color: #6366f1; color: #6366f1; transform: scale(1.15); box-shadow: 0 0 0 4px rgba(99,102,241,0.15); }
-    .step-item.rejected .step-circle { border-color: #ef4444; color: #ef4444; }
+    .step-item.active .step-circle { background: #fff; border-color: #6366f1; color: #6366f1; transform: scale(1.2); box-shadow: 0 0 0 5px rgba(99,102,241,0.15); border-width: 3px; }
+    .step-item.rejected .step-circle { border-color: #ef4444; color: #ef4444; background: #fee2e2; }
+    .pipeline-progress-line { height: 3px; position: absolute; left: 0; top: 50%; transform: translateY(-50%); z-index: 0; transition: width 0.6s ease; }
 
-    /* ── Score Badge ── */
+    /* ── Score Badge (Screenshot design) ── */
     .score-badge {
+        width: 58px; height: 58px; border-radius: 50%;
         display: inline-flex; align-items: center; justify-content: center;
-        min-width: 56px; padding: 5px 12px; border-radius: 50px;
-        font-weight: 700; font-size: 0.85rem; cursor: pointer;
-        transition: transform .2s ease, box-shadow .2s ease;
+        font-weight: 800; font-size: 0.95rem; cursor: pointer;
+        transition: all .2s ease;
     }
-    .score-badge:hover { transform: scale(1.05); box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
-    .score-high   { background: #dcfce7; color: #166534; border: 1.5px solid #86efac; }
-    .score-medium { background: #fef9c3; color: #713f12; border: 1.5px solid #fde047; }
-    .score-low    { background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; }
+    .score-high   { background: #dcfce7; color: #166534; border: 4px solid #f0fdf4; box-shadow: 0 0 0 1px #22c55e; }
+    .score-medium { background: #fffbeb; color: #b45309; border: 4px solid #fffdf2; box-shadow: 0 0 0 1px #f59e0b; }
+    .score-low    { background: #fee2e2; color: #991b1b; border: 4px solid #fff5f5; box-shadow: 0 0 0 1px #ef4444; }
+    .score-badge:hover { transform: scale(1.1) rotate(5deg); }
 
     /* ── Offer Group Row ── */
     .offer-group-row { background: #f8faff !important; }
@@ -161,12 +169,12 @@
                     <td colspan="5">
                         <div class="d-flex align-items-center justify-content-between">
                             <div class="d-flex align-items-center gap-2">
-                                <span style="width:8px;height:8px;background:#6366f1;border-radius:50%;display:inline-block;"></span>
-                                <span class="fw-bold text-dark">{{ offerTitle }}</span>
-                                <span class="badge bg-primary-subtle text-primary ms-1">{{ apps|length }} candidat{{ apps|length > 1 ? 's' : '' }}</span>
+                                <span style="width:10px;height:10px;background:#6366f1;border-radius:50%;display:inline-block;"></span>
+                                <span class="fw-bold text-dark fs-6">{{ offerTitle }}</span>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill ms-1">{{ apps|length }} candidat{{ apps|length > 1 ? 's' : '' }}</span>
                             </div>
                             <span class="text-muted small me-2">
-                                <i class="ti ti-sort-descending-numbers text-primary me-1"></i>Smart Ranking IA Actif
+                                <i class="ti ti-arrows-sort text-primary me-1"></i>Smart Ranking IA Actif
                             </span>
                         </div>
                     </td>
@@ -185,10 +193,15 @@
                                 <div class="fw-bold text-dark d-flex align-items-center flex-wrap gap-1">
                                     {{ job_app.candidat.firstName }} {{ job_app.candidat.lastName }}
                                     {% if isTop %}
-                                        <span class="badge-smart-rank {{ isNo1 ? 'pulse-rank-1' : '' }}">
-                                            <i class="ti ti-sparkles me-1" style="font-size:0.55rem;"></i>
-                                            {{ isNo1 ? '🥇 Top Match' : 'Coup de ❤️ IA' }}
-                                        </span>
+                                        {% if isNo1 %}
+                                            <span class="badge-top-match pulse-rank-1">
+                                                <i class="ti ti-sparkles me-1"></i>TOP MATCH
+                                            </span>
+                                        {% else %}
+                                            <span class="badge-ai-fav">
+                                                <i class="ti ti-sparkles me-1"></i>COUP DE ❤️ IA
+                                            </span>
+                                        {% endif %}
                                     {% endif %}
                                 </div>
                                 <div class="text-muted" style="font-size:0.78rem;">{{ job_app.candidat.email }}</div>
@@ -219,10 +232,10 @@
                                 </div>
                             {% endfor %}
                         </div>
-                        {% set progress_map = {'PENDING':14,'HR_SCREENING':28,'INTERVIEW_SCHEDULED':42,'TECHNICAL_TEST':56,'FINAL_REVIEW':70,'READY_FOR_CONTRACT':85,'ACCEPTED':100,'REJECTED':100} %}
+                        {% set progress_map = {'PENDING':15,'HR_SCREENING':30,'INTERVIEW_SCHEDULED':45,'TECHNICAL_TEST':60,'FINAL_REVIEW':75,'READY_FOR_CONTRACT':90,'ACCEPTED':100,'REJECTED':100} %}
                         {% set p_color = job_app.status == 'REJECTED' ? '#ef4444' : (job_app.status == 'ACCEPTED' or job_app.status == 'READY_FOR_CONTRACT' ? '#22c55e' : '#6366f1') %}
-                        <div style="height:4px;background:#e2e8f0;border-radius:10px;overflow:hidden;">
-                            <div style="height:100%;width:{{ progress_map[job_app.status] ?? 0 }}%;background:{{ p_color }};border-radius:10px;transition:width .5s ease;"></div>
+                        <div style="height:5px;background:#e2e8f0;border-radius:10px;overflow:hidden;margin-top:4px;">
+                            <div style="height:100%;width:{{ progress_map[job_app.status] ?? 0 }}%;background:{{ p_color }};border-radius:10px;transition:width 1s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px {{ p_color }}40;"></div>
                         </div>
                     </td>
 
@@ -246,11 +259,12 @@
                     <td class="text-center py-3">
                         {% set latest_interview = job_app.interviews|last %}
                         {% if latest_interview %}
-                            <div class="fw-bold text-primary small">Entretien {{ latest_interview.status }}</div>
+                            {% set iColor = latest_interview.status == 'SCHEDULED' ? '#22c55e' : '#64748b' %}
+                            <div class="fw-bold small" style="color:{{ iColor }};">Entretien {{ latest_interview.status == 'SCHEDULED' ? 'Prévue' : 'Archivée' }}</div>
                             <div class="text-muted" style="font-size:0.75rem;">{{ latest_interview.scheduledAt|date('d/m/Y') }}</div>
                         {% else %}
                             <div class="text-muted small">Postulé le</div>
-                            <div class="fw-bold" style="font-size:0.82rem;">{{ job_app.applyDate|date('d/m/Y') }}</div>
+                            <div class="fw-bold text-dark" style="font-size:0.87rem;">{{ job_app.applyDate|date('d/m/Y') }}</div>
                         {% endif %}
                     </td>
 
@@ -303,6 +317,27 @@
             </tbody>
         </table>
     </div>
+    
+    {# Pagination Pipeline Recruteur #}
+    {% if maxRecvPage > 1 %}
+    <div class="card-footer bg-white border-top py-3">
+        <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm justify-content-center mb-0 gap-1">
+                <li class="page-item {{ recvPage <= 1 ? 'disabled' : '' }}">
+                    <a class="page-link rounded-pill border-0 px-3" href="{{ path('app_job_application_index', app.request.query.all|merge({'recv_page': recvPage - 1})) }}">Précédent</a>
+                </li>
+                {% for i in 1..maxRecvPage %}
+                    <li class="page-item {{ i == recvPage ? 'active' : '' }}">
+                        <a class="page-link rounded-pill border-0 px-3 {{ i == recvPage ? 'shadow-sm' : '' }}" href="{{ path('app_job_application_index', app.request.query.all|merge({'recv_page': i})) }}">{{ i }}</a>
+                    </li>
+                {% endfor %}
+                <li class="page-item {{ recvPage >= maxRecvPage ? 'disabled' : '' }}">
+                    <a class="page-link rounded-pill border-0 px-3" href="{{ path('app_job_application_index', app.request.query.all|merge({'recv_page': recvPage + 1})) }}">Suivant</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
     {% else %}
     <div class="text-center py-5">
         <div class="mb-3" style="font-size:3rem;opacity:.3;">📭</div>
@@ -366,6 +401,27 @@
             </tbody>
         </table>
     </div>
+
+    {# Pagination Mes Candidatures #}
+    {% if maxSentPage > 1 %}
+    <div class="card-footer bg-white border-top py-3">
+        <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm justify-content-center mb-0 gap-1">
+                <li class="page-item {{ sentPage <= 1 ? 'disabled' : '' }}">
+                    <a class="page-link rounded-pill border-0 px-3" href="{{ path('app_job_application_index', app.request.query.all|merge({'sent_page': sentPage - 1})) }}">Précédent</a>
+                </li>
+                {% for i in 1..maxSentPage %}
+                    <li class="page-item {{ i == sentPage ? 'active' : '' }}">
+                        <a class="page-link rounded-pill border-0 px-3 {{ i == sentPage ? 'shadow-sm' : '' }}" href="{{ path('app_job_application_index', app.request.query.all|merge({'sent_page': i})) }}">{{ i }}</a>
+                    </li>
+                {% endfor %}
+                <li class="page-item {{ sentPage >= maxSentPage ? 'disabled' : '' }}">
+                    <a class="page-link rounded-pill border-0 px-3" href="{{ path('app_job_application_index', app.request.query.all|merge({'sent_page': sentPage + 1})) }}">Suivant</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
 </div>
 {% endif %}
 
