@@ -155,7 +155,8 @@ class JobApplicationController extends AbstractController
         JobOffre $jobOffre,
         EntityManagerInterface $entityManager,
         CloudinaryService $cloudinaryService,
-        JobApplicationRepository $jobApplicationRepository
+        JobApplicationRepository $jobApplicationRepository,
+        CVAnalyzerService $cvAnalyzer
     ): Response {
         $user = $this->getUser();
         
@@ -187,6 +188,23 @@ class JobApplicationController extends AbstractController
 
             $entityManager->persist($jobApplication);
             $entityManager->flush();
+
+            // --- Auto AI Analysis ---
+            try {
+                $jobDescription = $jobOffre->getDescription() ?? '';
+                $cvPath = $jobApplication->getCvPath();
+                if ($cvPath) {
+                    $analysis = $cvAnalyzer->analyzeDocument($jobDescription, $cvPath);
+                    if ($analysis && !isset($analysis['error'])) {
+                        $jobApplication->setAiScore($analysis['score'] ?? 0);
+                        $jobApplication->setAiAnalysis(json_encode($analysis));
+                        $jobApplication->setAiAnalyzedAt(new \DateTime());
+                        $entityManager->flush();
+                    }
+                }
+            } catch (\Exception $e) {
+                // Silent fail for auto-analysis to not block the application process
+            }
 
             $this->addFlash('success', 'Votre candidature a été envoyée avec succès !');
 
