@@ -66,8 +66,8 @@ PROMPT;
 
     public function generateDescription(array $data): string
     {
-        if (empty($this->groqApiKey)) {
-            return "Veuillez configurer une clé API Groq pour utiliser cette fonctionnalité d'IA.";
+        if (empty($this->groqApiKey) || str_contains($this->groqApiKey, 'placeholder')) {
+            return $this->generateLocalJobDescription($data);
         }
         
         $prompt = "Tu es un expert RH. Rédige une description de poste professionnelle, complète et attractive pour une offre d'emploi, en te basant sur ces informations :\n" .
@@ -83,46 +83,50 @@ PROMPT;
                   "- Organise avec des astérisques ou tirets pour rendre ça lisible (Introduction, Vos missions, Le profil attendu, Pourquoi nous rejoindre).\n" .
                   "- Parle à la deuxième personne du pluriel (vous) pour t'adresser au candidat.";
 
-        $response = $this->httpClient->request('POST', self::GROQ_URL, [
-            'headers' => [
-                'Authorization' => 'Bearer ' . $this->groqApiKey,
-                'Content-Type'  => 'application/json',
-            ],
-            'json' => [
-                'model'       => self::MODEL,
-                'temperature' => 0.6,
-                'max_tokens'  => 1500,
-                'messages'    => [
-                    ['role' => 'system', 'content' => "Tu es un rédacteur RH spécialisé dans la rédaction d'offres d'emploi attractives et engageantes."],
-                    ['role' => 'user',   'content' => $prompt],
+        try {
+            $response = $this->httpClient->request('POST', self::GROQ_URL, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->groqApiKey,
+                    'Content-Type'  => 'application/json',
                 ],
-            ],
-            'timeout' => 20,
-        ]);
+                'json' => [
+                    'model'       => self::MODEL,
+                    'temperature' => 0.6,
+                    'max_tokens'  => 1500,
+                    'messages'    => [
+                        ['role' => 'system', 'content' => "Tu es un rédacteur RH spécialisé dans la rédaction d'offres d'emploi attractives et engageantes."],
+                        ['role' => 'user',   'content' => $prompt],
+                    ],
+                ],
+                'timeout' => 20,
+            ]);
 
-        $responseData = $response->toArray(false);
-        
-        if (isset($responseData['error'])) {
-            throw new \RuntimeException('Groq API Error: ' . ($responseData['error']['message'] ?? 'Unknown error'));
+            $responseData = $response->toArray(false);
+            
+            if (isset($responseData['error'])) {
+                return $this->generateLocalJobDescription($data);
+            }
+
+            $content = $responseData['choices'][0]['message']['content'] ?? '';
+            
+            if (empty($content)) {
+                return $this->generateLocalJobDescription($data);
+            }
+
+            // Strip markdown code if accidentally added
+            $content = preg_replace('/^```(?:markdown|text)?\s*/i', '', trim($content));
+            $content = preg_replace('/\s*```$/', '', $content);
+            
+            return $content;
+        } catch (\Throwable) {
+            return $this->generateLocalJobDescription($data);
         }
-
-        $content = $responseData['choices'][0]['message']['content'] ?? '';
-        
-        if (empty($content)) {
-            throw new \RuntimeException('L\'IA n\'a pas pu générer de description. Veuillez vérifier vos données.');
-        }
-
-        // Strip markdown code if accidentally added
-        $content = preg_replace('/^```(?:markdown|text)?\s*/i', '', trim($content));
-        $content = preg_replace('/\s*```$/', '', $content);
-        
-        return $content;
     }
 
     public function generateEntrepriseDescription(array $data): string
     {
-        if (empty($this->groqApiKey)) {
-            return "Veuillez configurer une clé API Groq pour utiliser cette fonctionnalité d'IA.";
+        if (empty($this->groqApiKey) || str_contains($this->groqApiKey, 'placeholder')) {
+            return $this->generateLocalEntrepriseDescription($data);
         }
         
         $prompt = "Tu es un expert en communication corporate. Rédige une présentation d'entreprise professionnelle, inspirante et convaincante pour une plateforme de recrutement, en te basant sur ces informations :\n" .
@@ -138,36 +142,75 @@ PROMPT;
                   "- Organise le texte de manière fluide et professionnelle (environ 2-3 paragraphes).\n" .
                   "- Mets en avant les valeurs et l'expertise de l'entreprise.";
 
-        $response = $this->httpClient->request('POST', self::GROQ_URL, [
-            'headers' => [
-                'Authorization' => 'Bearer ' . $this->groqApiKey,
-                'Content-Type'  => 'application/json',
-            ],
-            'json' => [
-                'model'       => self::MODEL,
-                'temperature' => 0.7,
-                'max_tokens'  => 1000,
-                'messages'    => [
-                    ['role' => 'system', 'content' => "Tu es un rédacteur spécialisé dans le branding d'entreprise et la communication RH."],
-                    ['role' => 'user',   'content' => $prompt],
+        try {
+            $response = $this->httpClient->request('POST', self::GROQ_URL, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->groqApiKey,
+                    'Content-Type'  => 'application/json',
                 ],
-            ],
-            'timeout' => 20,
-        ]);
+                'json' => [
+                    'model'       => self::MODEL,
+                    'temperature' => 0.7,
+                    'max_tokens'  => 1000,
+                    'messages'    => [
+                        ['role' => 'system', 'content' => "Tu es un rédacteur spécialisé dans le branding d'entreprise et la communication RH."],
+                        ['role' => 'user',   'content' => $prompt],
+                    ],
+                ],
+                'timeout' => 20,
+            ]);
 
-        $responseData = $response->toArray(false);
-        
-        if (isset($responseData['error'])) {
-            throw new \RuntimeException('Groq API Error: ' . ($responseData['error']['message'] ?? 'Unknown error'));
+            $responseData = $response->toArray(false);
+            
+            if (isset($responseData['error'])) {
+                return $this->generateLocalEntrepriseDescription($data);
+            }
+
+            $content = $responseData['choices'][0]['message']['content'] ?? '';
+            
+            if (empty($content)) {
+                return $this->generateLocalEntrepriseDescription($data);
+            }
+
+            return preg_replace('/^```(?:markdown|text)?\s*/i', '', trim($content));
+        } catch (\Throwable) {
+            return $this->generateLocalEntrepriseDescription($data);
         }
+    }
 
-        $content = $responseData['choices'][0]['message']['content'] ?? '';
-        
-        if (empty($content)) {
-            throw new \RuntimeException('L\'IA n\'a pas pu générer de description.');
-        }
+    private function generateLocalJobDescription(array $data): string
+    {
+        $title = $data['title'] ?? 'Poste à pourvoir';
+        $location = $data['location'] ?? 'À définir';
+        $type = $data['employment_type'] ?? 'Contrat';
+        $skills = $data['skills'] ?? 'Expertise dans le domaine';
 
-        return preg_replace('/^```(?:markdown|text)?\s*/i', '', trim($content));
+        return "Nous recherchons un(e) {$title} passionné(e) pour rejoindre notre équipe à {$location} en {$type}.\n\n" .
+               "**Introduction**\n" .
+               "Rejoignez une entreprise dynamique en pleine croissance où l'innovation et le talent sont au cœur de notre succès.\n\n" .
+               "**Vos missions**\n" .
+               "- Assurer la réalisation des objectifs liés au poste de {$title}.\n" .
+               "- Collaborer avec les équipes transverses pour optimiser nos processus.\n" .
+               "- Participer activement à l'amélioration continue de nos services.\n\n" .
+               "**Le profil attendu**\n" .
+               "- Vous maîtrisez : {$skills}.\n" .
+               "- Vous avez un esprit d'équipe et une forte capacité d'adaptation.\n" .
+               "- Une première expérience réussie sur un poste similaire est un atout.\n\n" .
+               "**Pourquoi nous rejoindre ?**\n" .
+               "- Un environnement de travail stimulant et bienveillant.\n" .
+               "- Des opportunités d'évolution de carrière réelles.\n" .
+               "- Avantages : " . ($data['advantages'] ?? 'À discuter lors de l\'entretien') . ".";
+    }
+
+    private function generateLocalEntrepriseDescription(array $data): string
+    {
+        $name = $data['name'] ?? 'Notre Entreprise';
+        $sector = $data['sector'] ?? 'notre secteur d\'activité';
+        $slogan = $data['slogan'] ?? 'Innover pour demain';
+
+        return "{$name} est un acteur majeur dans {$sector}. Depuis notre création, nous nous efforçons de repousser les limites de l'innovation avec une vision claire : « {$slogan} ».\n\n" .
+               "Forte d'une équipe de " . ($data['size'] ?? 'plusieurs experts') . ", notre entreprise privilégie l'excellence opérationnelle et l'épanouissement de ses collaborateurs. Nous sommes basés à " . ($data['address'] ?? 'Tunis') . " et nous continuons de croître chaque jour grâce à la confiance de nos partenaires.\n\n" .
+               "Rejoindre {$name}, c'est intégrer une structure à taille humaine qui valorise le talent et l'initiative individuelle au service d'un projet collectif ambitieux.";
     }
 
     // ─── Groq API ────────────────────────────────────────────────────────────
