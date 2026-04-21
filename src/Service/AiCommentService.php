@@ -9,6 +9,47 @@ class AiCommentService
     private string $lastSource = 'fallback';
     private ?string $lastError = null;
 
+    /**
+     * Analyzes the sentiment of a given text using AI.
+     * Returns 'POSITIVE', 'NEGATIVE', or 'NEUTRAL'.
+     */
+    public function analyzeSentiment(string $text): string
+    {
+        $this->lastSource = 'fallback';
+        $this->lastError = null;
+
+        if (!function_exists('curl_init') || trim($text) === '') {
+            return 'NEUTRAL';
+        }
+
+        $messages = [
+            ['role' => 'system', 'content' => 'Analyze the sentiment of the following text. Respond with only one word: POSITIVE, NEGATIVE, or NEUTRAL.'],
+            ['role' => 'user', 'content' => $text],
+        ];
+
+        $apiKey = $this->getEnvString('XAI_API_KEY');
+        if ($apiKey) {
+            $endpoint = str_starts_with($apiKey, 'gsk_')
+                ? 'https://api.groq.com/openai/v1/chat/completions'
+                : 'https://api.x.ai/v1/chat/completions';
+            
+            $model = str_starts_with($apiKey, 'gsk_')
+                ? $this->getEnvString('GROQ_MODEL', 'llama-3.1-8b-instant')
+                : $this->getEnvString('XAI_MODEL', 'grok-2-latest');
+
+            $reply = $this->requestChatCompletion($endpoint, $apiKey, $model, $messages);
+            if ($reply) {
+                $this->lastSource = str_starts_with($apiKey, 'gsk_') ? 'groq' : 'xai';
+                $sentiment = strtoupper(trim($reply));
+                if (in_array($sentiment, ['POSITIVE', 'NEGATIVE', 'NEUTRAL'])) {
+                    return $sentiment;
+                }
+            }
+        }
+
+        return 'NEUTRAL';
+    }
+
     public function generateCommentSuggestion(ForumPost $post, ?string $userPrompt = null): string
     {
         $this->lastSource = 'fallback';

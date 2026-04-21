@@ -80,6 +80,12 @@
         }
     },
     "require-dev": {
-        "symfony/maker-bundle": "^1.40"
+        "phpstan/extension-installer": "*",
+        "phpstan/phpstan": "*",
+        "phpstan/phpstan-doctrine": "*",
+        "phpstan/phpstan-symfony": "*",
+        "phpunit/phpunit": "9.5",
+        "symfony/maker-bundle": "^1.40",
+        "symfony/test-pack": "*"
     }
 }

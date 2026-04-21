@@ -1,11 +1,16 @@
 <?php
 
-return [
+$bundles = [
     Symfony\Bundle\FrameworkBundle\FrameworkBundle::class => ['all' => true],
     Doctrine\Bundle\DoctrineBundle\DoctrineBundle::class => ['all' => true],
     Doctrine\Bundle\MigrationsBundle\DoctrineMigrationsBundle::class => ['all' => true],
     Symfony\Bundle\TwigBundle\TwigBundle::class => ['all' => true],
     Twig\Extra\TwigExtraBundle\TwigExtraBundle::class => ['all' => true],
     Symfony\Bundle\SecurityBundle\SecurityBundle::class => ['all' => true],
-    Symfony\Bundle\MakerBundle\MakerBundle::class => ['dev' => true],
 ];
+
+if (class_exists(Symfony\Bundle\MakerBundle\MakerBundle::class)) {
+    $bundles[Symfony\Bundle\MakerBundle\MakerBundle::class] = ['dev' => true];
+}
+
+return $bundles;

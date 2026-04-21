@@ -211,6 +211,25 @@ class ForumController extends AbstractController
         return $this->json($result);
     }
 
+    #[Route('/api/analyze-sentiment', name: 'app_forum_api_analyze_sentiment', methods: ['POST'])]
+    public function analyzeSentimentApi(Request $request): JsonResponse
+    {
+        $payload = json_decode($request->getContent(), true) ?? [];
+        $text = trim((string) ($payload['text'] ?? ''));
+
+        if ($text === '') {
+            return $this->json(['sentiment' => 'NEUTRAL']);
+        }
+
+        $sentiment = $this->aiCommentService->analyzeSentiment($text);
+
+        return $this->json([
+            'sentiment' => $sentiment,
+            'source' => $this->aiCommentService->getLastSource(),
+            'error' => $this->aiCommentService->getLastError(),
+        ]);
+    }
+
     #[Route('/new', name: 'app_forum_post_new')]
     public function new(Request $request): Response
     {

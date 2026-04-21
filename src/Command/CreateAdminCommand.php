@@ -3,8 +3,6 @@
 namespace App\Command;
 
 use App\Entity\User;
-use App\Entity\JobOffre;
-use App\Entity\OfferStatus;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -44,17 +42,6 @@ class CreateAdminCommand extends Command
             $this->entityManager->persist($user);
         }
 
-        $job = new JobOffre();
-        $job->setTitle('Développeur Symfony Senior');
-        $job->setLocation('Remote');
-        $job->setSalary(55000);
-        $job->setEmploymentType('CDI');
-        $job->setStatus(OfferStatus::PUBLISHED);
-        $job->setUser($user);
-        $job->setCreatedAt(new \DateTime());
-        $job->setDescription('Rejoignez notre équipe pour construire le futur des RH !');
-
-        $this->entityManager->persist($job);
 
         $this->entityManager->flush();
 
