@@ -456,13 +456,14 @@ document.addEventListener('DOMContentLoaded', () => {
         skillsData.forEach((skill, index) => {
             const card = document.createElement('div');
             card.className = 'skill-tag-card';
+            card.dataset.index = index;
             card.innerHTML = `
                 <div class="skill-name">${skill.name}</div>
                 <div class="skill-slider-wrapper">
-                    <input type="range" class="skill-slider" min="0" max="100" value="${skill.percent}" oninput="updateSkillPercent(${index}, this.value)">
+                    <input type="range" class="skill-slider" min="0" max="100" value="${skill.percent}">
                     <div class="skill-percent">${skill.percent}%</div>
                 </div>
-                <button type="button" class="btn-remove-skill" onclick="removeSkill(${index})">
+                <button type="button" class="btn-remove-skill">
                     <i class="ti ti-x"></i>
                 </button>
             `;
@@ -476,20 +477,32 @@ document.addEventListener('DOMContentLoaded', () => {
         hiddenSkillsInput.value = value;
     }
 
-    window.updateSkillPercent = (index, value) => {
-        skillsData[index].percent = parseInt(value);
-        const percentDisplay = skillsList.children[index].querySelector('.skill-percent');
-        percentDisplay.textContent = value + '%';
-        updateHiddenInput();
-    };
+    // Délégation d'événements pour le slider et la suppression
+    skillsList.addEventListener('input', (e) => {
+        if (e.target.classList.contains('skill-slider')) {
+            const card = e.target.closest('.skill-tag-card');
+            const index = card.dataset.index;
+            const value = e.target.value;
+            
+            skillsData[index].percent = parseInt(value);
+            card.querySelector('.skill-percent').textContent = value + '%';
+            updateHiddenInput();
+        }
+    });
 
-    window.removeSkill = (index) => {
-        skillsData.splice(index, 1);
-        renderSkills();
-    };
+    skillsList.addEventListener('click', (e) => {
+        const btnRemove = e.target.closest('.btn-remove-skill');
+        if (btnRemove) {
+            const card = btnRemove.closest('.skill-tag-card');
+            const index = card.dataset.index;
+            skillsData.splice(index, 1);
+            renderSkills();
+        }
+    });
 
     function addSkill() {
-        const name = skillInput.value.trim();
+        // Nettoyage : on retire les virgules pour éviter de casser le format de sauvegarde
+        const name = skillInput.value.trim().replace(/,/g, '');
         if (name && !skillsData.find(s => s.name.toLowerCase() === name.toLowerCase())) {
             skillsData.push({ name: name, percent: 100 });
             skillInput.value = '';
