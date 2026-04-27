@@ -1,112 +1,171 @@
 {% extends 'layout/admin.html.twig' %}
 
-{% block title %}Types de contrat | SyfonuRH{% endblock %}
-{% block page_title %}Types de contrat{% endblock %}
+{% block title %}Types de Contrat | SyfonuRH{% endblock %}
+{% block page_title %}Configurations des Contrats{% endblock %}
 
 {% block content %}
 <div class="row g-6 mt-2">
-  <div class="col-12">
-    <div class="card h-100">
-      <div class="card-header border-bottom-0 d-md-flex align-items-center justify-content-between">
-        <div class="d-flex flex-column">
-          <h5 class="mb-0">Liste des types</h5>
-          <span class="small text-secondary">{{ total }} résultat(s)</span>
+  {# Sidebar Section: Search & Actions #}
+  <div class="col-lg-3">
+     <div class="sticky-top" style="top: 2rem;">
+        {# Modern Search Card #}
+        <div class="card shadow-sm border-0 mb-6" style="border-radius: 12px; border: 1px solid #eef2f6 !important;">
+           <div class="card-header bg-white p-4 border-0 pb-0">
+              <h6 class="mb-0 fw-bold d-flex align-items-center gap-2">
+                 <i class="ti ti-search text-primary"></i> Filtrer les Types
+              </h6>
+           </div>
+           <div class="card-body p-4">
+              <form method="get" id="typeContratFilters" class="row g-4">
+                 <div class="col-12">
+                    <label class="form-label small fw-bold text-secondary">Mots-clés</label>
+                    <input class="form-control form-control-sm" type="text" name="q" value="{{ q }}" placeholder="Nom ou description..." data-autosubmit>
+                 </div>
+                 <button type="submit" class="btn btn-primary btn-sm w-100 d-none">Rechercher</button>
+                 <a href="{{ path('app_type_contrat_index') }}" class="btn btn-link link-secondary btn-sm w-100 text-decoration-none p-0 text-center">
+                    <i class="ti ti-rotate-clockwise me-1"></i> Réinitialiser
+                 </a>
+              </form>
+           </div>
         </div>
-        <a href="{{ path('app_type_contrat_new') }}" class="btn btn-primary btn-sm">
-          <i class="ti ti-plus me-1"></i> Nouveau type
-        </a>
-      </div>
 
-      <div class="card-body pt-0">
-        <form method="get" class="row g-3 align-items-end" id="typeContratFilters">
-          <div class="col-xl-8 col-md-8">
-            <label class="form-label">Recherche</label>
-            <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="Nom ou description…" data-autosubmit>
-          </div>
-          <div class="col-xl-2 col-md-2">
-            <input type="hidden" name="limit" value="{{ limit }}">
-            <button class="btn btn-outline-primary w-100" type="submit">Rechercher</button>
-          </div>
-          <div class="col-xl-2 col-md-2">
-            <a class="btn btn-outline-secondary w-100" href="{{ path('app_type_contrat_index') }}">Reset</a>
-          </div>
-        </form>
-      </div>
+        {# Summary Card #}
+        <div class="card bg-primary text-white border-0 mb-4 shadow-sm" style="border-radius: 12px; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);">
+           <div class="card-body p-4 text-center">
+              <div class="h2 fw-bold mb-0">{{ total }}</div>
+              <div class="small opacity-75 text-uppercase tracking-wider">Modèles de Contrat</div>
+              <hr class="my-3 opacity-25">
+              <a href="{{ path('app_type_contrat_new') }}" class="btn btn-white btn-sm w-100 text-primary fw-bold">
+                 <i class="ti ti-plus me-1"></i> Nouveau Modèle
+              </a>
+           </div>
+        </div>
+     </div>
+  </div>
 
-      <div class="table-responsive">
-        <table class="table table-hover table-centered mb-0 text-nowrap">
-          <thead class="table-light">
-            <tr>
-              <th>Nom</th>
-              <th>Description</th>
-              <th class="text-end">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for type in types %}
-              <tr>
-                <td>{{ type.name }}</td>
-                <td class="text-secondary">{{ type.description ?? '—' }}</td>
-                <td class="text-end">
-                  <div class="dropdown">
-                    <button class="btn btn-ghost btn-icon btn-sm rounded-circle" type="button" data-bs-toggle="dropdown">
-                      <i class="ti ti-dots-vertical"></i>
+  {# Main Feed Section: Post Style Cards #}
+  <div class="col-lg-6">
+     <div class="d-flex justify-content-between align-items-center mb-6">
+        <h5 class="mb-0 fw-bold">Flux des Modèles</h5>
+        <div class="text-secondary small d-flex align-items-center gap-2">
+           <i class="ti ti-info-circle"></i> Ces modèles définissent la structure de vos contrats.
+        </div>
+     </div>
+
+     <div class="type-contrat-feed">
+        {% for type in types %}
+           <div class="card border-0 shadow-sm mb-6 animate__animated animate__fadeInUp" style="border-radius: 16px;">
+              {# Post Header #}
+              <div class="card-header bg-white border-0 p-4 pb-0 d-flex justify-content-between align-items-center">
+                 <div class="d-flex align-items-center gap-3">
+                    <div class="avatar-ph rounded-3 d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" 
+                         style="width: 42px; height: 42px; background: #f8fafc; color: #6366f1 !important; border: 2px solid #eef2f6;">
+                       <i class="ti ti-file-certificate fs-5"></i>
+                    </div>
+                    <div>
+                       <h5 class="mb-0 fw-bold text-dark">{{ type.name }}</h5>
+                       <div class="small text-secondary d-flex align-items-center gap-1">
+                          <i class="ti ti-tag small"></i> Catégorie Administrative
+                       </div>
+                    </div>
+                 </div>
+                 <div class="dropdown">
+                    <button class="btn btn-ghost btn-icon btn-sm rounded-circle" data-bs-toggle="dropdown">
+                       <i class="ti ti-dots"></i>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                      <li><a class="dropdown-item" href="{{ path('app_type_contrat_edit', {id: type.id}) }}">Modifier</a></li>
-                      <li>
-                        <form method="post" action="{{ path('app_type_contrat_delete', {id: type.id}) }}"
-                              onsubmit="return confirm('Confirmer la suppression ?');">
-                          <input type="hidden" name="_token" value="{{ csrf_token('delete_type_contrat_' ~ type.id) }}">
-                          <button class="dropdown-item text-danger">Supprimer</button>
-                        </form>
-                      </li>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0">
+                       <li><a class="dropdown-item" href="{{ path('app_type_contrat_edit', {id: type.id}) }}"><i class="ti ti-edit me-2"></i>Modifier</a></li>
+                       <li><hr class="dropdown-divider"></li>
+                       <li>
+                          <form method="post" action="{{ path('app_type_contrat_delete', {id: type.id}) }}" onsubmit="return confirm('Supprimer ce modèle ?');">
+                             <input type="hidden" name="_token" value="{{ csrf_token('delete_type_contrat_' ~ type.id) }}">
+                             <button class="dropdown-item text-danger"><i class="ti ti-trash me-2"></i>Supprimer</button>
+                          </form>
+                       </li>
                     </ul>
-                  </div>
-                </td>
-              </tr>
-            {% else %}
-              <tr>
-                <td colspan="3" class="text-center py-8">
-                  <p class="text-secondary mb-0">Aucun type trouvé.</p>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+                 </div>
+              </div>
 
-      {% if pages > 1 %}
-        <div class="card-footer d-flex align-items-center justify-content-between">
-          <div class="small text-secondary">
-            Page {{ page }} / {{ pages }}
-          </div>
-          <nav aria-label="Pagination">
-            <ul class="pagination pagination-sm mb-0">
-              {% set prev = page - 1 %}
-              {% set next = page + 1 %}
-              <li class="page-item {{ page <= 1 ? 'disabled' : '' }}">
-                <a class="page-link" href="{{ path('app_type_contrat_index', {q: q, page: prev, limit: limit}) }}">Précédent</a>
-              </li>
-              {% for p in 1..pages %}
-                {% if p == 1 or p == pages or (p >= page-1 and p <= page+1) %}
-                  <li class="page-item {{ p == page ? 'active' : '' }}">
-                    <a class="page-link" href="{{ path('app_type_contrat_index', {q: q, page: p, limit: limit}) }}">{{ p }}</a>
-                  </li>
-                {% elseif p == 2 and page > 4 %}
-                  <li class="page-item disabled"><span class="page-link">…</span></li>
-                {% elseif p == pages-1 and page < pages-3 %}
-                  <li class="page-item disabled"><span class="page-link">…</span></li>
-                {% endif %}
-              {% endfor %}
-              <li class="page-item {{ page >= pages ? 'disabled' : '' }}">
-                <a class="page-link" href="{{ path('app_type_contrat_index', {q: q, page: next, limit: limit}) }}">Suivant</a>
-              </li>
-            </ul>
-          </nav>
+              {# Post Body #}
+              <div class="card-body p-4">
+                 <div class="p-4 rounded-3 border bg-light-subtle mb-0" style="min-height: 100px;">
+                    <p class="text-dark mb-0 fs-5" style="line-height: 1.6;">
+                       {{ type.description ?: 'Aucune description disponible pour ce modèle de contrat.' }}
+                    </p>
+                 </div>
+              </div>
+
+              {# Post Footer #}
+              <div class="card-footer bg-white border-top-0 p-4 pt-2 d-flex justify-content-between align-items-center">
+                 <div class="d-flex align-items-center gap-2">
+                    <div class="p-1 bg-primary bg-opacity-10 rounded text-primary px-3 small fw-bold">
+                       Actif
+                    </div>
+                 </div>
+                 <div class="d-flex gap-2">
+                    <a href="{{ path('app_type_contrat_edit', {id: type.id}) }}" class="btn btn-ghost-primary btn-sm px-3">
+                       <i class="ti ti-pencil me-1"></i> Éditer
+                    </a>
+                 </div>
+              </div>
+           </div>
+        {% else %}
+           <div class="text-center py-10">
+              <div class="bg-light p-5 rounded-circle d-inline-block mb-4">
+                 <i class="ti ti-file-off fs-1 text-secondary"></i>
+              </div>
+              <h5 class="text-secondary">Aucun modèle trouvé.</h5>
+           </div>
+        {% endfor %}
+
+        {# Pagination Style #}
+        {% if pages > 1 %}
+           <div class="d-flex justify-content-center mt-6">
+              <nav>
+                 <ul class="pagination pagination-rounded gap-2">
+                    <li class="page-item {{ page <= 1 ? 'disabled' : '' }}">
+                       <a class="page-link border-0 shadow-sm" href="{{ path('app_type_contrat_index', {q: q, page: page-1}) }}"><i class="ti ti-chevron-left"></i></a>
+                    </li>
+                    {% for p in 1..pages %}
+                       {% if p == 1 or p == pages or (p >= page-1 and p <= page+1) %}
+                          <li class="page-item {{ p == page ? 'active' : '' }}">
+                             <a class="page-link border-0 shadow-sm" href="{{ path('app_type_contrat_index', {q: q, page: p}) }}">{{ p }}</a>
+                          </li>
+                       {% endif %}
+                    {% endfor %}
+                    <li class="page-item {{ page >= pages ? 'disabled' : '' }}">
+                       <a class="page-link border-0 shadow-sm" href="{{ path('app_type_contrat_index', {q: q, page: page+1}) }}"><i class="ti ti-chevron-right"></i></a>
+                    </li>
+                 </ul>
+              </nav>
+           </div>
+        {% endif %}
+     </div>
+  </div>
+
+  {# Right Sidebar: Quick Tips #}
+  <div class="col-lg-3">
+     <div class="sticky-top" style="top: 2rem;">
+        <div class="card border-0 shadow-sm p-5" style="border-radius: 12px; background: #f8fafc;">
+           <h6 class="fw-bold mb-4 d-flex align-items-center gap-2">
+              <i class="ti ti-bulb text-warning"></i> Conseils RH
+           </h6>
+           <div class="small text-secondary mb-4" style="line-height: 1.6;">
+              Utilisez les modèles pour standardiser vos recrutements. Vous pouvez créer des modèles pour :
+           </div>
+           <ul class="list-unstyled small d-flex flex-column gap-2 mb-0">
+              <li><i class="ti ti-check text-success me-2"></i> Temps complet (CDI)</li>
+              <li><i class="ti ti-check text-success me-2"></i> Temps partiel</li>
+              <li><i class="ti ti-check text-success me-2"></i> Freelance / B2B</li>
+              <li><i class="ti ti-check text-success me-2"></i> Stages SIVP</li>
+           </ul>
         </div>
-      {% endif %}
-    </div>
+        
+        <div class="mt-6 px-4 text-center">
+           <div class="small text-secondary mb-2">Besoin d'aide ?</div>
+           <button class="btn btn-outline-primary btn-sm w-100">Contacter le support</button>
+        </div>
+     </div>
   </div>
 </div>
 {% endblock %}
@@ -115,4 +174,3 @@
   {{ parent() }}
   <script src="{{ asset('dasher/js/type-contrat.js') }}"></script>
 {% endblock %}
-
