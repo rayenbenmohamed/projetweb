@@ -42,4 +42,3 @@ class ContratService
         return $this->contractRepository->findBy($criteria, ['id' => 'DESC'], $limit, $offset);
     }
 }
-//

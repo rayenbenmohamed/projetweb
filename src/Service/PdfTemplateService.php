@@ -7,6 +7,10 @@ use App\Entity\PdfTemplate;
 
 class PdfTemplateService
 {
+    public function __construct(
+        private readonly string $projectDir
+    ) {}
+
     /**
      * Rende le contenu final d'un modèle en remplaçant les placeholders.
      */
@@ -58,6 +62,12 @@ class PdfTemplateService
             '{{job_title}}' => $job ? $job->getTitle() : 'Poste RH',
             '{{today}}' => date('d/m/Y'),
             '{{contract_id}}' => '#' . str_pad((string) $contract->getId(), 6, '0', STR_PAD_LEFT),
+            '{{logo}}' => $contract->getPdfTemplate() && $contract->getPdfTemplate()->getLogoPath() 
+                ? '<img src="' . $this->projectDir . '/public' . $contract->getPdfTemplate()->getLogoPath() . '" style="max-height: 60px;">' 
+                : '',
+            '{{signature}}' => $contract->getSignatureBase64() 
+                ? '<img src="' . $contract->getSignatureBase64() . '" style="max-height: 80px; display: block; margin: 10px 0;">' 
+                : '<div style="color: #ccc; font-style: italic;">[Signature en attente]</div>',
         ];
     }
 
