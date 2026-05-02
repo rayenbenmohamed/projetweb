@@ -22,7 +22,10 @@ class AiController extends AbstractController
         }
 
         try {
-            $result = $geminiService->generatePdfTemplate($prompt);
+            $primaryColor = $data['primaryColor'] ?? null;
+            $secondaryColor = $data['secondaryColor'] ?? null;
+
+            $result = $geminiService->generatePdfTemplate($prompt, $primaryColor, $secondaryColor);
             
             return new JsonResponse([
                 'header' => $result['header'],

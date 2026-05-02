@@ -70,15 +70,23 @@ class PdfTemplateController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $logoFile = $form->get('logoFile')->getData();
             if ($logoFile) {
-                $newFilename = uniqid() . '.' . $logoFile->guessExtension();
-                $logoFile->move(
-                    $this->getParameter('kernel.project_dir') . '/public/uploads/logos',
-                    $newFilename
-                );
-                $pdfTemplate->setLogoPath('/uploads/logos/' . $newFilename);
+                $originalFilename = pathinfo($logoFile->getClientOriginalName(), PATHINFO_FILENAME);
+                $safeFilename = $slugger->slug($originalFilename);
+                $newFilename = $safeFilename . '-' . uniqid() . '.' . $logoFile->guessExtension();
+
+                try {
+                    $logoFile->move(
+                        $this->getParameter('kernel.project_dir') . '/public/uploads/logos',
+                        $newFilename
+                    );
+                    $pdfTemplate->setLogoPath('/uploads/logos/' . $newFilename);
+                } catch (FileException $e) {
+                    $this->addFlash('error', 'Erreur lors de l\'upload du logo : ' . $e->getMessage());
+                }
             }
 
             $entityManager->flush();
+            $this->addFlash('success', 'Modèle mis à jour avec succès.');
             return $this->redirectToRoute('app_pdf_template_index', [], Response::HTTP_SEE_OTHER);
         }
 

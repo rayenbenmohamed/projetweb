@@ -193,4 +193,34 @@ class ApiController extends AbstractController
             'error'   => $result['error'] ?? 'Erreur lors de l\'envoi de l\'e-mail.',
         ], 500);
     }
+
+    #[Route('/google-calendar/add-event', name: 'api_google_calendar_add_event', methods: ['POST'])]
+    public function addGoogleCalendarEvent(Request $request, \App\Service\GoogleCalendarService $calendarService): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof \App\Entity\User) {
+            return new JsonResponse(['error' => 'Utilisateur non connecté.'], 401);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $summary = $data['summary'] ?? '';
+        $dateStr = $data['date'] ?? '';
+
+        if (empty($summary) || empty($dateStr)) {
+            return new JsonResponse(['error' => 'Titre et date obligatoires.'], 400);
+        }
+
+        try {
+            $date = new \DateTime($dateStr);
+            $link = $calendarService->addEvent($user, $summary, $date);
+
+            if ($link) {
+                return new JsonResponse(['success' => true, 'link' => $link]);
+            }
+
+            return new JsonResponse(['error' => 'Impossible d\'ajouter l\'événement.'], 500);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
+    }
 }

@@ -64,22 +64,31 @@ class GeminiService
         throw new Exception("Aucun modèle Gemini disponible avec cette clé API. Vérifiez votre quota sur https://aistudio.google.com");
     }
 
-    public function generatePdfTemplate(string $userPrompt): array
+    public function generatePdfTemplate(string $userPrompt, ?string $primaryColor = null, ?string $secondaryColor = null): array
     {
         if (!$this->apiKey) {
-            return $this->generateLocalTemplate($userPrompt);
+            return $this->generateLocalTemplate($userPrompt, $primaryColor, $secondaryColor);
         }
 
         $model = $this->getAvailableModel();
         $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key=" . $this->apiKey;
+
+        $colorContext = "";
+        if ($primaryColor) $colorContext .= " Utilise la couleur primaire : " . $primaryColor . " pour les titres et éléments forts.";
+        if ($secondaryColor) $colorContext .= " Utilise la couleur secondaire : " . $secondaryColor . " pour les bordures ou accents.";
 
         $systemInstruction = "Tu es un expert en design de documents RH et en HTML/CSS pour PDF (Dompdf). 
         Ta mission est de générer les segments d'un modèle de contrat de travail en format JSON.
         CONTRAINTES :
         1. Tu dois retourner UNIQUEMENT un objet JSON valide avec les clés : 'header', 'body', 'footer'.
         2. Le contenu de chaque clé doit être du HTML/CSS valide, compatible avec Dompdf (utilise uniquement des styles en ligne).
-        3. Utilise impérativement ces placeholders : {{candidate_name}}, {{recruiter_name}}, {{salary}}, {{today}}, {{start_date}}, {{job_title}}, {{contract_id}}.
-        4. Le design doit être Premium, élégant et professionnel.
+        3. Utilise ces placeholders pour injecter les données :
+           - {{candidate_name}}, {{recruiter_name}}, {{today}}, {{start_date}}, {{end_date}}, {{job_title}}, {{contract_id}}
+           - {{salary}} (Salaire Brut), {{salary_net}} (Salaire Net calculé)
+           - {{contract_type}} (Ex: CDI, CDD, Stage)
+           - {{logo}} (Injecte l'image du logo de l'entreprise)
+           - {{signature}} (Injecte l'image de la signature du candidat)
+        4. Le design doit être Premium, élégant et professionnel (utilisez des bordures fines, des espacements aérés)." . $colorContext . "
         5. N'ajoute aucune explication en dehors du JSON.";
 
         $data = [
@@ -113,14 +122,14 @@ class GeminiService
         return $this->generateLocalTemplate($userPrompt);
     }
 
-    private function generateLocalTemplate(string $prompt): array
+    private function generateLocalTemplate(string $prompt, ?string $primaryColor = null, ?string $secondaryColor = null): array
     {
         $p = strtolower($prompt);
 
         // --- Color detection ---
-        $color = '#1e40af'; // default blue
+        $color = $primaryColor ?? '#1e40af'; // default blue or user selected
         $colorLight = '#eff6ff';
-        $colorBorder = '#3b82f6';
+        $colorBorder = $secondaryColor ?? '#3b82f6';
         if (str_contains($p, 'rouge') || str_contains($p, 'red')) { $color = '#9f1239'; $colorLight = '#fff1f2'; $colorBorder = '#e11d48'; }
         elseif (str_contains($p, 'vert') || str_contains($p, 'green')) { $color = '#15803d'; $colorLight = '#f0fdf4'; $colorBorder = '#22c55e'; }
         elseif (str_contains($p, 'noir') || str_contains($p, 'dark') || str_contains($p, 'black')) { $color = '#1a1a1a'; $colorLight = '#f4f4f5'; $colorBorder = '#52525b'; }

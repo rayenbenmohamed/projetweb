@@ -262,10 +262,23 @@ class ContractController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_contract_show', methods: ['GET'])]
-    public function show(Contract $contract): Response
+    public function show(Contract $contract, GoogleCalendarService $calendarService): Response
     {
+        $user = $this->getUser();
+        $googleEvents = [];
+        $isGoogleLinked = false;
+
+        if ($user instanceof \App\Entity\User) {
+            $isGoogleLinked = $user->getGoogleAccessToken() !== null;
+            if ($isGoogleLinked) {
+                $googleEvents = $calendarService->getUpcomingEvents($user);
+            }
+        }
+
         return $this->render('contract/show.html.twig', [
             'contract' => $contract,
+            'googleEvents' => $googleEvents,
+            'isGoogleLinked' => $isGoogleLinked,
         ]);
     }
 

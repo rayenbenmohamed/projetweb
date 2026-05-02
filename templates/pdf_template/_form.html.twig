@@ -43,7 +43,7 @@
                     {{ form_widget(form.logoFile, {'attr': {'class': 'form-control'}}) }}
                     {% if pdf_template.logoPath %}
                         <div class="mt-2 text-center p-3 border rounded bg-light">
-                            <img src="{{ pdf_template.logoPath }}" alt="Logo" style="max-height: 60px;">
+                            <img src="{{ asset(pdf_template.logoPath) }}" alt="Logo" style="max-height: 60px;">
                         </div>
                     {% endif %}
                 </div>
@@ -51,11 +51,11 @@
                 <div class="row g-3 mb-4">
                     <div class="col-6">
                         {{ form_label(form.primaryColor) }}
-                        {{ form_widget(form.primaryColor, {'attr': {'class': 'form-control form-control-color w-100'}}) }}
+                        {{ form_widget(form.primaryColor, {'attr': {'class': 'form-control form-control-color w-100', 'id': 'pdf_template_primaryColor'}}) }}
                     </div>
                     <div class="col-6">
                         {{ form_label(form.secondaryColor) }}
-                        {{ form_widget(form.secondaryColor, {'attr': {'class': 'form-control form-control-color w-100'}}) }}
+                        {{ form_widget(form.secondaryColor, {'attr': {'class': 'form-control form-control-color w-100', 'id': 'pdf_template_secondaryColor'}}) }}
                     </div>
                 </div>
 
@@ -65,9 +65,12 @@
                     <h6 class="alert-heading fw-bold small mb-2"><i class="ti ti-info-circle me-1"></i> Guide des variables</h6>
                     <ul class="ps-3 mb-0">
                         <li><code>{{ '{{candidate_name}}' }}</code> : Nom complet</li>
-                        <li><code>{{ '{{salary}}' }}</code> : Salaire brut</li>
-                        <li><code>{{ '{{start_date}}' }}</code> : Début contrat</li>
                         <li><code>{{ '{{job_title}}' }}</code> : Titre du poste</li>
+                        <li><code>{{ '{{start_date}}' }}</code>, <code>{{ '{{end_date}}' }}</code> : Dates</li>
+                        <li><code>{{ '{{salary}}' }}</code>, <code>{{ '{{salary_net}}' }}</code> : Salaire</li>
+                        <li><code>{{ '{{contract_type}}' }}</code> : CDI/CDD</li>
+                        <li><code>{{ '{{logo}}' }}</code> : Image du Logo</li>
+                        <li><code>{{ '{{signature}}' }}</code> : Bloc Signature</li>
                     </ul>
                 </div>
 
@@ -110,6 +113,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const headerField = document.getElementById('pdf_template_headerHtml');
     const bodyField = document.getElementById('pdf_template_bodyHtml');
     const footerField = document.getElementById('pdf_template_footerHtml');
+    const primaryColorField = document.getElementById('pdf_template_primaryColor');
+    const secondaryColorField = document.getElementById('pdf_template_secondaryColor');
 
     if (btnGenerate) {
         btnGenerate.addEventListener('click', async function() {
@@ -127,7 +132,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const response = await fetch('{{ path('api_ai_generate_pdf_style') }}', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: prompt })
+                    body: JSON.stringify({ 
+                        prompt: prompt,
+                        primaryColor: primaryColorField ? primaryColorField.value : null,
+                        secondaryColor: secondaryColorField ? secondaryColorField.value : null
+                    })
                 });
 
                 let result;

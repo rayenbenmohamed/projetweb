@@ -9,6 +9,7 @@ use Google\Client;
 use Google\Service\Calendar;
 use Google\Service\Calendar\Event;
 use Google\Service\Calendar\EventDateTime;
+use GuzzleHttp\Client as GuzzleClient;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class GoogleCalendarService
@@ -29,6 +30,9 @@ class GoogleCalendarService
         $this->client->addScope(Calendar::CALENDAR_EVENTS);
         $this->client->setAccessType('offline');
         $this->client->setPrompt('select_account consent');
+
+        // Fix cURL 60 SSL error on Windows (local dev only)
+        $this->client->setHttpClient(new GuzzleClient(['verify' => false]));
     }
 
     public function generateAuthUrl(): string
@@ -85,6 +89,68 @@ class GoogleCalendarService
             return ['success' => true, 'links' => $eventsCreated];
         } catch (\Exception $e) {
             return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    public function getUpcomingEvents(User $user, int $maxResults = 5): array
+    {
+        if (!$this->isUserAuthenticated($user)) {
+            return [];
+        }
+
+        try {
+            $this->setupClientForUser($user);
+            $service = new Calendar($this->client);
+            $optParams = [
+                'maxResults' => $maxResults,
+                'orderBy' => 'startTime',
+                'singleEvents' => true,
+                'timeMin' => date('c'),
+            ];
+            $results = $service->events->listEvents('primary', $optParams);
+            $events = $results->getItems();
+
+            $formattedEvents = [];
+            foreach ($events as $event) {
+                $start = $event->getStart()->getDateTime() ?: $event->getStart()->getDate();
+                $formattedEvents[] = [
+                    'summary' => $event->getSummary(),
+                    'start' => new \DateTime($start),
+                    'link' => $event->getHtmlLink(),
+                ];
+            }
+
+            return $formattedEvents;
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    public function addEvent(User $user, string $summary, \DateTimeInterface $start): ?string
+    {
+        if (!$this->isUserAuthenticated($user)) {
+            return null;
+        }
+
+        try {
+            $this->setupClientForUser($user);
+            $service = new Calendar($this->client);
+            
+            $event = new Event();
+            $event->setSummary($summary);
+            
+            $startDT = new EventDateTime();
+            $startDT->setDateTime($start->format('c'));
+            $event->setStart($startDT);
+            
+            $endDT = new EventDateTime();
+            $endDT->setDateTime($start->modify('+1 hour')->format('c'));
+            $event->setEnd($endDT);
+
+            $result = $service->events->insert('primary', $event);
+            return $result->htmlLink;
+        } catch (\Exception $e) {
+            return null;
         }
     }
 
