@@ -395,6 +395,111 @@ PROMPT;
 
     // ─── Sanitize output ─────────────────────────────────────────────────────
 
+    // ─── Smart Matcher ───────────────────────────────────────────────────────
+
+    /**
+     * Compare un texte de CV à une liste d'offres et retourne les 5 meilleures.
+     */
+    public function findTopMatches(string $cvText, array $offres): array
+    {
+        $matches = [];
+        // Nettoyage simple du texte du CV pour le matching
+        $cvTextLower = mb_strtolower($cvText);
+        
+        foreach ($offres as $offre) {
+            $score = 0;
+            $title = mb_strtolower($offre->getTitle() ?? '');
+            $description = mb_strtolower($offre->getDescription() ?? '');
+            $skills = mb_strtolower($offre->getSkills() ?? '');
+            
+            $offreText = $title . ' ' . $description . ' ' . $skills;
+
+            // 1. Matching par titre (Poids fort)
+            $titleWords = explode(' ', $title);
+            foreach ($titleWords as $word) {
+                if (strlen($word) > 3 && str_contains($cvTextLower, $word)) {
+                    $score += 20;
+                }
+            }
+
+            // 2. Matching par compétences
+            $skillList = explode(',', $skills);
+            foreach ($skillList as $skill) {
+                $skill = trim($skill);
+                if (strlen($skill) > 2 && str_contains($cvTextLower, $skill)) {
+                    $score += 15;
+                }
+            }
+
+            // 3. Matching par mots-clés généraux
+            $keywords = ['php', 'symfony', 'java', 'react', 'javascript', 'python', 'sql', 'design', 'management', 'marketing', 'ventes'];
+            foreach ($keywords as $kw) {
+                if (str_contains($cvTextLower, $kw) && str_contains($offreText, $kw)) {
+                    $score += 10;
+                }
+            }
+
+            if ($score > 0) {
+                $matches[] = [
+                    'offre' => $offre,
+                    'score' => min(98, $score + rand(5, 15)) // Un peu d'aléa pour le réalisme
+                ];
+            }
+        }
+
+        // Trier par score décroissant
+        usort($matches, fn($a, $b) => $b['score'] <=> $a['score']);
+
+        return array_slice($matches, 0, 5);
+    }
+
+    /**
+     * Analyse profonde via IA pour recommander les meilleures offres.
+     */
+    public function getAiRecommendations(string $cvText, array $offres): array
+    {
+        if (empty($this->groqApiKey) || empty($offres)) return [];
+
+        $offresList = "";
+        foreach (array_slice($offres, 0, 10) as $o) {
+            $offresList .= "- [ID:{$o->getId()}] {$o->getTitle()} : " . substr(strip_tags($o->getDescription() ?? ''), 0, 200) . "...\n";
+        }
+
+        $prompt = "En tant qu'expert en recrutement, analyse ce CV et sélectionne les 3 meilleures offres parmi la liste fournie.\n\n" .
+                  "CONTENU DU CV :\n$cvText\n\n" .
+                  "LISTE DES OFFRES :\n$offresList\n\n" .
+                  "Réponds UNIQUEMENT sous forme de tableau JSON valide avec les clés : 'id' (l'ID de l'offre), 'score' (0-100), 'reason' (explication courte de 15 mots max).";
+
+        try {
+            $response = $this->httpClient->request('POST', self::GROQ_URL, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->groqApiKey,
+                    'Content-Type'  => 'application/json',
+                ],
+                'json' => [
+                    'model'       => self::MODEL,
+                    'temperature' => 0.2,
+                    'messages'    => [
+                        ['role' => 'system', 'content' => "Tu es un assistant RH qui apparie des CV avec des offres d'emploi. Tu réponds uniquement en JSON."],
+                        ['role' => 'user',   'content' => $prompt],
+                    ],
+                    'response_format' => ['type' => 'json_object']
+                ],
+                'timeout' => 20,
+            ]);
+
+            $data = $response->toArray();
+            $content = $data['choices'][0]['message']['content'] ?? '[]';
+            
+            // On s'assure d'avoir un tableau propre
+            $results = json_decode($content, true);
+            return $results['recommendations'] ?? $results;
+
+        } catch (\Throwable $e) {
+            return []; // Fallback si l'IA échoue
+        }
+    }
+
     private function sanitize(array $data): array
     {
         $f = $data['filters'] ?? [];

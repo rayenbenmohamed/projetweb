@@ -268,7 +268,7 @@ class ContractController extends AbstractController
         $googleEvents = [];
         $isGoogleLinked = false;
 
-        if ($user instanceof \App\Entity\User) {
+        if ($user instanceof \App\Entity\User && method_exists($user, 'getGoogleAccessToken')) {
             $isGoogleLinked = $user->getGoogleAccessToken() !== null;
             if ($isGoogleLinked) {
                 $googleEvents = $calendarService->getUpcomingEvents($user);

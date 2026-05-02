@@ -11,6 +11,7 @@ use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class DashboardController extends AbstractController
 {
@@ -21,6 +22,7 @@ class DashboardController extends AbstractController
         InterviewRepository $interviewRepo,
         UserRepository $userRepo,
         ContractRepository $contractRepo,
+        \App\Service\JobOffreAiService $jobOffreAiService
     ): Response {
         $user = $this->getUser();
         if (!$user) {
@@ -132,6 +134,19 @@ class DashboardController extends AbstractController
             ];
         }
 
+        // ── Smart Matcher pour Candidat ───────────────────────────────────────
+        $smartMatches = [];
+        if ($this->isGranted('ROLE_USER')) {
+            // Récupérer le dernier CV envoyé par cet utilisateur (pour simuler son profil)
+            $lastApp = $appRepo->findOneBy(['candidat' => $user], ['applyDate' => 'DESC']);
+            
+            if ($lastApp) {
+                $allOffres = $jobOffreRepo->findAll();
+                $profileText = ($lastApp->getCoverLetter() ?? '') . ' ' . ($lastApp->getCvPath() ?? '');
+                $smartMatches = $jobOffreAiService->findTopMatches($profileText, $allOffres);
+            }
+        }
+
         return $this->render('dashboard/front_index.html.twig', [
             // Recruteur
             'count_my_offres'         => $myOffresCount,
@@ -151,8 +166,61 @@ class DashboardController extends AbstractController
             // Candidat
             'count_my_apps'           => $myApplicationsCount,
             'count_my_accepted'       => $myAcceptedCount,
+            'smart_matches'           => $smartMatches,
             // Autres
             'latest_jobs'             => $jobOffreRepo->findBy([], ['createdAt' => 'DESC'], 5),
+        ]);
+    }
+
+    #[Route('/app/smart-matching', name: 'app_app_smart_matching')]
+    public function smartMatching(
+        JobOffreRepository $jobOffreRepo,
+        JobApplicationRepository $appRepo,
+        \App\Service\JobOffreAiService $jobOffreAiService,
+        HttpClientInterface $httpClient
+    ): Response {
+        $user = $this->getUser();
+        if (!$user) return $this->redirectToRoute('app_login');
+
+        // 1. Récupérer le dernier CV
+        $lastApp = $appRepo->findOneBy(['candidat' => $user], ['applyDate' => 'DESC']);
+        if (!$lastApp || !$lastApp->getCvPath()) {
+            $this->addFlash('warning', "Vous n'avez pas encore téléversé de CV. Postulez à une offre pour commencer l'analyse !");
+            return $this->redirectToRoute('app_app_dashboard');
+        }
+
+        // 2. Extraire le texte du CV (PDF Parser)
+        $cvText = "Profil candidat : " . ($lastApp->getCoverLetter() ?? '');
+        try {
+            $response = $httpClient->request('GET', $lastApp->getCvPath());
+            if ($response->getStatusCode() === 200) {
+                $parser = new \Smalot\PdfParser\Parser();
+                $pdf = $parser->parseContent($response->getContent());
+                $cvText = $pdf->getText();
+            }
+        } catch (\Exception $e) {
+            // Fallback sur le texte de la lettre si le PDF échoue
+        }
+
+        // 3. Demander à l'IA de choisir les 3 meilleures offres
+        $allOffres = $jobOffreRepo->findBy([], ['createdAt' => 'DESC'], 15);
+        $recommendations = $jobOffreAiService->getAiRecommendations($cvText, $allOffres);
+
+        // 4. Mapper les résultats IA avec les objets Offre réels
+        $finalResults = [];
+        foreach ($recommendations as $rec) {
+            $offre = $jobOffreRepo->find($rec['id'] ?? 0);
+            if ($offre) {
+                $finalResults[] = [
+                    'offre' => $offre,
+                    'score' => $rec['score'] ?? 0,
+                    'reason' => $rec['reason'] ?? 'Compatibilité détectée par l\'IA.'
+                ];
+            }
+        }
+
+        return $this->render('dashboard/smart_matching.html.twig', [
+            'recommendations' => $finalResults,
         ]);
     }
 }

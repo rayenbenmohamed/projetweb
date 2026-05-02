@@ -278,9 +278,6 @@
 </div>
 {% endif %}
 
-{% endblock %}
-
-{% block modals %}
 {% if applications_by_offer is not empty %}
 {% for offerTitle, apps in applications_by_offer %}
 {% for job_app in apps %}
@@ -307,12 +304,14 @@
                         <div class="p-2 bg-success-subtle rounded small">
                             <div class="fw-bold text-success">Points Forts</div>
                             {% for p in analysis.verdict.pros|default([]) %}<div>• {{ p }}</div>{% endfor %}
+                            {% for p in analysis.pros|default([]) %}<div>• {{ p }}</div>{% endfor %}
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="p-2 bg-danger-subtle rounded small">
                             <div class="fw-bold text-danger">Vigilance</div>
                             {% for c in analysis.verdict.cons|default([]) %}<div>• {{ c }}</div>{% endfor %}
+                            {% for c in analysis.cons|default([]) %}<div>• {{ c }}</div>{% endfor %}
                         </div>
                     </div>
                 </div>
@@ -324,4 +323,5 @@
 {% endfor %}
 {% endfor %}
 {% endif %}
+
 {% endblock %}

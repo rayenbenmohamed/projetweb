@@ -1,0 +1,55 @@
+{% extends 'layout/front.html.twig' %}
+
+{% block title %}Analyse de Profil IA | SyfonuRH{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="fw-black text-dark"><i class="ti ti-sparkles text-primary me-2"></i>Votre Analyse de Profil par l'IA</h1>
+        <p class="text-muted">Notre intelligence artificielle a scanné votre CV et sélectionné les meilleures opportunités pour votre carrière.</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        {% for rec in recommendations %}
+        <div class="col-lg-4">
+            <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden" style="transition: transform 0.3s ease;">
+                <div class="p-4 bg-primary text-white text-center">
+                    <div class="display-4 fw-bold mb-0">{{ rec.score }}%</div>
+                    <div class="small opacity-75 text-uppercase fw-bold">Score de compatibilité</div>
+                </div>
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-1">{{ rec.offre.title }}</h5>
+                    <p class="text-muted small mb-3"><i class="ti ti-map-pin me-1"></i>{{ rec.offre.location }}</p>
+                    
+                    <div class="p-3 bg-light rounded-3 mb-4">
+                        <h6 class="fw-bold small text-primary"><i class="ti ti-brain me-1"></i>L'avis de l'IA :</h6>
+                        <p class="small mb-0 text-dark italic">"{{ rec.reason }}"</p>
+                    </div>
+
+                    <a href="{{ path('app_job_offre_show', {id: rec.offre.id}) }}" class="btn btn-primary w-100 rounded-pill fw-bold">
+                        Postuler maintenant
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="ti ti-loader fs-1 d-block mb-3 text-muted animate-spin"></i>
+            <p class="text-muted">Aucune recommandation n'a pu être générée. Essayez de mettre à jour votre CV !</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="text-center mt-5">
+        <a href="{{ path('app_app_dashboard') }}" class="btn btn-link text-muted">
+            <i class="ti ti-arrow-left me-1"></i>Retour au tableau de bord
+        </a>
+    </div>
+</div>
+
+<style>
+    .card:hover { transform: translateY(-10px); }
+    .animate-spin { animation: spin 2s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
+{% endblock %}

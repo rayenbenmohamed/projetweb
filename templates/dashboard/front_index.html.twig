@@ -234,6 +234,57 @@
     </div>
 </div>
 
+{# ── Smart Matcher : Recommandations IA pour Candidat ── #}
+{% if smart_matches is not empty %}
+<div class="card premium-card mt-5 mb-5 border-0 shadow-sm" style="background: linear-gradient(135deg, #f8faff 0%, #ffffff 100%); border-left: 5px solid #6366f1 !important;">
+    <div class="card-body p-4">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h5 class="fw-bold mb-1"><i class="ti ti-sparkles text-primary me-2"></i>SyfonuMatch™ : Vos meilleures opportunités</h5>
+                <p class="text-muted small mb-0">Basé sur votre profil et vos compétences détectées</p>
+            </div>
+            <span class="badge bg-primary rounded-pill px-3">Top 5</span>
+        </div>
+        
+        <div class="row g-3">
+            {% for match in smart_matches %}
+            <div class="col-md-4 col-xl-2.4" style="flex: 0 0 auto; width: 20%;">
+                <div class="card h-100 border shadow-sm-hover transition-all" style="border-radius: 15px;">
+                    <div class="card-body p-3 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="badge bg-success-subtle text-success rounded-pill px-2 py-1" style="font-size: 0.65rem;">
+                                <i class="ti ti-chart-bar me-1"></i>{{ match.score }}% Match
+                            </div>
+                        </div>
+                        <h6 class="fw-bold mb-1 text-truncate" title="{{ match.offre.title }}">{{ match.offre.title }}</h6>
+                        <p class="text-muted mb-3" style="font-size: 0.75rem;">
+                            <i class="ti ti-map-pin me-1"></i>{{ match.offre.location }}
+                        </p>
+                        <div class="mt-auto">
+                            <a href="{{ path('app_job_offre_show', {id: match.offre.id}) }}" class="btn btn-sm btn-primary w-100 rounded-pill" style="font-size: 0.7rem;">
+                                Postuler
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .transition-all { transition: all 0.3s ease; }
+    .shadow-sm-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
+    @media (max-width: 1200px) {
+        .col-xl-2.4 { width: 33.33% !important; }
+    }
+    @media (max-width: 768px) {
+        .col-xl-2.4 { width: 50% !important; }
+    }
+</style>
+{% endif %}
+
 {# ── Statistiques Visuelles ── #}
 <div class="row g-4 mb-5">
     <div class="col-lg-6">
