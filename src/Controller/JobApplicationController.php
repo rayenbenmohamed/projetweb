@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\JobApplication;
 use App\Entity\JobOffre;
+use App\Service\CallMeBotService;
 use App\Service\CVAnalyzerService;
 use App\Repository\JobApplicationRepository;
 use App\Service\CloudinaryService;
@@ -156,7 +157,8 @@ class JobApplicationController extends AbstractController
         EntityManagerInterface $entityManager,
         CloudinaryService $cloudinaryService,
         JobApplicationRepository $jobApplicationRepository,
-        CVAnalyzerService $cvAnalyzer
+        CVAnalyzerService $cvAnalyzer,
+        CallMeBotService $callMeBot
     ): Response {
         $user = $this->getUser();
         
@@ -208,29 +210,30 @@ class JobApplicationController extends AbstractController
 
             $this->addFlash('success', 'Votre candidature a été envoyée avec succès !');
 
-            // --- WhatsApp Redirection Logic (Simple wa.me) ---
-            $entreprise = $jobOffre->getEntreprise();
-            if (!$entreprise && $jobOffre->getUser()) {
-                $entreprise = $jobOffre->getUser()->getEntreprise();
-            }
+            // --- Notification WhatsApp automatique au recruteur via CallMeBot ---
+            try {
+                $entreprise = $jobOffre->getEntreprise();
+                $phone      = $entreprise?->getPhone();
 
-            if ($entreprise && $entreprise->getPhone()) {
-                // Nettoyer le numéro (garder seulement les chiffres)
-                $phoneNumber = preg_replace('/[^0-9]/', '', $entreprise->getPhone());
-                
-                if (!empty($phoneNumber)) {
-                    /** @var \App\Entity\User $user */
-                    $candidateName = $user->getFirstName() . ' ' . $user->getLastName();
-                    $jobTitle = $jobOffre->getTitle();
-                    
-                    $message = "Bonjour, je suis $candidateName. Je viens de postuler à votre offre d'emploi \"$jobTitle\" sur SyfonuRH. Voici ma candidature.";
-                    $whatsappUrl = "https://wa.me/$phoneNumber?text=" . urlencode($message);
-                    
-                    return $this->redirect($whatsappUrl);
+                if ($phone) {
+                    $candidat     = $this->getUser();
+                    $candidatName = trim(
+                        ($candidat->getFirstName() ?? '') . ' ' . ($candidat->getLastName() ?? '')
+                    ) ?: $candidat->getEmail();
+
+                    $callMeBot->notifyNewApplication(
+                        $phone,
+                        $candidatName,
+                        $jobOffre->getTitle() ?? 'une offre',
+                        $entreprise->getName() ?? 'votre entreprise'
+                    );
                 }
+            } catch (\Exception $e) {
+                // Silent fail — ne bloque pas la candidature
             }
 
             return $this->redirectToRoute('app_job_offre_index');
+
         }
 
         return $this->render('job_application/new.html.twig', ['job_offre' => $jobOffre]);
@@ -238,8 +241,14 @@ class JobApplicationController extends AbstractController
 
     /** Voir une candidature */
     #[Route('/{id}', name: 'app_job_application_show', methods: ['GET'])]
-    public function show(JobApplication $jobApplication): Response
+    public function show(int $id, JobApplicationRepository $jobApplicationRepository): Response
     {
+        $jobApplication = $jobApplicationRepository->find($id);
+        if (!$jobApplication) {
+            $this->addFlash('warning', 'Candidature introuvable.');
+            return $this->redirectToRoute('app_job_application_index');
+        }
+
         $this->assertCanAccess($jobApplication);
 
         return $this->render('job_application/show.html.twig', [
@@ -249,8 +258,14 @@ class JobApplicationController extends AbstractController
 
     /** Modifier une candidature (propriétaire de l'offre seulement) */
     #[Route('/{id}/edit', name: 'app_job_application_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, JobApplication $jobApplication, EntityManagerInterface $entityManager): Response
+    public function edit(Request $request, int $id, JobApplicationRepository $jobApplicationRepository, EntityManagerInterface $entityManager): Response
     {
+        $jobApplication = $jobApplicationRepository->find($id);
+        if (!$jobApplication) {
+            $this->addFlash('warning', 'Candidature introuvable.');
+            return $this->redirectToRoute('app_job_application_index');
+        }
+
         $this->assertIsOfferOwner($jobApplication);
 
         if ($request->isMethod('POST')) {
@@ -266,8 +281,15 @@ class JobApplicationController extends AbstractController
     }
 
     #[Route('/{id}/delete', name: 'app_job_application_delete', methods: ['POST'])]
-    public function delete(Request $request, JobApplication $jobApplication, EntityManagerInterface $entityManager): Response
+    public function delete(Request $request, int $id, JobApplicationRepository $jobApplicationRepository, EntityManagerInterface $entityManager): Response
     {
+        $jobApplication = $jobApplicationRepository->find($id);
+
+        if (!$jobApplication) {
+            $this->addFlash('warning', 'Cette candidature est introuvable ou a déjà été supprimée.');
+            return $this->redirectToRoute('app_job_application_index');
+        }
+
         // 1. Vérification des permissions
         $this->assertCanDelete($jobApplication);
 

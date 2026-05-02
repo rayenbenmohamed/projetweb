@@ -11,6 +11,11 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: JobOffreRepository::class)]
 #[ORM\Table(name: 'job_offre')]
+#[ORM\Index(name: 'idx_job_offre_status', columns: ['status'])]
+#[ORM\Index(name: 'idx_job_offre_user', columns: ['user_id'])]
+#[ORM\Index(name: 'idx_job_offre_created', columns: ['created_at'])]
+#[ORM\Index(name: 'idx_job_offre_expires', columns: ['expires_at'])]
+#[ORM\Index(name: 'idx_job_offre_type', columns: ['employment_type'])]
 class JobOffre
 {
     #[ORM\Id]

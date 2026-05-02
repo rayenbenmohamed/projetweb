@@ -10,6 +10,11 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: JobApplicationRepository::class)]
 #[ORM\Table(name: 'job_application')]
+#[ORM\Index(name: 'idx_job_app_candidat', columns: ['user_id'])]
+#[ORM\Index(name: 'idx_job_app_offre', columns: ['job_offre_id'])]
+#[ORM\Index(name: 'idx_job_app_status', columns: ['application_status'])]
+#[ORM\Index(name: 'idx_job_app_date', columns: ['apply_date'])]
+#[ORM\Index(name: 'idx_job_app_ai_score', columns: ['ai_score'])]
 class JobApplication
 {
     public const STATUS_PENDING = 'PENDING';

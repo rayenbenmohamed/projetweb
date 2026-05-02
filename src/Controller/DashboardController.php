@@ -27,14 +27,18 @@ class DashboardController extends AbstractController
             return $this->redirectToRoute('app_login');
         }
 
-        // ── Stats Recruteur ──────────────────────────────────────────────────
-        $myOffresCount        = $jobOffreRepo->count(['user' => $user]);
-        $receivedApps         = $appRepo->findByRecruiter($user, null, null, 9999, 0);
-        $receivedCount        = count($receivedApps);
-        $pendingCount         = count(array_filter($receivedApps, fn($a) => $a->getStatus() === JobApplication::STATUS_PENDING));
-        $acceptedCount        = count(array_filter($receivedApps, fn($a) => in_array($a->getStatus(), [JobApplication::STATUS_ACCEPTED, JobApplication::STATUS_READY_FOR_CONTRACT])));
-        $rejectedCount        = count(array_filter($receivedApps, fn($a) => $a->getStatus() === JobApplication::STATUS_REJECTED));
-        $scoredApps = array_values(array_filter($receivedApps, fn($a) => $a->getAiScore() !== null));
+        // ── Stats Recruteur — SQL COUNT (no full memory load) ─────────────────
+        $myOffresCount = $jobOffreRepo->count(['user' => $user]);
+        $receivedCount = $appRepo->countByRecruiter($user);
+        $pendingCount  = $appRepo->countByRecruiter($user, null, JobApplication::STATUS_PENDING);
+        $acceptedCount = $appRepo->countByRecruiter($user, null, JobApplication::STATUS_ACCEPTED)
+                       + $appRepo->countByRecruiter($user, null, JobApplication::STATUS_READY_FOR_CONTRACT);
+        $rejectedCount = $appRepo->countByRecruiter($user, null, JobApplication::STATUS_REJECTED);
+
+        $conversionRate = $receivedCount > 0 ? round(($acceptedCount / $receivedCount) * 100) : 0;
+
+        // AI scores — only load apps that have a score (small set)
+        $scoredApps = $appRepo->findScoredForRecruiter($user);
         $avgScore   = null;
         $topName    = null;
         $topScore   = null;
@@ -47,27 +51,43 @@ class DashboardController extends AbstractController
             $topScore = $best->getAiScore();
         }
 
-        $conversionRate = $receivedCount > 0 ? round(($acceptedCount / $receivedCount) * 100) : 0;
-
-        // ── Stats Candidat ────────────────────────────────────────────────────
-        $myApplicationsCount  = $appRepo->count(['candidat' => $user]);
-        $myAcceptedCount      = count($appRepo->findForCandidate($user, JobApplication::STATUS_ACCEPTED, null, 9999, 0))
-                              + count($appRepo->findForCandidate($user, JobApplication::STATUS_READY_FOR_CONTRACT, null, 9999, 0));
-
-        // ── Données pour les Graphiques (Chart.js) ───────────────────────────
+        // ── Status distribution chart — limited slice ─────────────────────────
+        $recentApps = $appRepo->findByRecruiter($user, null, null, 200, 0);
         $statusDistribution = [
-            'Nouveaux'    => count(array_filter($receivedApps, fn($a) => $a->getStatus() === JobApplication::STATUS_PENDING)),
-            'Tri RH'      => count(array_filter($receivedApps, fn($a) => $a->getStatus() === JobApplication::STATUS_HR_SCREENING)),
-            'Entretien'   => count(array_filter($receivedApps, fn($a) => in_array($a->getStatus(), [JobApplication::STATUS_INTERVIEW_SCHEDULED, JobApplication::STATUS_TECHNICAL_TEST]))),
-            'Revue'       => count(array_filter($receivedApps, fn($a) => $a->getStatus() === JobApplication::STATUS_FINAL_REVIEW)),
-            'Acceptés'    => $acceptedCount,
-            'Refusés'     => $rejectedCount,
+            'Nouveaux'  => 0,
+            'Tri RH'    => 0,
+            'Entretien' => 0,
+            'Revue'     => 0,
+            'Acceptés'  => 0,
+            'Refusés'   => 0,
         ];
-        
+        foreach ($recentApps as $a) {
+            match (true) {
+                $a->getStatus() === JobApplication::STATUS_PENDING
+                    => $statusDistribution['Nouveaux']++,
+                $a->getStatus() === JobApplication::STATUS_HR_SCREENING
+                    => $statusDistribution['Tri RH']++,
+                in_array($a->getStatus(), [JobApplication::STATUS_INTERVIEW_SCHEDULED, JobApplication::STATUS_TECHNICAL_TEST])
+                    => $statusDistribution['Entretien']++,
+                $a->getStatus() === JobApplication::STATUS_FINAL_REVIEW
+                    => $statusDistribution['Revue']++,
+                in_array($a->getStatus(), [JobApplication::STATUS_ACCEPTED, JobApplication::STATUS_READY_FOR_CONTRACT])
+                    => $statusDistribution['Acceptés']++,
+                $a->getStatus() === JobApplication::STATUS_REJECTED
+                    => $statusDistribution['Refusés']++,
+                default => null,
+            };
+        }
+
         $statusLabels = array_keys($statusDistribution);
         $statusData   = array_values($statusDistribution);
 
-        // Moyennes des entretiens réalisés
+        // ── Stats Candidat — SQL COUNT ────────────────────────────────────────
+        $myApplicationsCount = $appRepo->count(['candidat' => $user]);
+        $myAcceptedCount     = $appRepo->countForCandidate($user, JobApplication::STATUS_ACCEPTED)
+                             + $appRepo->countForCandidate($user, JobApplication::STATUS_READY_FOR_CONTRACT);
+
+        // ── Completed interviews ──────────────────────────────────────────────
         $completedInterviews = $interviewRepo->createQueryBuilder('i')
             ->join('i.application', 'a')
             ->join('a.jobOffre', 'jo')
@@ -86,8 +106,8 @@ class DashboardController extends AbstractController
             $avgRatings['mot']  = array_sum(array_map(fn($i) => $i->getMotivationRating() ?? 0, $completedInterviews)) / $ciCount;
         }
 
-        // ── Prochains entretiens (recruteur) ──────────────────────────────────
-        $upcomingInterviews   = $interviewRepo->createQueryBuilder('i')
+        // ── Upcoming interviews (max 3) ───────────────────────────────────────
+        $upcomingInterviews = $interviewRepo->createQueryBuilder('i')
             ->join('i.application', 'a')
             ->join('a.jobOffre', 'jo')
             ->where('jo.user = :user')
@@ -101,7 +121,7 @@ class DashboardController extends AbstractController
             ->getQuery()
             ->getResult();
 
-        // ── Stats Globales (Admin uniquement) ────────────────────────────────
+        // ── Admin stats ───────────────────────────────────────────────────────
         $adminStats = null;
         if ($this->isGranted('ROLE_ADMIN')) {
             $adminStats = [

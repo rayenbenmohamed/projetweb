@@ -34,7 +34,6 @@ class JobOffreRepository extends ServiceEntityRepository
     public function search(array $criteria = []): array
     {
         $qb = $this->createQueryBuilder('j')
-            ->leftJoin('j.jobApplications', 'a')
             ->orderBy('j.createdAt', 'DESC');
 
         if (!empty($criteria['user'])) {
@@ -76,36 +75,62 @@ class JobOffreRepository extends ServiceEntityRepository
     }
 
     /**
-     * Returns global statistics. If $user is provided, scoped to that user.
+     * Returns global statistics using optimised SQL COUNT queries.
+     * Avoids loading all entities + their collections into memory.
      *
      * @return array{total: int, published: int, draft: int, applications: int, types: array}
      */
     public function getStats(?User $user = null): array
     {
-        $qb = $this->createQueryBuilder('j');
+        $em = $this->getEntityManager();
+        $userCondition = $user ? 'AND j.user = :user' : '';
+
+        // Single query: total + published + draft
+        $countsQb = $this->createQueryBuilder('j')
+            ->select(
+                'COUNT(j.id) AS total',
+                "SUM(CASE WHEN j.status = 'PUBLISHED' AND (j.expiresAt IS NULL OR j.expiresAt > CURRENT_TIMESTAMP()) THEN 1 ELSE 0 END) AS published",
+                "SUM(CASE WHEN j.status = 'DRAFT' THEN 1 ELSE 0 END) AS draft"
+            );
 
         if ($user) {
-            $qb->andWhere('j.user = :user')->setParameter('user', $user);
+            $countsQb->where('j.user = :user')->setParameter('user', $user);
         }
 
-        $offres = $qb->getQuery()->getResult();
+        $row = $countsQb->getQuery()->getSingleResult();
 
-        $total      = count($offres);
-        $published  = 0;
-        $draft      = 0;
-        $applications = 0;
-        $types      = [];
+        // Count applications via join (one query)
+        $appsQb = $em->createQueryBuilder()
+            ->select('COUNT(a.id)')
+            ->from('App\Entity\JobApplication', 'a')
+            ->join('a.jobOffre', 'j');
 
-        foreach ($offres as $o) {
-            $dStatus = $o->getDisplayStatus();
-            if ($dStatus === 'PUBLISHED') $published++;
-            elseif ($dStatus === 'DRAFT') $draft++;
-            elseif ($dStatus === 'ARCHIVED') $archivedCount = ($archivedCount ?? 0) + 1; // Note: stats array doesn't have archived yet but we could add it
-            $applications += $o->getJobApplications()->count();
-            $type = $o->getEmploymentType() ?: 'Autre';
-            $types[$type] = ($types[$type] ?? 0) + 1;
+        if ($user) {
+            $appsQb->where('j.user = :user')->setParameter('user', $user);
         }
 
-        return compact('total', 'published', 'draft', 'applications', 'types');
+        $applications = (int) $appsQb->getQuery()->getSingleScalarResult();
+
+        // Employment type breakdown
+        $typesQb = $this->createQueryBuilder('j')
+            ->select('j.employmentType AS type', 'COUNT(j.id) AS cnt')
+            ->groupBy('j.employmentType');
+
+        if ($user) {
+            $typesQb->where('j.user = :user')->setParameter('user', $user);
+        }
+
+        $types = [];
+        foreach ($typesQb->getQuery()->getResult() as $t) {
+            $types[$t['type'] ?: 'Autre'] = (int) $t['cnt'];
+        }
+
+        return [
+            'total'        => (int) ($row['total'] ?? 0),
+            'published'    => (int) ($row['published'] ?? 0),
+            'draft'        => (int) ($row['draft'] ?? 0),
+            'applications' => $applications,
+            'types'        => $types,
+        ];
     }
 }

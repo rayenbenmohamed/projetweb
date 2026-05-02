@@ -27,6 +27,8 @@ class NotificationService
         $notification->setCreatedAt(new \DateTime());
 
         $this->entityManager->persist($notification);
+        // Note: flush is intentionally deferred — the caller is responsible for flushing
+        // when creating multiple notifications in the same request (avoid N flush calls).
         $this->entityManager->flush();
     }
 

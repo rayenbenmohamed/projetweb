@@ -47,6 +47,24 @@ class JobApplicationRepository extends ServiceEntityRepository
     }
 
     /**
+     * Retourne UNIQUEMENT les candidatures avec un score IA pour un recruteur.
+     * Beaucoup plus léger que de charger tout puis filtrer en PHP.
+     *
+     * @return array<JobApplication>
+     */
+    public function findScoredForRecruiter(User $recruiter): array
+    {
+        return $this->createQueryBuilder('a')
+            ->join('a.jobOffre', 'o')
+            ->where('o.user = :recruiter')
+            ->andWhere('a.aiScore IS NOT NULL')
+            ->setParameter('recruiter', $recruiter)
+            ->orderBy('a.aiScore', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Compte les candidatures reçues pour un recruteur avec filtres.
      */
     public function countByRecruiter(User $recruiter, ?string $offerTitle = null, ?string $status = null): int
