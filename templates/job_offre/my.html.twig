@@ -1,0 +1,483 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Mes offres d'emploi | SyfonuRH{% endblock %}
+{% block page_title %}Mes offres d'emploi{% endblock %}
+
+{% block stylesheets %}
+<style>
+/* ─── Stat cards ──────────────────────────── */
+.stat-card{border:none;border-radius:14px;padding:1.1rem 1.4rem;display:flex;align-items:center;gap:.9rem;box-shadow:0 2px 12px rgba(0,0,0,.06);transition:transform .2s,box-shadow .2s}
+.stat-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.10)}
+.stat-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.stat-value{font-size:1.6rem;font-weight:700;line-height:1}
+.stat-label{font-size:.75rem;color:#8a95a3;margin-top:2px}
+
+/* ─── Filter bar ──────────────────────────── */
+.filter-bar{background:#fff;border-radius:14px;padding:1rem 1.2rem;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:0}
+.filter-bar .form-control,.filter-bar .form-select{border-radius:9px;font-size:.83rem;border:1.5px solid #e4e9f0;transition:border-color .2s,box-shadow .2s;height:36px;padding:.3rem .75rem}
+.filter-bar .form-control:focus,.filter-bar .form-select:focus{border-color:#5c67f5;box-shadow:0 0 0 3px rgba(92,103,245,.12)}
+.btn-filter-reset{border-radius:9px;height:36px;width:36px;padding:0;display:flex;align-items:center;justify-content:center;border:1.5px solid #e4e9f0;background:#f7f8fc;color:#5c6782;transition:all .2s;flex-shrink:0}
+.btn-filter-reset:hover{background:#eceff8;border-color:#c8cfe8}
+
+/* ─── Scrollable feed ─────────────────────── */
+.feed-wrapper{height:calc(100vh - 340px);min-height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:.75rem;padding-right:4px}
+.feed-wrapper::-webkit-scrollbar{width:5px}
+.feed-wrapper::-webkit-scrollbar-track{background:transparent}
+.feed-wrapper::-webkit-scrollbar-thumb{background:#dde0f0;border-radius:10px}
+.feed-wrapper::-webkit-scrollbar-thumb:hover{background:#b0b8d8}
+
+/* ─── LinkedIn-style job card ─────────────── */
+.jcard{background:#fff;border-radius:14px;border:1.5px solid #eef0f8;padding:1rem 1.2rem;display:flex;align-items:flex-start;gap:1rem;transition:transform .18s,box-shadow .18s,border-color .18s;box-shadow:0 1px 4px rgba(0,0,0,.04);position:relative;overflow:visible}
+.jcard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#5c67f5,#a78bfa);opacity:0;transition:opacity .2s}
+.jcard:hover{transform:translateX(4px);box-shadow:0 4px 20px rgba(0,0,0,.09);border-color:#d0d5f5}
+.jcard:hover::before{opacity:1}
+.jcard .jcard-logo{width:62px;height:62px;border-radius:14px;background:linear-gradient(135deg,#eef0ff,#e8f0ff);display:flex;align-items:center;justify-content:center;color:#5c67f5;font-size:1.6rem;flex-shrink:0;box-shadow:0 2px 8px rgba(92,103,245,.13);overflow:hidden;border:2px solid #e8eaff}
+.jcard .jcard-logo img{width:100%;height:100%;object-fit:cover;border-radius:12px}
+.jcard .jcard-body{flex:1;min-width:0}
+.jcard .jcard-title{font-weight:700;font-size:.95rem;color:#1e2343;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jcard .jcard-title a{color:inherit;text-decoration:none}
+.jcard .jcard-title a:hover{color:#5c67f5}
+.jcard .jcard-sub{font-size:.78rem;color:#6b7280;display:flex;flex-wrap:wrap;gap:.3rem .8rem;margin-top:.2rem}
+.jcard .jcard-sub span{display:flex;align-items:center;gap:.2rem}
+.jcard .jcard-badges{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.45rem}
+.badge-pill{font-size:.7rem;font-weight:600;padding:.22rem .6rem;border-radius:20px;white-space:nowrap}
+.bp-published{background:#d1fae5;color:#065f46}
+.bp-draft{background:#fef3c7;color:#92400e}
+.bp-type{background:#eef0ff;color:#5c67f5}
+.bp-applied{background:#dbeafe;color:#1e40af}
+.jcard .jcard-salary{font-size:.92rem;font-weight:700;color:#5c67f5;white-space:nowrap;margin-left:auto;padding-left:.5rem;flex-shrink:0;align-self:center}
+.jcard .jcard-actions{display:flex;gap:.4rem;margin-top:.55rem;flex-wrap:wrap}
+.jbtn{font-size:.75rem;font-weight:600;padding:.3rem .75rem;border-radius:9px;border:1.5px solid transparent;display:inline-flex;align-items:center;gap:.25rem;transition:all .18s;text-decoration:none;white-space:nowrap}
+.jbtn-view {border-color:#06b6d4;color:#06b6d4;background:#f0fffe}
+.jbtn-edit {border-color:#f59e0b;color:#f59e0b;background:#fffbf0}
+.jbtn-dup  {border-color:#5c67f5;color:#5c67f5;background:#f0f0ff}
+.jbtn-del  {border-color:#ef4444;color:#ef4444;background:#fff5f5}
+.jcard .jcard-title.translated {color:#059669!important;transition:all .3s}
+
+/* ─── Inline flag buttons (translation) ──────────────────── */
+.trans-flags-row {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    background: #f3f4f6;
+    border-radius: 20px;
+    padding: .2rem .5rem;
+    flex-shrink: 0;
+}
+.trans-label {
+    font-size: .75rem;
+    color: #9ca3af;
+    padding: 0 .15rem;
+    display: flex;
+    align-items: center;
+}
+.flag-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .22rem;
+    background: transparent;
+    border: 1.5px solid transparent;
+    border-radius: 20px;
+    padding: .18rem .5rem;
+    font-size: .7rem;
+    font-weight: 700;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all .15s ease;
+    white-space: nowrap;
+    line-height: 1;
+}
+.flag-btn img { width: 17px; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.flag-btn:hover { background: #fff; border-color: #5c67f5; color: #5c67f5; transform: scale(1.07); }
+.flag-btn.active { background: #5c67f5; border-color: #5c67f5; color: #fff; }
+.flag-btn.flag-btn-reset { color: #6b7280; }
+.flag-btn.flag-btn-reset:hover { background: #fff7ed; border-color: #f97316; color: #f97316; }
+.flag-btn.loading { pointer-events: none; opacity: .5; }
+.rotate { animation: spin .7s linear infinite; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* ─── Empty state ─────────────────────────── */
+.empty-feed{text-align:center;padding:3.5rem 2rem;color:#9ca3af}
+.empty-feed i{font-size:2.5rem;margin-bottom:.6rem;display:block}
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Delete Modals ──────────────────────────────────────────────────── #}
+{% for offre in job_offres %}
+<div class="modal fade" id="delMod{{ offre.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title text-danger"><i class="ti ti-alert-triangle me-2"></i>Confirmer la suppression</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body py-3">
+        Supprimer <strong>{{ offre.title }}</strong> ? Cette action est <strong>irréversible</strong>.
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">Annuler</button>
+        <form method="post" action="{{ path('app_job_offre_delete', {id: offre.id}) }}">
+          <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ offre.id) }}">
+          <button type="submit" class="btn btn-danger rounded-3"><i class="ti ti-trash me-1"></i>Supprimer</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{# ── Header ─────────────────────────────────────────────────────────── #}
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+  <div>
+    <h4 class="mb-0 fw-bold">Mes offres publiées</h4>
+    <small class="text-secondary">Gérez vos annonces — <a href="{{ path('app_job_offre_index') }}">vue publique</a></small>
+  </div>
+  <a href="{{ path('app_job_offre_new') }}" class="btn btn-primary btn-sm rounded-3 px-3">
+    <i class="ti ti-plus me-1"></i>Nouvelle offre
+  </a>
+</div>
+
+{# ── Stats ──────────────────────────────────────────────────────────── #}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#eef0ff,#f3f4ff)">
+      <div class="stat-icon" style="background:rgba(92,103,245,.15);color:#5c67f5"><i class="ti ti-briefcase"></i></div>
+      <div><div class="stat-value" style="color:#5c67f5">{{ stats.total }}</div><div class="stat-label">Total</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#d1fae5,#ecfdf5)">
+      <div class="stat-icon" style="background:rgba(16,185,129,.15);color:#059669"><i class="ti ti-circle-check"></i></div>
+      <div><div class="stat-value" style="color:#059669">{{ stats.published }}</div><div class="stat-label">Publiées</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#fef3c7,#fffbeb)">
+      <div class="stat-icon" style="background:rgba(217,119,6,.15);color:#d97706"><i class="ti ti-edit"></i></div>
+      <div><div class="stat-value" style="color:#d97706">{{ stats.draft }}</div><div class="stat-label">Brouillons</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#ede9fe,#f5f3ff)">
+      <div class="stat-icon" style="background:rgba(139,92,246,.15);color:#7c3aed"><i class="ti ti-users"></i></div>
+      <div><div class="stat-value" style="color:#7c3aed">{{ stats.applications }}</div><div class="stat-label">Candidatures</div></div>
+    </div>
+  </div>
+</div>
+
+{# ── Filter bar ─────────────────────────────────────────────────────── #}
+<div class="filter-bar mb-2">
+  <div class="row g-2 align-items-center">
+    <div class="col-12 col-md-4">
+      <input type="text" id="fsQ" class="form-control" placeholder="🔍  Recherche titre, lieu…" value="{{ filters.q }}">
+    </div>
+    <div class="col-6 col-md-2">
+      <select id="fsType" class="form-select">
+        <option value="">Tous les types</option>
+        <option value="CDI"        {% if filters.type == 'CDI' %}selected{% endif %}>CDI</option>
+        <option value="CDD"        {% if filters.type == 'CDD' %}selected{% endif %}>CDD</option>
+        <option value="Freelance"  {% if filters.type == 'Freelance' %}selected{% endif %}>Freelance</option>
+        <option value="Stage"      {% if filters.type == 'Stage' %}selected{% endif %}>Stage</option>
+        <option value="Alternance" {% if filters.type == 'Alternance' %}selected{% endif %}>Alternance</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <select id="fsStatus" class="form-select">
+        <option value="">Tous statuts</option>
+        <option value="published" {% if filters.status == 'PUBLISHED' %}selected{% endif %}>Publiée</option>
+        <option value="draft"     {% if filters.status == 'DRAFT' %}selected{% endif %}>Brouillon</option>
+      </select>
+    </div>
+    <div class="col-5 col-md-1">
+      <input type="number" id="fsSalMin" class="form-control" placeholder="Min €" value="{{ filters.salary_min }}" min="0">
+    </div>
+    <div class="col-5 col-md-1">
+      <input type="number" id="fsSalMax" class="form-control" placeholder="Max €" value="{{ filters.salary_max }}" min="0">
+    </div>
+    <div class="col-2 col-md-auto d-flex align-items-center gap-2">
+      <button id="btnReset" class="btn-filter-reset" title="Réinitialiser">
+        <i class="ti ti-refresh" style="font-size:.95rem"></i>
+      </button>
+    </div>
+    <div class="col-12 col-md-auto ms-auto">
+      <span class="results-bar" id="resCount">
+        <span id="resNum">{{ job_offres|length }}</span> offre{{ job_offres|length != 1 ? 's' : '' }} trouvée{{ job_offres|length != 1 ? 's' : '' }}
+      </span>
+    </div>
+  </div>
+</div>
+
+{# ── Scrollable feed ────────────────────────────────────────────────── #}
+{% if job_offres|length == 0 %}
+<div class="empty-feed">
+  <i class="ti ti-briefcase-off text-secondary"></i>
+  <p class="fw-semibold mb-1">Aucune offre</p>
+  <p class="small text-secondary mb-3">Créez votre première annonce.</p>
+  <a href="{{ path('app_job_offre_new') }}" class="btn btn-primary btn-sm rounded-3 px-4">
+    <i class="ti ti-plus me-1"></i>Créer une offre
+  </a>
+</div>
+{% else %}
+<div class="feed-wrapper" id="feedWrapper">
+  {% for offre in job_offres %}
+  {% set dStatus = offre.displayStatus %}
+  {% set statusClass = dStatus == 'PUBLISHED' ? 'published' : (dStatus == 'DRAFT' ? 'draft' : 'secondary') %}
+  {% set statusLabel = dStatus == 'PUBLISHED' ? 'Publiée' : (dStatus == 'DRAFT' ? 'Brouillon' : 'Archivée') %}
+  <div class="jcard"
+       id="card-{{ offre.id }}"
+       data-id="{{ offre.id }}"
+       data-q="{{ (offre.title ~ ' ' ~ offre.location)|lower }}"
+       data-type="{{ offre.employmentType|lower }}"
+       data-status="{{ offre.status|lower }}"
+       data-salary="{{ offre.salary }}">
+
+    <div class="jcard-logo">
+      {% if offre.companyLogo %}
+        <img src="{{ offre.companyLogo }}" alt="Logo"
+             style="width:48px;height:48px;object-fit:cover;border-radius:12px;">
+      {% else %}
+        <i class="ti ti-briefcase"></i>
+      {% endif %}
+    </div>
+
+    <div class="jcard-body">
+      <div class="d-flex align-items-start gap-2 flex-wrap">
+        <div class="jcard-title flex-grow-1">
+          <a href="{{ path('app_job_offre_show', {id: offre.id}) }}">{{ offre.title }}</a>
+        </div>
+        {% if offre.salary %}
+        <div class="jcard-salary">{{ offre.salary|number_format(0, ',', ' ') }} €{% if offre.isSalaryNegotiable %}<small class="fw-normal text-secondary"> nég.</small>{% endif %}</div>
+        {% endif %}
+      </div>
+
+      <div class="jcard-sub">
+        {% if offre.location %}<span><i class="ti ti-map-pin"></i>{{ offre.location }}</span>{% endif %}
+        <span><i class="ti ti-calendar"></i>{{ offre.createdAt|date('d/m/Y') }}</span>
+        <span><i class="ti ti-users"></i>{{ offre.jobApplications|length }} candidature{{ offre.jobApplications|length != 1 ? 's' : '' }}</span>
+      </div>
+
+      <div class="jcard-badges">
+        <span class="badge-pill bp-{{ statusClass }}">{{ statusLabel }}</span>
+        {% if offre.employmentType %}<span class="badge-pill bp-type">{{ offre.employmentType }}</span>{% endif %}
+      </div>
+
+      {# Linked Avantages (Table) #}
+      {% if offre.linkedAvantages|length > 0 %}
+      <div class="d-flex flex-wrap gap-2 mt-2">
+          {% for av in offre.linkedAvantages %}
+          <span class="badge bg-light text-primary border d-inline-flex align-items-center gap-1 shadow-sm" style="font-size: 0.65rem; font-weight: 500; border-radius: 6px; padding: 0.15rem 0.45rem;">
+              {% if av.icon %}<i class="ti {{ av.icon }}"></i>{% endif %}
+              {{ av.name }}
+          </span>
+          {% endfor %}
+      </div>
+      {% endif %}
+
+      {# Legacy Advantages (Text) #}
+      {% if offre.advantages %}
+      <div class="small text-secondary mt-1 d-flex align-items-center gap-1" style="font-size: 0.72rem;">
+          <i class="ti ti-plus" style="font-size: 0.65rem;"></i> {{ offre.advantages }}
+      </div>
+      {% endif %}
+
+      <div class="jcard-actions">
+        <a href="{{ path('app_job_offre_show', {id: offre.id}) }}" class="jbtn jbtn-view"><i class="ti ti-eye"></i>Voir</a>
+        <a href="{{ path('app_job_offre_edit', {id: offre.id}) }}" class="jbtn jbtn-edit"><i class="ti ti-pencil"></i>Modifier</a>
+        <form method="post" action="{{ path('app_job_offre_duplicate', {id: offre.id}) }}" class="d-inline">
+          <input type="hidden" name="_token" value="{{ csrf_token('duplicate' ~ offre.id) }}">
+          <button type="submit" class="jbtn jbtn-dup"><i class="ti ti-copy"></i>Dupliquer</button>
+        </form>
+        <button type="button" class="jbtn jbtn-del" data-bs-toggle="modal" data-bs-target="#delMod{{ offre.id }}">
+          <i class="ti ti-trash"></i>Supprimer
+        </button>
+        {# Traduction inline — boutons en ligne #}
+        <div class="trans-flags-row" id="trans-row-{{ offre.id }}">
+            <span class="trans-label"><i class="ti ti-language"></i></span>
+            <button class="flag-btn" title="English" onclick="translateCard(this, {{ offre.id }}, 'en')">
+                <img src="https://flagcdn.com/w20/gb.png" alt="EN"><span>EN</span>
+            </button>
+            <button class="flag-btn" title="Arabe" onclick="translateCard(this, {{ offre.id }}, 'ar')">
+                <img src="https://flagcdn.com/w20/sa.png" alt="AR"><span>AR</span>
+            </button>
+            <button class="flag-btn" title="Espagnol" onclick="translateCard(this, {{ offre.id }}, 'es')">
+                <img src="https://flagcdn.com/w20/es.png" alt="ES"><span>ES</span>
+            </button>
+            <button class="flag-btn" title="Allemand" onclick="translateCard(this, {{ offre.id }}, 'de')">
+                <img src="https://flagcdn.com/w20/de.png" alt="DE"><span>DE</span>
+            </button>
+            <button class="flag-btn flag-btn-reset d-none" title="Retour à l'original" onclick="resetTranslation(this, {{ offre.id }})">
+                <i class="ti ti-arrow-back-up"></i><span>FR</span>
+            </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  <div id="emptyMsg" class="empty-feed d-none">
+    <i class="ti ti-search-off text-secondary"></i>
+    <p class="fw-semibold mb-1">Aucun résultat</p>
+    <p class="small text-secondary">Modifiez vos critères de recherche.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block javascripts %}
+<script>
+(function(){
+  const cards   = document.querySelectorAll('#feedWrapper .jcard');
+  const emptyMsg= document.getElementById('emptyMsg');
+  const resNum  = document.getElementById('resNum');
+  const resCount= document.getElementById('resCount');
+
+  const fsQ      = document.getElementById('fsQ');
+  const fsType   = document.getElementById('fsType');
+  const fsStatus = document.getElementById('fsStatus');
+  const fsSalMin = document.getElementById('fsSalMin');
+  const fsSalMax = document.getElementById('fsSalMax');
+  const btnReset = document.getElementById('btnReset');
+
+  if (!cards.length) return;
+
+  function filterCards(){
+    const q      = fsQ     ? fsQ.value.toLowerCase().trim()     : '';
+    const type   = fsType  ? fsType.value.toLowerCase()          : '';
+    const status = fsStatus? fsStatus.value.toLowerCase()        : '';
+    const salMin = fsSalMin? parseFloat(fsSalMin.value) || 0    : 0;
+    const salMax = fsSalMax? parseFloat(fsSalMax.value) || Infinity : Infinity;
+
+    let visible = 0;
+    cards.forEach(card => {
+      const cq     = card.dataset.q      || '';
+      const ctype  = card.dataset.type   || '';
+      const cstat  = card.dataset.status || '';
+      const csal   = parseFloat(card.dataset.salary) || 0;
+
+      const ok =
+        (!q      || cq.includes(q))     &&
+        (!type   || ctype === type)      &&
+        (!status || cstat.includes(status)) &&
+        (csal === 0 || (csal >= salMin && csal <= salMax));
+
+      card.style.display = ok ? '' : 'none';
+      if (ok) visible++;
+    });
+
+    if (emptyMsg) emptyMsg.classList.toggle('d-none', visible > 0);
+    if (resNum) {
+      resNum.textContent = visible;
+      resCount.innerHTML = `<span id="resNum">${visible}</span> offre${visible!==1?'s':''} trouvée${visible!==1?'s':''}`;
+      if (q||type||status||(fsSalMin&&fsSalMin.value)||(fsSalMax&&fsSalMax.value)){
+        resCount.innerHTML += ' <span style="width:7px;height:7px;border-radius:50%;background:#5c67f5;display:inline-block;vertical-align:middle;margin-left:3px"></span>';
+      }
+    }
+  }
+
+  [fsQ, fsSalMin, fsSalMax].forEach(el => el && el.addEventListener('input',  filterCards));
+  [fsType, fsStatus]        .forEach(el => el && el.addEventListener('change', filterCards));
+
+  if (btnReset) {
+    btnReset.addEventListener('click', function(){
+      if(fsQ)      fsQ.value      = '';
+      if(fsType)   fsType.value   = '';
+      if(fsStatus) fsStatus.value = '';
+      if(fsSalMin) fsSalMin.value = '';
+      if(fsSalMax) fsSalMax.value = '';
+      filterCards();
+    });
+  }
+
+  filterCards();
+})();
+
+// ─── Translation Feature ───────────────────────────────────
+
+async function translateText(text, targetLang) {
+    if (!text || !text.trim()) return null;
+    const r = await fetch('/job/offre/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text.trim(), target: targetLang })
+    });
+    const d = await r.json();
+    return d.translation || null;
+}
+
+window.translateCard = async function(el, id, targetLang) {
+    const btn  = el;
+    if (btn.classList.contains('loading')) return;
+    const card = document.getElementById('card-' + id);
+    if (!card) return;
+    const row  = card.querySelector('.trans-flags-row');
+
+    const titleEl      = card.querySelector('.jcard-title a');
+    const locationEl   = card.querySelector('.jcard-sub span:first-child i.ti-map-pin')?.closest('span');
+    const typeEl       = card.querySelector('.bp-type');
+    const advantagesEl = card.querySelector('.small.text-secondary.mt-1');
+
+    if (!row.dataset.translated) {
+        if (titleEl)      titleEl.dataset.original      = titleEl.innerText;
+        if (locationEl)   locationEl.dataset.original   = locationEl.innerText;
+        if (typeEl)       typeEl.dataset.original       = typeEl.innerText;
+        if (advantagesEl) advantagesEl.dataset.original = advantagesEl.innerText;
+    }
+
+    const originalHtml = btn.innerHTML;
+    btn.classList.add('loading');
+    btn.innerHTML = '<i class="ti ti-refresh rotate"></i>';
+
+    try {
+        const [titleTr, locationTr, typeTr, advantagesTr] = await Promise.all([
+            titleEl      ? translateText(titleEl.dataset.original      || titleEl.innerText,      targetLang) : null,
+            locationEl   ? translateText(locationEl.dataset.original   || locationEl.innerText,   targetLang) : null,
+            typeEl       ? translateText(typeEl.dataset.original       || typeEl.innerText,       targetLang) : null,
+            advantagesEl ? translateText(advantagesEl.dataset.original || advantagesEl.innerText, targetLang) : null,
+        ]);
+
+        if (titleTr      && titleEl)      { titleEl.innerText = titleTr; titleEl.style.color = '#059669'; }
+        if (locationTr   && locationEl)   { locationEl.innerHTML = '<i class="ti ti-map-pin"></i>' + locationTr; }
+        if (typeTr       && typeEl)       { typeEl.innerText = typeTr; }
+        if (advantagesTr && advantagesEl) { advantagesEl.innerHTML = '<i class="ti ti-plus" style="font-size:0.65rem;"></i> ' + advantagesTr; }
+
+        row.querySelectorAll('.flag-btn:not(.flag-btn-reset)').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        btn.innerHTML = originalHtml;
+        const resetBtn = row.querySelector('.flag-btn-reset');
+        if (resetBtn) resetBtn.classList.remove('d-none');
+        row.dataset.translated = targetLang;
+
+    } catch (e) {
+        console.error('Translation error:', e);
+        btn.innerHTML = originalHtml;
+        alert('Erreur de traduction. Veuillez réessayer.');
+    } finally {
+        btn.classList.remove('loading');
+    }
+};
+
+window.resetTranslation = function(el, id) {
+    const card = document.getElementById('card-' + id);
+    const row  = card.querySelector('.trans-flags-row');
+
+    const titleEl      = card.querySelector('.jcard-title a');
+    const locationEl   = card.querySelector('.jcard-sub span:first-child i.ti-map-pin')?.closest('span');
+    const typeEl       = card.querySelector('.bp-type');
+    const advantagesEl = card.querySelector('.small.text-secondary.mt-1');
+
+    if (titleEl?.dataset.original)      { titleEl.innerText = titleEl.dataset.original; titleEl.style.color = ''; }
+    if (locationEl?.dataset.original)   { locationEl.innerHTML = '<i class="ti ti-map-pin"></i>' + locationEl.dataset.original; }
+    if (typeEl?.dataset.original)       { typeEl.innerText = typeEl.dataset.original; }
+    if (advantagesEl?.dataset.original) { advantagesEl.innerHTML = '<i class="ti ti-plus" style="font-size:0.65rem;"></i> ' + advantagesEl.dataset.original; }
+
+    row.querySelectorAll('.flag-btn:not(.flag-btn-reset)').forEach(b => b.classList.remove('active'));
+    el.classList.add('d-none');
+    delete row.dataset.translated;
+};
+
+</script>
+{% endblock %}

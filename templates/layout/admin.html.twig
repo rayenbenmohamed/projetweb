@@ -68,7 +68,8 @@
 
         {# Contrats #}
         <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <a class="nav-link dropdown-toggle {{ app.request.attributes.get('_route') starts with 'app_contract' or app.request.attributes.get('_route') starts with 'app_type_contrat' or app.request.attributes.get('_route') starts with 'app_pdf_template' ? 'active' }}"
+               href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                 <span class="nav-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
@@ -82,9 +83,31 @@
                 <span class="text">Contrats</span>
             </a>
             <ul class="dropdown-menu flex-column">
-                <li class="nav-item"><a class="nav-link" href="{{ path('app_contract_index') }}">Liste des contrats</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ path('app_type_contrat_index') }}">Type de contrat</a></li>
-                <li class="nav-item"><a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_pdf_template' ? 'active' }}" href="{{ path('app_pdf_template_index') }}">Modèles PDF</a></li>
+                <li class="nav-item">
+                    <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_contract' and app.request.attributes.get('_route') != 'app_contract_new' ? 'active' }}"
+                       href="{{ path('app_contract_index') }}">
+                        <i class="ti ti-list me-1"></i> Liste des contrats
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_type_contrat' ? 'active' }}"
+                       href="{{ path('app_type_contrat_index') }}">
+                        <i class="ti ti-tags me-1"></i> Types de contrat
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_pdf_template' ? 'active' }}"
+                       href="{{ path('app_pdf_template_index') }}">
+                        <i class="ti ti-file-text me-1"></i> Modèles PDF
+                    </a>
+                </li>
+                <li class="nav-item"><hr class="dropdown-divider my-1"></li>
+                <li class="nav-item">
+                    <a class="nav-link {{ app.request.attributes.get('_route') == 'app_contract_new' ? 'active' }}"
+                       href="{{ path('app_contract_new') }}">
+                        <i class="ti ti-plus me-1"></i> Nouveau contrat
+                    </a>
+                </li>
             </ul>
         </li>
 
@@ -101,12 +124,15 @@
                         <path d="M12 12l0 .01"/><path d="M3 13a20 20 0 0 0 18 0"/>
                     </svg>
                 </span>
-                <span class="text">Offres d'emploi</span>
+                <span class="text">Recrutement</span>
             </a>
             <ul class="dropdown-menu flex-column">
-                <li class="nav-item"><a class="nav-link" href="{{ path('app_job_offre_index') }}">Liste des offres</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ path('app_entreprise_my') }}">Ma Société</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ path('app_job_offre_index') }}">Toutes les offres</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ path('app_job_offre_my') }}">Mes offres</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ path('app_job_offre_new') }}">Nouvelle offre</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ path('app_job_application_index') }}">Candidatures reçues</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ path('app_interview_index') }}">Mes Entretiens</a></li>
             </ul>
         </li>
 
@@ -219,6 +245,5 @@
 {% endblock %}
 
 {% block javascripts %}
-    {{ parent() }}
     {% include '_social_notifications_script.html.twig' %}
 {% endblock %}

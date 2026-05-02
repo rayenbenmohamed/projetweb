@@ -1,89 +1,993 @@
-{% extends 'layout/public.html.twig' %}
+{% extends 'layout/admin.html.twig' %}
 
 {% block title %}Offres d'emploi | SyfonuRH{% endblock %}
+{% block page_title %}Toutes les offres d'emploi{% endblock %}
+
+{% block stylesheets %}
+{# Leaflet CSS #}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+/* ── Stat cards ──────────────────────────────── */
+.stat-card{border:none;border-radius:14px;padding:1.1rem 1.4rem;display:flex;align-items:center;gap:.9rem;box-shadow:0 2px 12px rgba(0,0,0,.06);transition:transform .2s,box-shadow .2s}
+.stat-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.10)}
+.stat-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.stat-value{font-size:1.6rem;font-weight:700;line-height:1}
+.stat-label{font-size:.75rem;color:#8a95a3;margin-top:2px}
+
+/* ── Type pills ───────────────────────────────── */
+.type-pills{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.75rem}
+.type-pill{font-size:.73rem;font-weight:600;padding:.24rem .65rem;border-radius:20px;cursor:pointer;border:1.5px solid #e5e7eb;background:#f3f4f6;color:#374151;transition:all .15s;user-select:none}
+.type-pill.all-pill{background:#eef0ff;color:#5c67f5;border-color:#c7cbf5}
+.type-pill.active,.type-pill:hover{background:#5c67f5!important;color:#fff!important;border-color:#5c67f5!important}
+
+/* ── Filter bar ───────────────────────────────── */
+.filter-bar{background:#fff;border-radius:14px;padding:1rem 1.2rem;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.filter-bar .form-control,.filter-bar .form-select{border-radius:9px;font-size:.83rem;border:1.5px solid #e4e9f0;transition:border-color .2s,box-shadow .2s;height:36px;padding:.3rem .75rem}
+.filter-bar .form-control:focus,.filter-bar .form-select:focus{border-color:#5c67f5;box-shadow:0 0 0 3px rgba(92,103,245,.12)}
+.btn-filter-reset{border-radius:9px;height:36px;width:36px;padding:0;display:flex;align-items:center;justify-content:center;border:1.5px solid #e4e9f0;background:#f7f8fc;color:#5c6782;transition:all .2s;flex-shrink:0}
+.btn-filter-reset:hover{background:#eceff8;border-color:#c8cfe8}
+.btn-map-toggle{border-radius:9px;height:36px;padding:0 .9rem;display:flex;align-items:center;gap:.35rem;font-size:.8rem;font-weight:600;border:1.5px solid #5c67f5;background:#eef0ff;color:#5c67f5;transition:all .2s;white-space:nowrap;cursor:pointer}
+.btn-map-toggle:hover,.btn-map-toggle.active{background:#5c67f5;color:#fff}
+
+/* ── Split layout ─────────────────────────────── */
+.split-wrapper{display:flex;gap:1rem;align-items:flex-start}
+.split-cards{flex:1;min-width:0}
+.split-map{width:420px;flex-shrink:0;position:sticky;top:80px}
+@media(max-width:992px){.split-wrapper{flex-direction:column}.split-map{width:100%;position:static}}
+
+/* ── Map container ────────────────────────────── */
+.map-panel{background:#fff;border-radius:14px;border:1.5px solid #eef0f8;box-shadow:0 2px 12px rgba(0,0,0,.06);overflow:hidden;display:none}
+.map-panel.visible{display:block}
+.map-panel-header{padding:.75rem 1rem;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between}
+.map-panel-header span{font-size:.82rem;font-weight:600;color:#374151}
+#mapContainer{height:520px;width:100%}
+
+/* Leaflet popup customization */
+.leaflet-popup-content-wrapper{border-radius:12px!important;box-shadow:0 4px 24px rgba(0,0,0,.12)!important;padding:0!important}
+.leaflet-popup-content{margin:0!important;width:220px!important}
+.map-popup{padding:.9rem 1rem}
+.map-popup .mp-title{font-weight:700;font-size:.9rem;color:#1e2343;margin-bottom:.3rem}
+.map-popup .mp-meta{font-size:.75rem;color:#6b7280;display:flex;flex-direction:column;gap:.15rem}
+.map-popup .mp-meta span{display:flex;align-items:center;gap:.25rem}
+.map-popup .mp-badges{display:flex;gap:.3rem;flex-wrap:wrap;margin:.5rem 0}
+.map-popup .mp-salary{font-size:.9rem;font-weight:700;color:#5c67f5;margin-bottom:.5rem}
+.map-popup .mp-btn{display:inline-flex;align-items:center;gap:.25rem;font-size:.75rem;font-weight:600;padding:.3rem .75rem;border-radius:8px;background:#5c67f5;color:#fff;text-decoration:none;transition:opacity .2s}
+.map-popup .mp-btn:hover{opacity:.85;color:#fff}
+.ibadge{font-size:.68rem;font-weight:600;padding:.2rem .55rem;border-radius:20px;white-space:nowrap;display:inline-block}
+.ibadge-published{background:#d1fae5;color:#065f46}
+.ibadge-draft{background:#fef3c7;color:#92400e}
+.ibadge-type{background:#eef0ff;color:#5c67f5}
+.ibadge-applied{background:#dbeafe;color:#1e40af}
+
+/* Map geocoding loader */
+.map-loader{position:absolute;inset:0;background:rgba(255,255,255,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;z-index:800;border-radius:14px;font-size:.82rem;color:#5c67f5;font-weight:600}
+.map-loader .spinner{width:28px;height:28px;border:3px solid #eef0ff;border-top-color:#5c67f5;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.map-count{font-size:.75rem;color:#8a95a3;margin-top:.25rem}
+
+/* ── Scrollable feed ──────────────────────────── */
+.feed-wrapper{height:calc(100vh - 390px);min-height:420px;overflow-y:auto;overflow-x:visible;padding-right:4px}
+.feed-wrapper::-webkit-scrollbar{width:5px}
+.feed-wrapper::-webkit-scrollbar-track{background:transparent}
+.feed-wrapper::-webkit-scrollbar-thumb{background:#dde0f0;border-radius:10px}
+.feed-wrapper::-webkit-scrollbar-thumb:hover{background:#b0b8d8}
+
+/* ── Job card ─────────────────────────────────── */
+.jcard{background:#fff;border-radius:14px;border:1.5px solid #eef0f8;padding:1rem 1.2rem;margin-bottom:.75rem;display:flex;flex-direction:row;align-items:flex-start;gap:1rem;transition:transform .18s,box-shadow .18s,border-color .18s;box-shadow:0 1px 4px rgba(0,0,0,.04);position:relative;cursor:pointer;overflow:visible}
+.jcard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#5c67f5,#a78bfa);border-radius:3px 0 0 3px;opacity:0;transition:opacity .2s}
+.jcard:hover,.jcard.map-highlight{transform:translateX(4px);box-shadow:0 4px 20px rgba(0,0,0,.09);border-color:#d0d5f5}
+.jcard:hover::before,.jcard.map-highlight::before{opacity:1}
+.jcard.map-highlight{border-color:#5c67f5;box-shadow:0 0 0 2px rgba(92,103,245,.25)}
+.jcard-logo{width:62px;height:62px;border-radius:14px;background:linear-gradient(135deg,#eef0ff,#e8f0ff);display:flex;align-items:center;justify-content:center;color:#5c67f5;font-size:1.6rem;flex-shrink:0;margin-top:2px;box-shadow:0 2px 8px rgba(92,103,245,.13);overflow:hidden;border:2px solid #e8eaff}
+.jcard-logo img{width:100%;height:100%;object-fit:cover;border-radius:12px}
+.jcard-inner{flex:1;min-width:0}
+.jcard-heading{font-weight:700;font-size:.95rem;color:#1e2343}
+.jcard-heading a{color:inherit;text-decoration:none}
+.jcard-heading a:hover{color:#5c67f5}
+.jcard-price{font-size:.92rem;font-weight:700;color:#5c67f5;white-space:nowrap;flex-shrink:0}
+.jcard-meta{font-size:.78rem;color:#6b7280;display:flex;flex-wrap:wrap;gap:.3rem .8rem;margin-top:.25rem}
+.jcard-meta span{display:inline-flex;align-items:center;gap:.2rem}
+.jcard-badges{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.35rem}
+.rec-chip{display:inline-flex;align-items:center;gap:.35rem;background:#f3f4f6;border-radius:20px;padding:.15rem .5rem .15rem .25rem;font-size:.72rem;color:#374151;font-weight:500;margin-top:.25rem}
+.rec-av{width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#5c67f5,#a78bfa);color:#fff;font-size:.6rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.jcard-actions{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem;padding-top:.5rem;border-top:1px solid #f3f4f6}
+.jbtn{font-size:.75rem;font-weight:600;padding:.3rem .75rem;border-radius:9px;border:1.5px solid transparent;display:inline-flex;align-items:center;gap:.25rem;transition:all .18s;text-decoration:none;cursor:pointer;background:transparent;white-space:nowrap}
+.jbtn-view  {border-color:#06b6d4;color:#06b6d4;background:#f0fffe}
+.jbtn-apply {border-color:#10b981;color:#10b981;background:#f0fdf4}
+.jbtn-cancel{border-color:#ef4444;color:#ef4444;background:#fff5f5}
+.jbtn-login {border-color:#6b7280;color:#6b7280;background:#f9fafb}
+.jcard-title.translated {color:#059669!important;transition:all .3s}
+.jcard:hover{filter:none!important}
+
+/* ── Translation inline row ──────────────────────────────── */
+.trans-flags-row {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    background: #f3f4f6;
+    border-radius: 20px;
+    padding: .2rem .4rem;
+    flex-shrink: 0;
+}
+.trans-label {
+    font-size: .75rem;
+    color: #9ca3af;
+    padding: 0 .2rem;
+}
+.flag-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .2rem;
+    background: transparent;
+    border: 1.5px solid transparent;
+    border-radius: 20px;
+    padding: .18rem .45rem;
+    font-size: .7rem;
+    font-weight: 700;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+}
+.flag-btn img { width: 16px; border-radius: 3px; }
+.flag-btn:hover { background: #fff; border-color: #5c67f5; color: #5c67f5; transform: scale(1.08); }
+.flag-btn.active { background: #5c67f5; border-color: #5c67f5; color: #fff; }
+.flag-btn.flag-btn-reset { color: #6b7280; }
+.flag-btn.flag-btn-reset:hover { background: #fff7ed; border-color: #f97316; color: #f97316; }
+.flag-btn.loading { pointer-events:none; opacity:.5; }
+.rotate { animation: spin .7s linear infinite; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* Results */
+.results-bar{font-size:.8rem;color:#8a95a3;display:flex;align-items:center;gap:.4rem}
+
+/* Empty */
+.empty-feed{text-align:center;padding:3.5rem 2rem;color:#9ca3af}
+.empty-feed i{font-size:2.5rem;margin-bottom:.6rem;display:block}
+/* ── Chat AI Widget ───────────────────────────── */
+.ai-chat-widget { position: fixed; bottom: 25px; right: 25px; z-index: 2000; font-family: 'Inter', sans-serif; }
+.ai-chat-bubble { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #5c67f5, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 15px rgba(92, 103, 245, 0.4); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
+.ai-chat-bubble:hover { transform: scale(1.1) rotate(10deg); }
+.ai-chat-bubble .ai-pulse { position: absolute; inset: -4px; border: 2px solid #5c67f5; border-radius: 50%; opacity: 0; animation: pulse 2s infinite; }
+@keyframes pulse { 0% { transform: scale(0.95); opacity: 0.5; } 100% { transform: scale(1.2); opacity: 0; } }
+
+.ai-chat-window { position: absolute; bottom: 70px; right: 0; width: 350px; height: 480px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); display: flex; flex-direction: column; transform: translateY(20px); opacity: 0; pointer-events: none; transition: all 0.3s ease; border: 1px solid rgba(0,0,0,0.05); }
+.ai-chat-window.active { transform: translateY(0); opacity: 1; pointer-events: auto; }
+.ai-chat-header { padding: 1.2rem; background: linear-gradient(135deg, #5c67f5, #7c3aed); color: #fff; border-radius: 20px 20px 0 0; display: flex; align-items: center; gap: 10px; }
+.ai-chat-header i { font-size: 1.4rem; }
+.ai-chat-header-title { font-weight: 700; font-size: 0.95rem; }
+.ai-chat-messages { flex: 1; overflow-y: auto; padding: 1.2rem; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+.ai-chat-messages::-webkit-scrollbar { width: 4px; }
+.ai-chat-messages::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+.msg { max-width: 85%; padding: 10px 14px; border-radius: 15px; font-size: 0.85rem; line-height: 1.4; position: relative; animation: msgIn 0.3s ease-out; }
+@keyframes msgIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.msg-ai { background: #f3f4f6; color: #1f2937; align-self: flex-start; border-bottom-left-radius: 4px; }
+.msg-user { background: #5c67f5; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; box-shadow: 0 4px 10px rgba(92, 103, 245, 0.2); }
+.msg-loading { display: flex; gap: 4px; padding: 12px 14px; }
+.msg-loading span { width: 6px; height: 6px; background: #9ca3af; border-radius: 50%; animation: loadingDot 1.4s infinite; }
+.msg-loading span:nth-child(2) { animation-delay: 0.2s; }
+.msg-loading span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes loadingDot { 0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+
+.ai-chat-input-area { padding: 1rem; border-top: 1px solid #f1f5f9; display: flex; gap: 8px; }
+.ai-chat-input { flex: 1; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 8px 12px; font-size: 0.85rem; transition: border-color 0.2s; outline: none; }
+.ai-chat-input:focus { border-color: #5c67f5; }
+.ai-chat-send { width: 38px; height: 38px; border-radius: 10px; background: #eef0ff; color: #5c67f5; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+.ai-chat-send:hover { background: #5c67f5; color: #fff; }
+
+@media (max-width: 576px) {
+    .ai-chat-window { width: calc(100vw - 40px); height: 400px; right: -10px; }
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="row g-6 mt-2">
-    <div class="col-12">
-        <div class="card h-100">
-            <div class="card-header border-bottom-0 d-md-flex align-items-center justify-content-between">
-                <h5 class="mb-0">Liste des offres</h5>
-                {% if is_granted('ROLE_RECRUTEUR') or is_granted('ROLE_ADMIN') %}
-                <a href="{{ path('app_job_offre_new') }}" class="btn btn-primary btn-sm">
-                    <i class="ti ti-plus me-1"></i> Nouvelle offre
-                </a>
-                {% endif %}
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover table-centered mb-0 text-nowrap">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Titre</th>
-                            <th>Lieu</th>
-                            <th>Salaire</th>
-                            <th>Type</th>
-                            <th>Statut</th>
-                            <th>Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for offre in job_offres %}
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="icon-shape icon-md rounded-3 bg-primary-subtle text-primary">
-                                        <i class="ti ti-briefcase fs-4"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-0">{{ offre.title }}</h6>
-                                        <span class="small text-secondary">{{ offre.user ? offre.user.firstName : '—' }}</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>{{ offre.location }}</td>
-                            <td>{{ offre.salary|number_format(0, ',', ' ') }} DT</td>
-                            <td>{{ offre.employmentType }}</td>
-                            <td>
-                                <span class="badge bg-{{ offre.status == 'PUBLISHED' ? 'success' : 'warning' }}-subtle text-{{ offre.status == 'PUBLISHED' ? 'success' : 'warning' }}-emphasis">
-                                    {{ offre.status|capitalize }}
-                                </span>
-                            </td>
-                            <td>{{ offre.createdAt|date('d/m/Y') }}</td>
-                            <td>
-                                <div class="dropdown">
-                                    <button class="btn btn-ghost btn-icon btn-sm rounded-circle" type="button" data-bs-toggle="dropdown">
-                                        <i class="ti ti-dots-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <li><a class="dropdown-item" href="{{ path('app_job_offre_show', {id: offre.id}) }}">Voir l'offre</a></li>
-                                        {% if is_granted('ROLE_CANDIDAT') %}
-                                        <li><a class="dropdown-item" href="{{ path('app_job_application_new', {id: offre.id}) }}">Postuler</a></li>
-                                        {% endif %}
-                                        {% if is_granted('ROLE_RECRUTEUR') or is_granted('ROLE_ADMIN') %}
-                                        <li><a class="dropdown-item" href="{{ path('app_job_offre_edit', {id: offre.id}) }}">Modifier</a></li>
-                                        <li>
-                                            <form method="post" action="{{ path('app_job_offre_delete', {id: offre.id}) }}" onsubmit="return confirm('Confirmer la suppression ?');">
-                                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ offre.id) }}">
-                                                <button class="dropdown-item text-danger">Supprimer</button>
-                                            </form>
-                                        </li>
-                                        {% endif %}
-                                    </ul>
-                                </div>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="7" class="text-center py-8">
-                                <p class="text-secondary mb-0">Aucune offre trouvée.</p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+
+{# ── Header ─────────────────────────────────────────────────────────── #}
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <div>
+        <h4 class="mb-0 fw-bold">Offres disponibles</h4>
+        <small class="text-secondary">Toutes les offres publiées — postulez directement.</small>
+    </div>
+    {% if app.user %}
+    <a href="{{ path('app_job_offre_my') }}" class="btn btn-outline-primary btn-sm rounded-3">
+        <i class="ti ti-briefcase me-1"></i>Gérer mes offres
+    </a>
+    {% endif %}
+</div>
+
+{# ── Stats ──────────────────────────────────────────────────────────── #}
+<div class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="background:linear-gradient(135deg,#eef0ff,#f3f4ff)">
+            <div class="stat-icon" style="background:rgba(92,103,245,.15);color:#5c67f5"><i class="ti ti-briefcase"></i></div>
+            <div><div class="stat-value" style="color:#5c67f5">{{ stats.total }}</div><div class="stat-label">Total offres</div></div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="background:linear-gradient(135deg,#d1fae5,#ecfdf5)">
+            <div class="stat-icon" style="background:rgba(16,185,129,.15);color:#059669"><i class="ti ti-circle-check"></i></div>
+            <div><div class="stat-value" style="color:#059669">{{ stats.published }}</div><div class="stat-label">Publiées</div></div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="background:linear-gradient(135deg,#ede9fe,#f5f3ff)">
+            <div class="stat-icon" style="background:rgba(139,92,246,.15);color:#7c3aed"><i class="ti ti-users"></i></div>
+            <div><div class="stat-value" style="color:#7c3aed">{{ stats.applications }}</div><div class="stat-label">Candidatures</div></div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="background:linear-gradient(135deg,#fce7f3,#fdf2f8)">
+            <div class="stat-icon" style="background:rgba(236,72,153,.15);color:#db2777"><i class="ti ti-tag"></i></div>
+            <div><div class="stat-value" style="color:#db2777">{{ stats.types|length }}</div><div class="stat-label">Types de contrat</div></div>
         </div>
     </div>
 </div>
+
+{# ── Type pills ─────────────────────────────────────────────────────── #}
+{% if stats.types|length > 0 %}
+<div class="type-pills" id="typePills">
+    <span class="type-pill all-pill active" data-type="">Tous</span>
+    {% for type, count in stats.types %}
+    <span class="type-pill" data-type="{{ type|lower }}">{{ type }} <span style="opacity:.65">({{ count }})</span></span>
+    {% endfor %}
+</div>
+{% endif %}
+
+{# ── Filter bar ─────────────────────────────────────────────────────── #}
+<div class="filter-bar mb-2">
+    <div class="row g-2 align-items-center">
+        <div class="col-12 col-md-3">
+            <input type="text" id="fsQ" class="form-control" placeholder="🔍  Titre, ville, compétences…" value="{{ filters.q }}">
+        </div>
+        <div class="col-6 col-md-2">
+            <input type="text" id="fsLoc" class="form-control" placeholder="📍 Ville / Région" value="{{ filters.location }}">
+        </div>
+        <div class="col-6 col-md-2">
+            <select id="fsType" class="form-select">
+                <option value="">Tous les types</option>
+                <option value="cdi"        {% if filters.type == 'CDI' %}selected{% endif %}>CDI</option>
+                <option value="cdd"        {% if filters.type == 'CDD' %}selected{% endif %}>CDD</option>
+                <option value="freelance"  {% if filters.type == 'Freelance' %}selected{% endif %}>Freelance</option>
+                <option value="stage"      {% if filters.type == 'Stage' %}selected{% endif %}>Stage</option>
+                <option value="alternance" {% if filters.type == 'Alternance' %}selected{% endif %}>Alternance</option>
+            </select>
+        </div>
+        <div class="col-4 col-md-1">
+            <input type="number" id="fsSalMin" class="form-control" placeholder="Min €" value="{{ filters.salary_min }}" min="0">
+        </div>
+        <div class="col-4 col-md-1">
+            <input type="number" id="fsSalMax" class="form-control" placeholder="Max €" value="{{ filters.salary_max }}" min="0">
+        </div>
+        <div class="col-4 col-md-auto d-flex gap-2 align-items-center">
+            <button id="btnReset" class="btn-filter-reset" title="Réinitialiser">
+                <i class="ti ti-refresh" style="font-size:.95rem"></i>
+            </button>
+            <button id="btnMapToggle" class="btn-map-toggle" title="Afficher la carte">
+                <i class="ti ti-map-pin"></i> Carte
+            </button>
+        </div>
+        <div class="col-12 col-md-auto ms-md-auto">
+            <span class="results-bar" id="resCount">
+                <span id="resNum">{{ job_offres|length }}</span>&nbsp;offre{{ job_offres|length != 1 ? 's' : '' }} trouvée{{ job_offres|length != 1 ? 's' : '' }}
+            </span>
+        </div>
+    </div>
+</div>
+
+{# ── Split layout: cards + map ──────────────────────────────────────── #}
+<div class="split-wrapper">
+
+    {# Left: Cards #}
+    <div class="split-cards">
+        {% if job_offres|length == 0 %}
+        <div class="empty-feed">
+            <i class="ti ti-mood-empty text-secondary"></i>
+            <p class="fw-semibold mb-1">Aucune offre disponible</p>
+            <p class="small text-secondary">Revenez plus tard !</p>
+        </div>
+        {% else %}
+        <div class="feed-wrapper" id="feedWrapper">
+
+            {% for offre in job_offres %}
+            {% set dStatus = offre.displayStatus %}
+            {% set statusCls = dStatus == 'PUBLISHED' ? 'published' : (dStatus == 'DRAFT' ? 'draft' : 'secondary') %}
+            {% set statusLbl = dStatus == 'PUBLISHED' ? 'Publiée' : (dStatus == 'DRAFT' ? 'Brouillon' : 'Archivée') %}
+            {% set isApplied = user_applications[offre.id] is defined %}
+
+            <div class="jcard"
+                 id="card-{{ offre.id }}"
+                 data-id="{{ offre.id }}"
+                 data-q="{{ (offre.title ~ ' ' ~ offre.location)|lower }}"
+                 data-loc="{{ offre.location|lower }}"
+                 data-type="{{ offre.employmentType|lower }}"
+                 data-salary="{{ offre.salary }}"
+                 data-location-raw="{{ offre.location }}">
+
+                <div class="jcard-logo">
+                    {% if offre.entreprise and offre.entreprise.logo %}
+                        <img src="{{ offre.entreprise.logo }}" alt="{{ offre.entreprise.name }}">
+                    {% elseif offre.companyLogo %}
+                        <img src="{{ offre.companyLogo }}" alt="Logo">
+                    {% else %}
+                        <i class="ti ti-building-factory-2"></i>
+                    {% endif %}
+                </div>
+
+                <div class="jcard-inner">
+                    <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
+                        <div class="jcard-heading">
+                            <a href="{{ path('app_job_offre_show', {id: offre.id}) }}">{{ offre.title }}</a>
+                        </div>
+                        {% if offre.salary %}
+                        <span class="jcard-price">{{ offre.salary|number_format(0, ',', ' ') }} €{% if offre.isSalaryNegotiable %}<small class="fw-normal text-secondary"> nég.</small>{% endif %}</span>
+                        {% endif %}
+                    </div>
+
+                    {% if offre.entreprise %}
+                        <div><span class="rec-chip"><i class="ti ti-building me-1 opacity-50"></i>{{ offre.entreprise.name }}</span></div>
+                    {% elseif offre.user %}
+                        {% set initials = (offre.user.firstName|slice(0,1) ~ offre.user.lastName|slice(0,1))|upper %}
+                        <div><span class="rec-chip"><span class="rec-av">{{ initials }}</span>{{ offre.user.firstName }} {{ offre.user.lastName }}</span></div>
+                    {% endif %}
+
+                    <div class="jcard-meta">
+                        {% if offre.location %}<span><i class="ti ti-map-pin"></i>{{ offre.location }}</span>{% endif %}
+                        <span><i class="ti ti-calendar"></i>{{ offre.createdAt|date('d/m/Y') }}</span>
+                        <span><i class="ti ti-users"></i>{{ offre.jobApplications|length }} candidature{{ offre.jobApplications|length != 1 ? 's' : '' }}</span>
+                    </div>
+
+                    <div class="jcard-badges">
+                        <span class="ibadge ibadge-{{ statusCls }}">{{ statusLbl }}</span>
+                        {% if offre.employmentType %}<span class="ibadge ibadge-type">{{ offre.employmentType }}</span>{% endif %}
+                        {% if isApplied %}<span class="ibadge ibadge-applied"><i class="ti ti-check" style="font-size:.65rem"></i> Postulé</span>{% endif %}
+                    </div>
+
+                    {# Linked Avantages (Table) #}
+                    {% if offre.linkedAvantages|length > 0 %}
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        {% for av in offre.linkedAvantages %}
+                        <span class="badge bg-light text-primary border d-inline-flex align-items-center gap-1 shadow-sm" style="font-size: 0.65rem; font-weight: 500; border-radius: 6px; padding: 0.2rem 0.5rem;">
+                            {% if av.icon %}<i class="ti {{ av.icon }}"></i>{% endif %}
+                            {{ av.name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {# Legacy Advantages (Text) #}
+                    {% if offre.advantages %}
+                    <div class="small text-secondary mt-1 d-flex align-items-center gap-1" style="font-size: 0.72rem;">
+                        <i class="ti ti-plus" style="font-size: 0.65rem;"></i> {{ offre.advantages }}
+                    </div>
+                    {% endif %}
+
+                    <div class="jcard-actions">
+                        <a href="{{ path('app_job_offre_show', {id: offre.id}) }}" class="jbtn jbtn-view"><i class="ti ti-eye"></i>Voir</a>
+                        {% if app.user %}
+                            {% if app.user != offre.user %}
+                                {% if isApplied %}
+                                    {% set user_app = user_applications[offre.id] %}
+                                    <form method="post" action="{{ path('app_job_application_delete', {id: user_app.id}) }}"
+                                          onsubmit="return confirm('Retirer votre candidature ?');" style="display:contents">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user_app.id) }}">
+                                        <button type="submit" class="jbtn jbtn-cancel"><i class="ti ti-x"></i>Retirer</button>
+                                    </form>
+                                {% else %}
+                                    <a href="{{ path('app_job_application_new', {id: offre.id}) }}" class="jbtn jbtn-apply"><i class="ti ti-send"></i>Postuler</a>
+                                {% endif %}
+                            {% endif %}
+                        {% else %}
+                            <a href="{{ path('app_login') }}" class="jbtn jbtn-login"><i class="ti ti-login"></i>Se connecter</a>
+                        {% endif %}
+                        
+                        {# Traduction inline — boutons en ligne #}
+                        <div class="trans-flags-row" id="trans-row-{{ offre.id }}">
+                            <span class="trans-label"><i class="ti ti-language"></i></span>
+                            <button class="flag-btn" title="English" onclick="translateCard(this, {{ offre.id }}, 'en')">
+                                <img src="https://flagcdn.com/w20/gb.png" alt="EN"><span>EN</span>
+                            </button>
+                            <button class="flag-btn" title="Arabe" onclick="translateCard(this, {{ offre.id }}, 'ar')">
+                                <img src="https://flagcdn.com/w20/sa.png" alt="AR"><span>AR</span>
+                            </button>
+                            <button class="flag-btn" title="Espagnol" onclick="translateCard(this, {{ offre.id }}, 'es')">
+                                <img src="https://flagcdn.com/w20/es.png" alt="ES"><span>ES</span>
+                            </button>
+                            <button class="flag-btn" title="Allemand" onclick="translateCard(this, {{ offre.id }}, 'de')">
+                                <img src="https://flagcdn.com/w20/de.png" alt="DE"><span>DE</span>
+                            </button>
+                            <button class="flag-btn flag-btn-reset d-none" title="Retour à l'original" onclick="resetTranslation(this, {{ offre.id }})">
+                                <i class="ti ti-arrow-back-up"></i><span>FR</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div id="emptyMsg" class="empty-feed d-none">
+                <i class="ti ti-search-off text-secondary"></i>
+                <p class="fw-semibold mb-1">Aucun résultat</p>
+                <p class="small text-secondary">Modifiez vos critères.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {# Right: Map panel #}
+    <div class="split-map" id="splitMap">
+        <div class="map-panel" id="mapPanel">
+            <div class="map-panel-header">
+                <span><i class="ti ti-map-pin me-1" style="color:#5c67f5"></i>Carte des offres</span>
+                <span class="map-count" id="mapCount">Géolocalisation en cours…</span>
+            </div>
+            <div style="position:relative">
+                <div id="mapLoader" class="map-loader">
+                    <div class="spinner"></div>
+                    Géolocalisation des offres…
+                </div>
+                <div id="mapContainer"></div>
+            </div>
+        </div>
+    </div>
+
+</div>{# /split-wrapper #}
+
+{# ── Chat AI Widget HTML ───────────────────────────────────────── #}
+<div class="ai-chat-widget">
+    <div class="ai-chat-bubble" id="aiChatBubble" title="Assistant AI">
+        <div class="ai-pulse"></div>
+        <i class="ti ti-robot"></i>
+    </div>
+    <div class="ai-chat-window" id="aiChatWindow">
+        <div class="ai-chat-header">
+            <i class="ti ti-bolt text-warning"></i>
+            <div>
+                <div class="ai-chat-header-title">SyfonuRH AI</div>
+                <div style="font-size:0.7rem; opacity:0.8">Assistant de recherche intelligent</div>
+            </div>
+            <button type="button" class="btn-close btn-close-white ms-auto" style="font-size:0.7rem; box-shadow:none" id="aiChatClose"></button>
+        </div>
+        <div class="ai-chat-messages" id="aiChatMessages">
+            <div class="msg msg-ai">
+                Bonjour ! Je suis votre assistant AI. Dites-moi ce que vous recherchez ? (ex: "Offres CDI à Tunis", "Salaire > 2000DT")
+            </div>
+        </div>
+        <form class="ai-chat-input-area" id="aiChatForm">
+            <input type="text" class="ai-chat-input" id="aiChatInput" placeholder="Tapez votre recherche..." autocomplete="off">
+            <button type="submit" class="ai-chat-send">
+                <i class="ti ti-send"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+
+{# Raw offer data for JS geocoding #}
+<script id="offersData" type="application/json">
+[
+{% for offre in job_offres %}
+{
+    "id": {{ offre.id }},
+    "title": {{ offre.title|json_encode|raw }},
+    "location": {{ (offre.location ?: '')|json_encode|raw }},
+    "salary": {{ offre.salary ? offre.salary : 'null' }},
+    "salaryNeg": {{ offre.isSalaryNegotiable ? 'true' : 'false' }},
+    "type": {{ (offre.employmentType ?: '')|json_encode|raw }},
+    "status": {{ offre.status|json_encode|raw }},
+    "applications": {{ offre.jobApplications|length }},
+    "url": {{ path('app_job_offre_show', {id: offre.id})|json_encode|raw }}
+}{{ not loop.last ? ',' : '' }}
+{% endfor %}
+]
+</script>
+
+{% endblock %}
+
+{% block javascripts %}
+{# Leaflet JS #}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+(function () {
+'use strict';
+
+/* ─── Filter logic ────────────────────────────────────────────── */
+var cards    = document.querySelectorAll('#feedWrapper .jcard');
+var emptyMsg = document.getElementById('emptyMsg');
+var resCount = document.getElementById('resCount');
+var fsQ      = document.getElementById('fsQ');
+var fsLoc    = document.getElementById('fsLoc');
+var fsType   = document.getElementById('fsType');
+var fsSalMin = document.getElementById('fsSalMin');
+var fsSalMax = document.getElementById('fsSalMax');
+var btnReset = document.getElementById('btnReset');
+var pills    = document.querySelectorAll('#typePills .type-pill');
+
+// Track currently visible offer IDs
+var visibleIds = new Set();
+
+function filterCards() {
+    var q      = fsQ     ? fsQ.value.toLowerCase().trim()          : '';
+    var loc    = fsLoc   ? fsLoc.value.toLowerCase().trim()        : '';
+    var type   = fsType  ? fsType.value.toLowerCase()              : '';
+    var salMin = fsSalMin ? parseFloat(fsSalMin.value) || 0        : 0;
+    var salMax = fsSalMax ? parseFloat(fsSalMax.value) || Infinity : Infinity;
+    var hasF   = !!(q || loc || type || (fsSalMin && fsSalMin.value) || (fsSalMax && fsSalMax.value));
+
+    visibleIds.clear();
+    var visible = 0;
+
+    cards.forEach(function (card) {
+        var cq   = card.dataset.q    || '';
+        var cloc = card.dataset.loc  || '';
+        var ctyp = card.dataset.type || '';
+        var csal = parseFloat(card.dataset.salary) || 0;
+        var ok   = (!q   || cq.includes(q))
+                && (!loc  || cloc.includes(loc))
+                && (!type || ctyp === type)
+                && (csal === 0 || (csal >= salMin && csal <= salMax));
+        card.style.display = ok ? '' : 'none';
+        if (ok) { visible++; visibleIds.add(+card.dataset.id); }
+    });
+
+    if (emptyMsg) emptyMsg.classList.toggle('d-none', visible > 0);
+    if (resCount) {
+        resCount.innerHTML = '<span id="resNum">' + visible + '</span>&nbsp;offre' + (visible !== 1 ? 's' : '') +
+            ' trouvée' + (visible !== 1 ? 's' : '') +
+            (hasF ? ' <span style="width:7px;height:7px;border-radius:50%;background:#5c67f5;display:inline-block;vertical-align:middle;margin-left:3px"></span>' : '');
+    }
+
+    // Sync map markers
+    updateMapMarkers();
+}
+
+[fsQ, fsLoc, fsSalMin, fsSalMax].forEach(function (el) { el && el.addEventListener('input', filterCards); });
+[fsType].forEach(function (el) { el && el.addEventListener('change', filterCards); });
+
+pills.forEach(function (pill) {
+    if (fsType && pill.dataset.type && pill.dataset.type === fsType.value.toLowerCase()) {
+        pills.forEach(function (p) { p.classList.remove('active'); });
+        pill.classList.add('active');
+    }
+    pill.addEventListener('click', function () {
+        pills.forEach(function (p) { p.classList.remove('active'); });
+        this.classList.add('active');
+        if (fsType) { fsType.value = this.dataset.type; }
+        filterCards();
+    });
+});
+
+if (btnReset) {
+    btnReset.addEventListener('click', function () {
+        if (fsQ)      fsQ.value      = '';
+        if (fsLoc)    fsLoc.value    = '';
+        if (fsType)   fsType.value   = '';
+        if (fsSalMin) fsSalMin.value = '';
+        if (fsSalMax) fsSalMax.value = '';
+        pills.forEach(function (p) { p.classList.toggle('active', p.dataset.type === ''); });
+        filterCards();
+    });
+}
+
+/* ─── Map toggle button ──────────────────────────────────────── */
+var btnMapToggle = document.getElementById('btnMapToggle');
+var mapPanel     = document.getElementById('mapPanel');
+var mapInitialized = false;
+
+if (btnMapToggle) {
+    btnMapToggle.addEventListener('click', function () {
+        this.classList.toggle('active');
+        if (mapPanel.classList.toggle('visible')) {
+            if (!mapInitialized) {
+                mapInitialized = true;
+                initMap();
+            } else {
+                map.invalidateSize();
+            }
+        }
+    });
+}
+
+/* ─── Leaflet map ────────────────────────────────────────────── */
+var map = null;
+var markerMap = {};   // id → {marker, lat, lng}
+var offersData = [];
+
+try {
+    offersData = JSON.parse(document.getElementById('offersData').textContent || '[]');
+} catch(e) { offersData = []; }
+
+// Custom SVG marker
+function makeIcon(color) {
+    color = color || '#5c67f5';
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">'
+        + '<ellipse cx="16" cy="38" rx="6" ry="2.5" fill="rgba(0,0,0,.18)"/>'
+        + '<path d="M16 0C9.4 0 4 5.4 4 12c0 9 12 26 12 26S28 21 28 12C28 5.4 22.6 0 16 0z" fill="' + color + '"/>'
+        + '<circle cx="16" cy="12" r="5" fill="#fff"/>'
+        + '</svg>';
+    return L.divIcon({ html: svg, className: '', iconSize: [32, 40], iconAnchor: [16, 40], popupAnchor: [0, -42] });
+}
+
+function badgeHtml(statusCls, type) {
+    var h = '<span class="ibadge ibadge-' + statusCls + '">' + (statusCls === 'published' ? 'Publiée' : 'Brouillon') + '</span>';
+    if (type) h += ' <span class="ibadge ibadge-type">' + type + '</span>';
+    return h;
+}
+
+function popupHtml(offer) {
+    var scls = offer.status === 'PUBLISHED' ? 'published' : 'draft';
+    var sal  = offer.salary ? offer.salary.toLocaleString('fr-FR') + ' €' + (offer.salaryNeg ? ' nég.' : '') : '';
+    return '<div class="map-popup">'
+        + '<div class="mp-title">' + offer.title + '</div>'
+        + (sal ? '<div class="mp-salary">' + sal + '</div>' : '')
+        + '<div class="mp-meta">'
+        + (offer.location ? '<span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>' + offer.location + '</span>' : '')
+        + '<span>👥 ' + offer.applications + ' candidature' + (offer.applications !== 1 ? 's' : '') + '</span>'
+        + '</div>'
+        + '<div class="mp-badges">' + badgeHtml(scls, offer.type) + '</div>'
+        + '<a href="' + offer.url + '" class="mp-btn">Voir l\'offre →</a>'
+        + '</div>';
+}
+
+// Geocode a location string using Nominatim (OSM, free, no key)
+var geocodeCache = {};
+function geocode(locationStr, callback) {
+    if (!locationStr || locationStr.trim() === '') { callback(null); return; }
+    var key = locationStr.trim().toLowerCase();
+    if (geocodeCache[key] !== undefined) { callback(geocodeCache[key]); return; }
+    var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(locationStr);
+    fetch(url, { headers: { 'Accept-Language': 'fr' } })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data && data.length > 0) {
+                var r = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+                geocodeCache[key] = r;
+                callback(r);
+            } else {
+                geocodeCache[key] = null;
+                callback(null);
+            }
+        })
+        .catch(function () { geocodeCache[key] = null; callback(null); });
+}
+
+function updateMapMarkers() {
+    if (!map) return;
+    Object.keys(markerMap).forEach(function (id) {
+        var entry = markerMap[id];
+        if (!entry.marker) return;
+        var show = visibleIds.size === 0 || visibleIds.has(+id);
+        if (show) {
+            entry.marker.addTo(map);
+        } else {
+            map.removeLayer(entry.marker);
+        }
+    });
+}
+
+function initMap() {
+    if (map) return;
+
+    map = L.map('mapContainer', { zoomControl: true, scrollWheelZoom: true }).setView([33.9, 9.5], 5);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    // Collect unique locations
+    var locationMap = {}; // location string → [offers]
+    offersData.forEach(function (offer) {
+        var loc = (offer.location || '').trim();
+        if (!loc) return;
+        if (!locationMap[loc]) locationMap[loc] = [];
+        locationMap[loc].push(offer);
+    });
+
+    var locations = Object.keys(locationMap);
+    var done = 0;
+    var total = locations.length;
+    var bounds = [];
+    var loader = document.getElementById('mapLoader');
+    var mapCount = document.getElementById('mapCount');
+
+    if (total === 0) {
+        if (loader) loader.style.display = 'none';
+        if (mapCount) mapCount.textContent = 'Aucune localisation disponible';
+        return;
+    }
+
+    function geocodeNext(idx) {
+        if (idx >= locations.length) return;
+        var loc = locations[idx];
+        setTimeout(function () {
+            geocode(loc, function (coords) {
+                done++;
+                if (mapCount) mapCount.textContent = done + '/' + total + ' géolocalisées';
+                if (coords) {
+                    var offers = locationMap[loc];
+                    bounds.push([coords.lat, coords.lng]);
+
+                    // If multiple offers at same location, cluster popup
+                    var popupContent;
+                    if (offers.length === 1) {
+                        popupContent = popupHtml(offers[0]);
+                    } else {
+                        popupContent = '<div class="map-popup"><div class="mp-title" style="font-size:.82rem">📍 ' + loc + ' — ' + offers.length + ' offres</div><div style="margin-top:.5rem;display:flex;flex-direction:column;gap:.5rem">';
+                        offers.forEach(function (o) {
+                            var sal = o.salary ? o.salary.toLocaleString('fr-FR') + ' €' : '';
+                            popupContent += '<div style="padding:.5rem;background:#f8f9ff;border-radius:8px">'
+                                + '<div style="font-weight:700;font-size:.82rem;color:#1e2343">' + o.title + '</div>'
+                                + (sal ? '<div style="font-size:.78rem;color:#5c67f5;font-weight:600">' + sal + '</div>' : '')
+                                + '<a href="' + o.url + '" class="mp-btn" style="margin-top:.35rem;font-size:.7rem">Voir →</a>'
+                                + '</div>';
+                        });
+                        popupContent += '</div></div>';
+                    }
+
+                    var marker = L.marker([coords.lat, coords.lng], {
+                        icon: makeIcon(offers.length > 1 ? '#7c3aed' : '#5c67f5')
+                    }).bindPopup(popupContent, { maxWidth: 260, minWidth: 220 });
+
+                    // Highlight card on marker hover
+                    marker.on('mouseover', function () {
+                        offers.forEach(function (o) {
+                            var card = document.getElementById('card-' + o.id);
+                            if (card && card.style.display !== 'none') {
+                                card.classList.add('map-highlight');
+                                card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                            }
+                        });
+                    });
+                    marker.on('mouseout', function () {
+                        document.querySelectorAll('.jcard.map-highlight').forEach(function (c) { c.classList.remove('map-highlight'); });
+                    });
+
+                    marker.addTo(map);
+
+                    // Store marker keyed by each offer id
+                    offers.forEach(function (o) {
+                        markerMap[o.id] = { marker: marker, lat: coords.lat, lng: coords.lng };
+                    });
+                }
+
+                if (done === total) {
+                    if (loader) loader.style.display = 'none';
+                    if (mapCount) mapCount.textContent = bounds.length + ' localisation' + (bounds.length !== 1 ? 's' : '') + ' affichée' + (bounds.length !== 1 ? 's' : '');
+                    if (bounds.length > 0) {
+                        try { map.fitBounds(bounds, { padding: [30, 30], maxZoom: 12 }); } catch(e) {}
+                    }
+                    // Apply current filter state
+                    filterCards();
+                }
+
+                geocodeNext(idx + 1);
+            });
+        }, idx * 300); // 300 ms between requests to respect Nominatim rate limit
+    }
+
+    geocodeNext(0);
+}
+
+// Click card → open marker popup on map
+cards.forEach(function (card) {
+    card.addEventListener('click', function (e) {
+        if (e.target.closest('a, button, form')) return;
+        var id = +card.dataset.id;
+        var entry = markerMap[id];
+        if (entry && entry.marker && map) {
+            map.setView([entry.lat, entry.lng], 13, { animate: true });
+            entry.marker.openPopup();
+        }
+    });
+});
+
+// Initialize visible IDs with all
+offersData.forEach(function (o) { visibleIds.add(o.id); });
+
+// Run filter on load
+filterCards();
+
+
+// ─── Translation Feature ───────────────────────────────────
+
+// Helper: calls the translation API for a single text
+async function translateText(text, targetLang) {
+    if (!text || !text.trim()) return null;
+    const response = await fetch('/job/offre/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text.trim(), target: targetLang })
+    });
+    const data = await response.json();
+    return data.translation || null;
+}
+
+window.translateCard = async function(el, id, targetLang) {
+    // el is the .flag-btn button
+    const btn = el;
+    if (btn.classList.contains('loading')) return;
+
+    const card = document.getElementById('card-' + id);
+    if (!card) return;
+
+    const row = card.querySelector('.trans-flags-row');
+
+    // Collect all translatable elements
+    const titleEl      = card.querySelector('.jcard-heading a');
+    const locationEl   = card.querySelector('.jcard-meta span:first-child i.ti-map-pin')?.closest('span');
+    const typeEl       = card.querySelector('.ibadge-type');
+    const advantagesEl = card.querySelector('.small.text-secondary.mt-1');
+
+    // Save originals on first translation (use the row as storage anchor)
+    if (!row.dataset.translated) {
+        if (titleEl)       titleEl.dataset.original       = titleEl.innerText;
+        if (locationEl)    locationEl.dataset.original    = locationEl.innerText;
+        if (typeEl)        typeEl.dataset.original        = typeEl.innerText;
+        if (advantagesEl)  advantagesEl.dataset.original  = advantagesEl.innerText;
+    }
+
+    // Show loading on clicked button
+    const originalHtml = btn.innerHTML;
+    btn.classList.add('loading');
+    btn.innerHTML = '<i class="ti ti-refresh rotate"></i>';
+
+    try {
+        const tasks = [
+            titleEl       ? translateText(titleEl.dataset.original       || titleEl.innerText,       targetLang) : Promise.resolve(null),
+            locationEl    ? translateText(locationEl.dataset.original    || locationEl.innerText,    targetLang) : Promise.resolve(null),
+            typeEl        ? translateText(typeEl.dataset.original        || typeEl.innerText,        targetLang) : Promise.resolve(null),
+            advantagesEl  ? translateText(advantagesEl.dataset.original  || advantagesEl.innerText,  targetLang) : Promise.resolve(null),
+        ];
+
+        const [titleTr, locationTr, typeTr, advantagesTr] = await Promise.all(tasks);
+
+        // Apply translations
+        if (titleTr      && titleEl)       { titleEl.innerText = titleTr; titleEl.style.color = '#059669'; }
+        if (locationTr   && locationEl)    { locationEl.innerHTML = '<i class="ti ti-map-pin"></i>' + locationTr; }
+        if (typeTr       && typeEl)        { typeEl.innerText = typeTr; }
+        if (advantagesTr && advantagesEl)  { advantagesEl.innerHTML = '<i class="ti ti-plus" style="font-size:0.65rem;"></i> ' + advantagesTr; }
+
+        // Mark active button
+        row.querySelectorAll('.flag-btn:not(.flag-btn-reset)').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        btn.innerHTML = originalHtml;
+
+        // Show reset button
+        const resetBtn = row.querySelector('.flag-btn-reset');
+        if (resetBtn) resetBtn.classList.remove('d-none');
+
+        row.dataset.translated = targetLang;
+
+    } catch (e) {
+        console.error('Translation error:', e);
+        btn.innerHTML = originalHtml;
+        alert('Erreur de traduction. Veuillez réessayer.');
+    } finally {
+        btn.classList.remove('loading');
+    }
+};
+
+window.resetTranslation = function(el, id) {
+    const card = document.getElementById('card-' + id);
+    const row  = card.querySelector('.trans-flags-row');
+
+    const titleEl      = card.querySelector('.jcard-heading a');
+    const locationEl   = card.querySelector('.jcard-meta span:first-child i.ti-map-pin')?.closest('span');
+    const typeEl       = card.querySelector('.ibadge-type');
+    const advantagesEl = card.querySelector('.small.text-secondary.mt-1');
+
+    if (titleEl?.dataset.original)      { titleEl.innerText = titleEl.dataset.original; titleEl.style.color = ''; }
+    if (locationEl?.dataset.original)   { locationEl.innerHTML = '<i class="ti ti-map-pin"></i>' + locationEl.dataset.original; }
+    if (typeEl?.dataset.original)       { typeEl.innerText = typeEl.dataset.original; }
+    if (advantagesEl?.dataset.original) { advantagesEl.innerHTML = '<i class="ti ti-plus" style="font-size:0.65rem;"></i> ' + advantagesEl.dataset.original; }
+
+    // Reset button states
+    row.querySelectorAll('.flag-btn:not(.flag-btn-reset)').forEach(b => b.classList.remove('active'));
+    el.classList.add('d-none');
+    delete row.dataset.translated;
+};
+
+
+// ─── AI Chat Interaction Logic ─────────────────────────────
+const aiChatBubble  = document.getElementById('aiChatBubble');
+const aiChatWindow  = document.getElementById('aiChatWindow');
+const aiChatClose   = document.getElementById('aiChatClose');
+const aiChatForm    = document.getElementById('aiChatForm');
+const aiChatInput   = document.getElementById('aiChatInput');
+const aiChatMsgs    = document.getElementById('aiChatMessages');
+
+const toggleChat = () => {
+    aiChatWindow.classList.toggle('active');
+    if (aiChatWindow.classList.contains('active')) {
+        aiChatInput.focus();
+    }
+};
+
+aiChatBubble.addEventListener('click', toggleChat);
+aiChatClose.addEventListener('click', () => aiChatWindow.classList.remove('active'));
+
+const addMessage = (text, type = 'ai') => {
+    const div = document.createElement('div');
+    div.className = `msg msg-${type}`;
+    div.innerText = text;
+    aiChatMsgs.appendChild(div);
+    aiChatMsgs.scrollTop = aiChatMsgs.scrollHeight;
+    return div;
+};
+
+const showLoading = () => {
+    const div = document.createElement('div');
+    div.className = 'msg msg-ai msg-loading';
+    div.innerHTML = '<span></span><span></span><span></span>';
+    aiChatMsgs.appendChild(div);
+    aiChatMsgs.scrollTop = aiChatMsgs.scrollHeight;
+    return div;
+};
+
+aiChatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = aiChatInput.value.trim();
+    if (!msg) return;
+
+    aiChatInput.value = '';
+    addMessage(msg, 'user');
+
+    const loader = showLoading();
+
+    try {
+        const response = await fetch('{{ path("app_job_offre_ai_chat") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg })
+        });
+        
+        const data = await response.json();
+        loader.remove();
+
+        if (data.reply) {
+            addMessage(data.reply, 'ai');
+        }
+
+        if (data.filters) {
+            const f = data.filters;
+            // Apply filters to UI inputs to keep them in sync
+            if (f.q !== undefined) {
+                fsQ.value = f.q || '';
+            }
+            if (f.location !== undefined) {
+                fsLoc.value = f.location || '';
+            }
+            if (f.type !== undefined) {
+                fsType.value = (f.type || '').toLowerCase();
+                // Update pills
+                pills.forEach(p => {
+                    p.classList.toggle('active', p.dataset.type === fsType.value);
+                });
+            }
+            if (f.salary_min !== undefined) {
+                fsSalMin.value = f.salary_min || '';
+            }
+            if (f.salary_max !== undefined) {
+                fsSalMax.value = f.salary_max || '';
+            }
+            
+            // Trigger the existing filtering logic
+            filterCards();
+        }
+
+    } catch (err) {
+        loader.remove();
+        addMessage("Désolé, une erreur est survenue lors de la communication avec l'assistant.", 'ai');
+        console.error(err);
+    }
+});
+
+})();
+</script>
+<style>
+/* Style additionnel si nécessaire */
+</style>
 {% endblock %}

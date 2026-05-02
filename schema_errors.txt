@@ -1,0 +1,45 @@
+﻿php : 
+Au caractère Ligne:1 : 1
++ php bin/console 
+doctrine:schema:validate 
+2>&1 | Out-File -FilePath 
+C: ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (:  
+  String) [], RemoteExc   
+ eption
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+Mapping
+-------
+
+ [FAIL] The entity-class 
+App\Entity\JobApplication 
+mapping is invalid:
+ * The field App\Entity\Jo
+bApplication#interviews 
+is on the inverse side of 
+a bi-directional 
+relationship, but the 
+specified mappedBy 
+association on the 
+target-entity App\Entity\I
+nterview#application does 
+not contain the required 
+'inversedBy: 
+"interviews"' attribute.
+
+
+Database
+--------
+
+ [ERROR] The database     
+         schema is not in 
+         sync with the    
+         current mapping  
+         file.            
+

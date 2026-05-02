@@ -11,7 +11,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[ORM\Table(name: '`user`')]
 #[ORM\InheritanceType("SINGLE_TABLE")]
 #[ORM\DiscriminatorColumn(name: "discr", type: "string")]
-#[ORM\DiscriminatorMap(["user" => User::class, "admin" => Admin::class, "candidat" => Candidat::class, "recruiter" => Recruiter::class])]
+#[ORM\DiscriminatorMap(["user" => "User", "admin" => "Admin", "candidat" => "Candidat", "recruiter" => "Recruiter"])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -49,14 +49,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: "datetime", nullable: true)]
     private ?\DateTimeInterface $resetTokenExpiry = null;
 
-    #[ORM\Column(type: "text", nullable: true)]
-    private ?string $googleAccessToken = null;
-
-    #[ORM\Column(type: "text", nullable: true)]
-    private ?string $googleRefreshToken = null;
-
-    #[ORM\Column(type: "datetime", nullable: true)]
-    private ?\DateTimeInterface $googleTokenExpiresAt = null;
+    #[ORM\OneToOne(mappedBy: 'user', targetEntity: Entreprise::class, cascade: ['persist', 'remove'])]
+    private ?Entreprise $entreprise = null;
 
     public function getId(): ?int
     {
@@ -202,36 +196,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getGoogleAccessToken(): ?string
+    public function getEntreprise(): ?Entreprise
     {
-        return $this->googleAccessToken;
+        return $this->entreprise;
     }
 
-    public function setGoogleAccessToken(?string $googleAccessToken): self
+    public function setEntreprise(Entreprise $entreprise): self
     {
-        $this->googleAccessToken = $googleAccessToken;
-        return $this;
-    }
+        // set the owning side of the relation if necessary
+        if ($entreprise->getUser() !== $this) {
+            $entreprise->setUser($this);
+        }
 
-    public function getGoogleRefreshToken(): ?string
-    {
-        return $this->googleRefreshToken;
-    }
+        $this->entreprise = $entreprise;
 
-    public function setGoogleRefreshToken(?string $googleRefreshToken): self
-    {
-        $this->googleRefreshToken = $googleRefreshToken;
-        return $this;
-    }
-
-    public function getGoogleTokenExpiresAt(): ?\DateTimeInterface
-    {
-        return $this->googleTokenExpiresAt;
-    }
-
-    public function setGoogleTokenExpiresAt(?\DateTimeInterface $googleTokenExpiresAt): self
-    {
-        $this->googleTokenExpiresAt = $googleTokenExpiresAt;
         return $this;
     }
 }

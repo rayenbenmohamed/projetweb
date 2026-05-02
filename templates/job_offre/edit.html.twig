@@ -1,43 +1,406 @@
-{% extends 'layout/front.html.twig' %}
+{% extends 'layout/admin.html.twig' %}
 
 {% block title %}Modifier l'offre | SyfonuRH{% endblock %}
 {% block page_title %}Modifier : {{ job_offre.title }}{% endblock %}
 
+{% block stylesheets %}
+{{ parent() }}
+<style>
+.logo-ring-wrapper { position:relative; width:140px; height:140px; }
+.logo-ring-inner {
+    width:140px; height:140px; border-radius:50%;
+    background:linear-gradient(135deg,#eef0ff,#dde1ff);
+    border:3px solid #c7cbf5;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; transition:border-color .25s,box-shadow .25s;
+    box-shadow:0 4px 20px rgba(92,103,245,.12);
+}
+.logo-ring-inner img { width:100%; height:100%; object-fit:cover; }
+.logo-ring-overlay {
+    position:absolute; inset:0; border-radius:50%;
+    background:rgba(92,103,245,.78); backdrop-filter:blur(3px);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    color:#fff; opacity:0; transition:opacity .22s;
+}
+.logo-ring-wrapper:hover .logo-ring-inner { border-color:#5c67f5; box-shadow:0 0 0 4px rgba(92,103,245,.18),0 6px 24px rgba(92,103,245,.2); }
+.logo-ring-wrapper:hover .logo-ring-overlay { opacity:1; }
+.remove-logo-btn { background:#fff5f5; color:#ef4444; border:1.5px solid #fecaca; border-radius:20px; font-size:.75rem; font-weight:600; padding:.25rem .75rem; cursor:pointer; display:inline-flex; align-items:center; gap:.3rem; margin-top:.5rem; transition:all .2s; }
+.remove-logo-btn:hover { background:#fee2e2; }
+
+/* ── Modern Skills Scanner ────────────────────────── */
+.skills-scanner-container {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1.5px solid #eef0f8;
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.skills-input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+}
+
+.skill-tag-card {
+    background: #ffffff;
+    border: 1px solid #e0e4f0;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    animation: skillSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    overflow: hidden;
+}
+
+.skill-tag-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(92, 103, 245, 0.05), transparent);
+    animation: skillScan 3s infinite;
+}
+
+@keyframes skillScan {
+    0% { left: -100%; }
+    100% { left: 200%; }
+}
+
+@keyframes skillSlideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.skill-name {
+    font-weight: 600;
+    color: #1e2343;
+    min-width: 100px;
+    font-size: 0.9rem;
+}
+
+.skill-slider-wrapper {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.skill-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 5px;
+    background: #eef0ff;
+    outline: none;
+    cursor: pointer;
+}
+
+.skill-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #5c67f5;
+    cursor: pointer;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 6px rgba(92,103,245,0.4);
+    transition: transform 0.2s;
+}
+
+.skill-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.skill-percent {
+    font-weight: 700;
+    color: #5c67f5;
+    font-size: 0.85rem;
+    min-width: 45px;
+    text-align: right;
+}
+
+.btn-remove-skill {
+    color: #ff5b5b;
+    background: #fff5f5;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1rem;
+}
+
+.btn-remove-skill:hover {
+    background: #ff5b5b;
+    color: #fff;
+}
+
+.empty-skills-msg {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 1rem;
+    border: 1px dashed #e2e8f0;
+    border-radius: 12px;
+}
+
+</style>
+{% endblock %}
 {% block content %}
 <div class="row g-6 mt-2 justify-content-center">
     <div class="col-xl-8">
         <div class="card card-lg">
             <div class="card-body p-6">
-                <form method="post">
+
+                {# ── Erreurs globales ─────────────────────────── #}
+                {% if errors is defined and errors|length > 0 %}
+                <div class="alert alert-danger rounded-3 mb-4">
+                    <div class="fw-semibold mb-1"><i class="ti ti-alert-circle me-1"></i>Veuillez corriger les erreurs suivantes :</div>
+                    <ul class="mb-0 ps-3 small">
+                        {% for field, msg in errors %}
+                        <li>{{ msg }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {# ── Logo entreprise ────────────────────── #}
+                    <div class="logo-upload-section mb-5">
+                        <div class="text-center mb-3">
+                            <span style="background:linear-gradient(135deg,#eef0ff,#e0e3ff);color:#5c67f5;font-weight:600;font-size:.72rem;padding:.3rem .85rem;border-radius:20px;letter-spacing:.6px;display:inline-block;">IDENTITÉ VISUELLE</span>
+                        </div>
+
+                        <div class="d-flex flex-column align-items-center" style="cursor:pointer;" onclick="document.getElementById('companyLogoInput').click()">
+                            <div class="logo-ring-wrapper">
+                                <div id="logoPreview" class="logo-ring-inner">
+                                    {% if job_offre.companyLogo %}
+                                        <img src="{{ job_offre.companyLogo }}" alt="Logo actuel">
+                                    {% else %}
+                                        <i class="ti ti-building-skyscraper" style="font-size:3.2rem;color:#5c67f5;"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="logo-ring-overlay">
+                                    <i class="ti ti-camera" style="font-size:1.5rem;"></i>
+                                    <span style="font-size:.68rem;margin-top:3px;font-weight:600;">{{ job_offre.companyLogo ? 'Remplacer' : 'Uploader' }}</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 text-center">
+                                <div class="fw-bold" style="color:#1e2343;font-size:.95rem;">
+                                    {{ job_offre.companyLogo ? 'Logo actuel' : 'Pas encore de logo' }}
+                                </div>
+                                <div class="text-secondary mt-1" style="font-size:.75rem;">PNG, JPG ou WebP · Max 2 Mo</div>
+                                <div class="mt-2">
+                                    <span style="background:#eef0ff;color:#5c67f5;font-size:.78rem;font-weight:600;padding:.3rem .9rem;border-radius:20px;border:1.5px solid #c7cbf5;display:inline-flex;align-items:center;gap:.3rem;">
+                                        <i class="ti ti-upload" style="font-size:.85rem;"></i>
+                                        {{ job_offre.companyLogo ? 'Changer le logo' : 'Choisir un fichier' }}
+                                    </span>
+                                </div>
+                            </div>
+                            <input type="file" id="companyLogoInput" name="company_logo" accept="image/*"
+                                   class="d-none" onchange="previewLogo(this)">
+                        </div>
+
+                        {% if job_offre.companyLogo %}
+                        <div class="text-center mt-3">
+                            <label class="remove-logo-btn">
+                                <input type="checkbox" name="remove_logo" value="1" class="d-none">
+                                <i class="ti ti-trash" style="font-size:.8rem;"></i> Supprimer le logo
+                            </label>
+                        </div>
+                        {% endif %}
+
+                        {% if errors.company_logo is defined %}
+                            <div class="text-danger small mt-2 text-center"><i class="ti ti-alert-circle me-1"></i>{{ errors.company_logo }}</div>
+                        {% endif %}
+                    </div>
+
+                    <hr class="mb-4" style="border-color:#eef0f8;">
+
+
                     <div class="mb-4">
                         <label class="form-label">Titre du poste <span class="text-danger">*</span></label>
-                        <input type="text" name="title" class="form-control" value="{{ job_offre.title }}" required>
+                        <input type="text" name="title"
+                               class="form-control {% if errors.title is defined %}is-invalid{% endif %}"
+                               value="{{ job_offre.title }}">
+                        {% if errors.title is defined %}
+                            <div class="invalid-feedback">{{ errors.title }}</div>
+                        {% endif %}
                     </div>
-                    
+
                     <div class="row g-4 mb-4">
                         <div class="col-md-6">
                             <label class="form-label">Lieu</label>
-                            <input type="text" name="location" class="form-control" value="{{ job_offre.location }}">
+                            <input type="text" name="location"
+                                   class="form-control {% if errors.location is defined %}is-invalid{% endif %}"
+                                   value="{{ job_offre.location }}">
+                            {% if errors.location is defined %}
+                                <div class="invalid-feedback">{{ errors.location }}</div>
+                            {% endif %}
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Salaire annuel (€)</label>
-                            <input type="number" name="salary" class="form-control" value="{{ job_offre.salary }}">
+                            <input type="number" name="salary"
+                                   class="form-control {% if errors.salary is defined %}is-invalid{% endif %}"
+                                   value="{{ job_offre.salary }}" min="0" max="500000" step="100">
+                            {% if errors.salary is defined %}
+                                <div class="invalid-feedback">{{ errors.salary }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="is_salary_negotiable" id="isSalaryNegotiable"
+                                       {{ job_offre.isSalaryNegotiable ? 'checked' }}>
+                                <label class="form-check-label" for="isSalaryNegotiable">Le salaire est négociable</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label">Type d'emploi <span class="text-danger">*</span></label>
+                            <select name="employment_type"
+                                    class="form-select {% if errors.employmentType is defined %}is-invalid{% endif %}">
+                                <option value="">-- Choisir --</option>
+                                <option value="CDI"        {{ job_offre.employmentType == 'CDI'        ? 'selected' }}>CDI</option>
+                                <option value="CDD"        {{ job_offre.employmentType == 'CDD'        ? 'selected' }}>CDD</option>
+                                <option value="Freelance"  {{ job_offre.employmentType == 'Freelance'  ? 'selected' }}>Freelance</option>
+                                <option value="Stage"      {{ job_offre.employmentType == 'Stage'      ? 'selected' }}>Stage</option>
+                                <option value="Alternance" {{ job_offre.employmentType == 'Alternance' ? 'selected' }}>Alternance</option>
+                            </select>
+                            {% if errors.employmentType is defined %}
+                                <div class="invalid-feedback">{{ errors.employmentType }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Date de début (Publiée) <span class="text-danger">*</span></label>
+                            <input type="datetime-local" id="publishedAt" name="published_at"
+                                   class="form-control {% if errors.publishedAt is defined %}is-invalid{% endif %}"
+                                   value="{{ job_offre.publishedAt ? job_offre.publishedAt|date('Y-m-d\\TH:i') }}">
+                            {% if errors.publishedAt is defined %}
+                                <div class="invalid-feedback">{{ errors.publishedAt }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Date d'expiration</label>
+                            <input type="datetime-local" id="expiresAt" name="expires_at"
+                                   class="form-control {% if errors.expires_at is defined %}is-invalid{% endif %}"
+                                   value="{{ job_offre.expiresAt ? job_offre.expiresAt|date('Y-m-d\\TH:i') }}">
+                            {% if errors.expires_at is defined %}
+                                <div class="invalid-feedback">{{ errors.expires_at }}</div>
+                            {% endif %}
                         </div>
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label">Type d'emploi</label>
-                        <select name="employment_type" class="form-select">
-                            <option value="CDI" {{ job_offre.employmentType == 'CDI' ? 'selected' }}>CDI</option>
-                            <option value="CDD" {{ job_offre.employmentType == 'CDD' ? 'selected' }}>CDD</option>
-                            <option value="Freelance" {{ job_offre.employmentType == 'Freelance' ? 'selected' }}>Freelance</option>
-                            <option value="Stage" {{ job_offre.employmentType == 'Stage' ? 'selected' }}>Stage</option>
+                        <label class="form-label">Statut</label>
+                        <select name="status" class="form-select {% if errors.status is defined %}is-invalid{% endif %}">
+                            <option value="DRAFT"     {{ job_offre.status == 'DRAFT'     ? 'selected' }}>Brouillon (DRAFT)</option>
+                            <option value="PUBLISHED" {{ job_offre.status == 'PUBLISHED' ? 'selected' }}>Publiée (PUBLISHED)</option>
+                            <option value="ARCHIVED"  {{ job_offre.status == 'ARCHIVED'  ? 'selected' }} class="text-danger">Archivée (Expirée)</option>
                         </select>
+                        {% if errors.status is defined %}
+                            <div class="invalid-feedback">{{ errors.status }}</div>
+                        {% endif %}
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label">Description détaillée</label>
-                        <textarea name="description" class="form-control" rows="8">{{ job_offre.description }}</textarea>
+                        <label class="form-label d-flex justify-content-between align-items-center">
+                            Avantages (Table)
+                            <span class="badge bg-info-subtle text-info fw-normal" style="font-size:0.65rem;">SÉLECTIONNEZ LES AVANTAGES</span>
+                        </label>
+                        <div class="d-flex flex-wrap gap-2 p-3 border rounded-3 bg-light-subtle">
+                            {% for avantage in avantages %}
+                            {% set is_selected = false %}
+                            {% for linked in job_offre.linkedAvantages %}
+                                {% if linked.id == avantage.id %}{% set is_selected = true %}{% endif %}
+                            {% endfor %}
+                            <div class="av-checkbox">
+                                <input type="checkbox" name="selected_avantages[]" value="{{ avantage.id }}" id="av-{{ avantage.id }}" class="btn-check" {{ is_selected ? 'checked' }}>
+                                <label class="btn btn-outline-primary btn-sm rounded-pill px-3 d-flex align-items-center gap-1" for="av-{{ avantage.id }}">
+                                    {% if avantage.icon %}<i class="ti {{ avantage.icon }}"></i>{% endif %}
+                                    {{ avantage.name }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-secondary small">Autre avantages (Texte libre)</label>
+                        <input type="text" name="advantages"
+                               class="form-control form-control-sm {% if errors.advantages is defined %}is-invalid{% endif %}"
+                               value="{{ job_offre.advantages }}"
+                               placeholder="Ex: Panier repas, Télétravail total...">
+                        {% if errors.advantages is defined %}
+                            <div class="invalid-feedback">{{ errors.advantages }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row g-4 mb-4">
+                        <div class="col-12">
+                            <label class="form-label d-flex justify-content-between align-items-center">
+                                Compétences & Matching
+                                <span class="badge bg-primary-subtle text-primary fw-600" style="font-size:0.65rem;">SCANNER DE COMPÉTENCES</span>
+                            </label>
+                            
+                            <div class="skills-scanner-container">
+                                <div class="skills-input-group">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white border-end-0 text-secondary">
+                                            <i class="ti ti-search" style="font-size: 1.1rem;"></i>
+                                        </span>
+                                        <input type="text" id="skill-input" class="form-control border-start-0 ps-0" placeholder="Ajouter une compétence (ex: Symfony, React...)" aria-label="Skill name">
+                                        <button class="btn btn-primary px-4" type="button" id="btn-add-skill">
+                                            <i class="ti ti-plus me-1"></i>Ajouter
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="skills-list" class="skills-grid">
+                                    {# Les cartes de compétences seront injectées ici par JS #}
+                                    <div class="empty-skills-msg">
+                                        <i class="ti ti-info-circle me-1"></i>Aucune compétence ajoutée. Tapez un nom et cliquez sur Ajouter.
+                                    </div>
+                                </div>
+                            </div>
+
+                            {# Champ caché pour la soumission réelle #}
+                            <input type="hidden" name="skills" id="hidden-skills-input" value="{{ job_offre.skills|default('') }}">
+                            
+                            {% if errors.skills is defined %}
+                                <div class="text-danger small mt-2"><i class="ti ti-alert-circle me-1"></i>{{ errors.skills }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4 position-relative">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label mb-0">Description détaillée <span class="text-danger">*</span></label>
+                            <button type="button" class="btn btn-sm btn-light text-primary fw-semibold bg-primary-subtle border-0" id="btn-generate-ai">
+                                <i class="ti ti-sparkles me-1 text-warning"></i>Générer avec l'IA
+                            </button>
+                        </div>
+                        <textarea name="description" id="description_field"
+                                  class="form-control {% if errors.description is defined %}is-invalid{% endif %}"
+                                  rows="8">{{ job_offre.description }}</textarea>
+                        {% if errors.description is defined %}
+                            <div class="invalid-feedback">{{ errors.description }}</div>
+                        {% endif %}
                     </div>
 
                     <div class="d-flex justify-content-end gap-2 mt-6">
@@ -49,4 +412,166 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // ── Skills Scanner Logic ─────────────────────────────
+    const skillInput = document.getElementById('skill-input');
+    const btnAddSkill = document.getElementById('btn-add-skill');
+    const skillsList = document.getElementById('skills-list');
+    const hiddenSkillsInput = document.getElementById('hidden-skills-input');
+
+    let skillsData = [];
+
+    // Initialiser depuis la valeur existante
+    const initialSkills = hiddenSkillsInput.value;
+    if (initialSkills) {
+        // Format supporté: "PHP (80%), Symfony (100%)" ou simple CSV
+        const parts = initialSkills.split(',').map(s => s.trim()).filter(s => s !== '');
+        parts.forEach(part => {
+            const match = part.match(/(.+)\s\((\d+)%\)/);
+            if (match) {
+                skillsData.push({ name: match[1], percent: parseInt(match[2]) });
+            } else {
+                skillsData.push({ name: part, percent: 100 });
+            }
+        });
+        renderSkills();
+    }
+
+    function renderSkills() {
+        if (skillsData.length === 0) {
+            skillsList.innerHTML = '<div class="empty-skills-msg"><i class="ti ti-info-circle me-1"></i>Aucune compétence ajoutée. Tapez un nom et cliquez sur Ajouter.</div>';
+            return;
+        }
+
+        skillsList.innerHTML = '';
+        skillsData.forEach((skill, index) => {
+            const card = document.createElement('div');
+            card.className = 'skill-tag-card';
+            card.dataset.index = index;
+            card.innerHTML = `
+                <div class="skill-name">${skill.name}</div>
+                <div class="skill-slider-wrapper">
+                    <input type="range" class="skill-slider" min="0" max="100" value="${skill.percent}">
+                    <div class="skill-percent">${skill.percent}%</div>
+                </div>
+                <button type="button" class="btn-remove-skill">
+                    <i class="ti ti-x"></i>
+                </button>
+            `;
+            skillsList.appendChild(card);
+        });
+        updateHiddenInput();
+    }
+
+    function updateHiddenInput() {
+        const value = skillsData.map(s => `${s.name} (${s.percent}%)`).join(', ');
+        hiddenSkillsInput.value = value;
+    }
+
+    // Délégation d'événements pour le slider et la suppression
+    skillsList.addEventListener('input', (e) => {
+        if (e.target.classList.contains('skill-slider')) {
+            const card = e.target.closest('.skill-tag-card');
+            const index = card.dataset.index;
+            const value = e.target.value;
+            
+            skillsData[index].percent = parseInt(value);
+            card.querySelector('.skill-percent').textContent = value + '%';
+            updateHiddenInput();
+        }
+    });
+
+    skillsList.addEventListener('click', (e) => {
+        const btnRemove = e.target.closest('.btn-remove-skill');
+        if (btnRemove) {
+            const card = btnRemove.closest('.skill-tag-card');
+            const index = card.dataset.index;
+            skillsData.splice(index, 1);
+            renderSkills();
+        }
+    });
+
+    function addSkill() {
+        // Nettoyage : on retire les virgules pour éviter de casser le format de sauvegarde
+        const name = skillInput.value.trim().replace(/,/g, '');
+        if (name && !skillsData.find(s => s.name.toLowerCase() === name.toLowerCase())) {
+            skillsData.push({ name: name, percent: 100 });
+            skillInput.value = '';
+            renderSkills();
+        }
+    }
+
+    btnAddSkill.addEventListener('click', addSkill);
+    skillInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addSkill();
+        }
+    });
+
+    const btnGenerate = document.getElementById('btn-generate-ai');
+
+    if (btnGenerate) {
+        btnGenerate.addEventListener('click', async () => {
+            const btnOriginalText = btnGenerate.innerHTML;
+            btnGenerate.innerHTML = '<i class="ti ti-loader ti-spin me-1"></i>Génération...';
+            btnGenerate.disabled = true;
+
+            const data = {
+                title: document.querySelector('input[name="title"]').value,
+                location: document.querySelector('input[name="location"]').value,
+                salary: document.querySelector('input[name="salary"]').value,
+                employment_type: document.querySelector('select[name="employment_type"]').value,
+                skills: document.querySelector('input[name="skills"]').value,
+                advantages: document.querySelector('input[name="advantages"]').value
+            };
+
+            try {
+                const res = await fetch('{{ path('app_job_offre_ai_generate') }}', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await res.json();
+                
+                if (result.description && result.description.length > 10) {
+                    const descField = document.querySelector('textarea[name="description"]');
+                    descField.value = result.description;
+                    // Flash effect
+                    descField.style.transition = 'background-color 0.5s';
+                    descField.style.backgroundColor = '#f0fff4';
+                    setTimeout(() => descField.style.backgroundColor = '', 1000);
+                } else if (result.error) {
+                    alert('Erreur IA: ' + result.error);
+                } else {
+                    alert('L\'IA n\'a pas pu générer une description valide. Vérifiez vos informations.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erreur de connexion. Vérifiez la configuration de la clé API.');
+            } finally {
+                btnGenerate.innerHTML = btnOriginalText;
+                btnGenerate.disabled = false;
+            }
+        });
+    }
+});
+
+function previewLogo(input) {
+    const preview = document.getElementById('logoPreview');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.innerHTML = '<img src="' + e.target.result + '" style="width:72px;height:72px;object-fit:cover;" alt="Aperçu">';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
 {% endblock %}

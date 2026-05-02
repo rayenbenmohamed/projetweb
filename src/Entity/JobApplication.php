@@ -3,13 +3,28 @@
 namespace App\Entity;
 
 use App\Repository\JobApplicationRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: JobApplicationRepository::class)]
 #[ORM\Table(name: 'job_application')]
+#[ORM\Index(name: 'idx_job_app_candidat', columns: ['user_id'])]
+#[ORM\Index(name: 'idx_job_app_offre', columns: ['job_offre_id'])]
+#[ORM\Index(name: 'idx_job_app_status', columns: ['application_status'])]
+#[ORM\Index(name: 'idx_job_app_date', columns: ['apply_date'])]
+#[ORM\Index(name: 'idx_job_app_ai_score', columns: ['ai_score'])]
 class JobApplication
 {
+    public const STATUS_PENDING = 'PENDING';
+    public const STATUS_HR_SCREENING = 'HR_SCREENING';
+    public const STATUS_INTERVIEW_SCHEDULED = 'INTERVIEW_SCHEDULED';
+    public const STATUS_TECHNICAL_TEST = 'TECHNICAL_TEST';
+    public const STATUS_FINAL_REVIEW = 'FINAL_REVIEW';
+    public const STATUS_READY_FOR_CONTRACT = 'READY_FOR_CONTRACT';
+    public const STATUS_ACCEPTED = 'ACCEPTED';
+    public const STATUS_REJECTED = 'REJECTED';
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -20,7 +35,7 @@ class JobApplication
     private ?User $candidat = null;
 
     #[ORM\ManyToOne(targetEntity: JobOffre::class, inversedBy: 'jobApplications')]
-    #[ORM\JoinColumn(name: 'job_offre_id', nullable: false)]
+    #[ORM\JoinColumn(name: 'job_offre_id', nullable: false, onDelete: 'CASCADE')]
     private ?JobOffre $jobOffre = null;
 
     #[ORM\Column(name: 'application_status', length: 50)]
@@ -35,9 +50,55 @@ class JobApplication
     #[ORM\Column(name: 'cv_path', length: 255, nullable: true)]
     private ?string $cvPath = null;
 
+    #[ORM\OneToMany(mappedBy: 'application', targetEntity: Interview::class, cascade: ['remove'], orphanRemoval: true)]
+    private Collection $interviews;
+
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    private ?int $aiScore = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $aiAnalysis = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $aiAnalyzedAt = null;
+
     public function __construct()
     {
         $this->applyDate = new \DateTime();
+        $this->interviews = new ArrayCollection();
+    }
+
+    public function getAiScore(): ?int
+    {
+        return $this->aiScore;
+    }
+
+    public function setAiScore(?int $aiScore): self
+    {
+        $this->aiScore = $aiScore;
+        return $this;
+    }
+
+    public function getAiAnalysis(): ?string
+    {
+        return $this->aiAnalysis;
+    }
+
+    public function setAiAnalysis(?string $aiAnalysis): self
+    {
+        $this->aiAnalysis = $aiAnalysis;
+        return $this;
+    }
+
+    public function getAiAnalyzedAt(): ?\DateTimeInterface
+    {
+        return $this->aiAnalyzedAt;
+    }
+
+    public function setAiAnalyzedAt(?\DateTimeInterface $aiAnalyzedAt): self
+    {
+        $this->aiAnalyzedAt = $aiAnalyzedAt;
+        return $this;
     }
 
     public function getId(): ?int
@@ -109,5 +170,13 @@ class JobApplication
     {
         $this->cvPath = $cvPath;
         return $this;
+    }
+
+    /**
+     * @return Collection<int, Interview>
+     */
+    public function getInterviews(): Collection
+    {
+        return $this->interviews;
     }
 }

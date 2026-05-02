@@ -18,9 +18,6 @@
 
     {# Dasher Theme CSS #}
     <link rel="stylesheet" href="{{ asset('dasher/css/theme.css') }}"/>
-    <link rel="stylesheet" href="{{ asset('dasher/css/crud-fixes.css') }}"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
 
     {% block stylesheets %}{% endblock %}
@@ -40,13 +37,10 @@
 <body>
 {% block body %}{% endblock %}
 
-{% block modals %}{% endblock %}
-
 {# Bootstrap 5 & Dasher JS #}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 <script src="{{ asset('dasher/js/main.js') }}"></script>
 {% block javascripts %}{% endblock %}
+    {% block importmap %}{{ importmap('app') }}{% endblock %}
 </body>
 </html>

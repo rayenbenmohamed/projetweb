@@ -4,74 +4,348 @@
 {% block page_title %}Mon espace{% endblock %}
 
 {% block content %}
-<div class="row mb-6 g-6 mt-2">
+<style>
+    .stat-card { border-radius: 16px; border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.06); transition: transform .2s ease; overflow: hidden; }
+    .stat-card:hover { transform: translateY(-3px); }
+    .stat-value { font-size: 2.2rem; font-weight: 800; line-height: 1; }
+    .stat-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; opacity: 0.75; }
+    .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+    .top-match-card { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+    .interview-item { border-left: 3px solid #6366f1; padding: .5rem .75rem; border-radius: 0 8px 8px 0; background: #f8faff; margin-bottom: .5rem; }
+</style>
+
+{# ── Hero Banner ── #}
+<div class="row mb-5 g-4">
     <div class="col-xl-8 col-lg-6">
-        <div class="bg-gradient-mixed p-8 py-10 rounded-3 p-lg-7">
-            <h1 class="fs-3">Bienvenue{% if app.user %}, {{ app.user.firstName|default(app.user.email) }}{% endif %}</h1>
-            <p class="mb-0">Front-office : consultez les offres, gérez vos candidatures ou publiez des annonces.</p>
-            <a href="{{ path('app_job_offre_index') }}" class="btn btn-dark mt-3">Parcourir les offres</a>
+        <div class="h-100 rounded-4 p-4 p-lg-5 d-flex flex-column justify-content-center"
+             style="background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: white;">
+            <div class="mb-2" style="font-size: 2rem;">👋</div>
+            <h1 class="fw-black text-white mb-2" style="font-size: 1.8rem;">
+                Bienvenue{% if app.user %}, {{ app.user.firstName|default(app.user.email) }}{% endif %}
+            </h1>
+            <p class="mb-4 text-white-50">Gestion des candidatures, entretiens et offres — tout en un seul endroit.</p>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{{ path('app_job_offre_index') }}" class="btn btn-light btn-sm rounded-pill px-4 fw-bold">
+                    <i class="ti ti-search me-1"></i>Parcourir les offres
+                </a>
+                <a href="{{ path('app_job_application_index') }}" class="btn btn-outline-light btn-sm rounded-pill px-4">
+                    <i class="ti ti-users me-1"></i>Pipeline RH
+                </a>
+                <a href="{{ path('app_job_application_export_csv') }}" class="btn btn-warning btn-sm rounded-pill px-4 fw-bold">
+                    <i class="ti ti-download me-1"></i>Exporter CSV
+                </a>
+            </div>
         </div>
     </div>
     <div class="col-xl-4 col-lg-6">
-        <div class="card card-lg h-100">
-            <div class="card-body d-flex flex-column justify-content-center gap-3">
-                <h5 class="mb-0">Raccourcis</h5>
-                {% if is_granted('ROLE_RECRUTEUR') %}
-                    <a href="{{ path('app_job_offre_new') }}" class="btn btn-outline-primary btn-sm">Nouvelle offre</a>
-                    <a href="{{ path('app_job_application_index') }}" class="btn btn-outline-success btn-sm">Candidatures</a>
-                    <a href="{{ path('app_contract_index') }}" class="btn btn-outline-info btn-sm">Contrats</a>
-                    <a href="{{ path('app_type_contrat_index') }}" class="btn btn-outline-secondary btn-sm">Configuration contrats</a>
-                {% endif %}
-                {% if is_granted('ROLE_CANDIDAT') %}
-                    <a href="{{ path('app_job_application_index') }}" class="btn btn-outline-primary btn-sm">Mes candidatures</a>
-                    <a href="{{ path('app_cv_index') }}" class="btn btn-outline-secondary btn-sm">Mon CV</a>
-                {% endif %}
+        <div class="row g-4 h-100">
+            <div class="col-6 h-100">
+                <div class="card stat-card h-100 top-match-card p-3 p-xl-4">
+                    <div class="mb-2 d-flex align-items-center gap-2">
+                        <i class="ti ti-sparkles fs-5"></i>
+                        <span class="fw-bold small" style="opacity:.9;">SyfonuMatch™</span>
+                    </div>
+                    {% if avg_score is not null %}
+                        <div class="stat-value text-white mb-1" style="font-size: 1.8rem;">{{ avg_score }}%</div>
+                        <div class="text-white-50" style="font-size: 0.65rem; line-height: 1.2;">Score moyen / {{ count_received_apps }} candidats</div>
+                    {% else %}
+                        <div class="text-white-50 text-center py-2"><i class="ti ti-brain fs-3"></i></div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-6 h-100">
+                <div class="card stat-card h-100 p-3 p-xl-4" style="background: white; border: 1px solid #e2e8f0;">
+                    <div class="mb-2 d-flex align-items-center gap-2">
+                        <i class="ti ti-target-arrow fs-5 text-success"></i>
+                        <span class="fw-bold small text-muted">Conversion</span>
+                    </div>
+                    <div class="stat-value text-success mb-1" style="font-size: 1.8rem;">{{ conversion_rate }}%</div>
+                    <div class="text-muted" style="font-size: 0.65rem; line-height: 1.2;">Taux de succès des recrutements</div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row row-cols-1 row-cols-xl-3 row-cols-md-2 mb-6 g-6">
+{# ── Stats Recruteur ── #}
+<h6 class="text-muted fw-bold text-uppercase mb-3" style="letter-spacing:1px;font-size:.75rem;">
+    <i class="ti ti-briefcase me-1"></i>Mes Statistiques Recruteur
+</h6>
+<div class="row row-cols-2 row-cols-xl-5 g-3 mb-5">
     <div class="col">
-        <div class="card card-lg">
-            <div class="card-body">
-                <h6 class="text-secondary">Offres publiées</h6>
-                <div class="fs-2 fw-bold">{{ count_offres }}</div>
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted mb-2">Offres publiées</div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="stat-value text-primary">{{ count_my_offres }}</div>
+                <div class="stat-icon bg-primary-subtle text-primary"><i class="ti ti-briefcase"></i></div>
             </div>
         </div>
     </div>
     <div class="col">
-        <div class="card card-lg">
-            <div class="card-body">
-                <h6 class="text-secondary">{% if is_granted('ROLE_RECRUTEUR') %}Candidatures (toutes){% else %}Mes candidatures{% endif %}</h6>
-                <div class="fs-2 fw-bold">{{ count_applications }}</div>
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted mb-2">Candidatures reçues</div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="stat-value text-dark">{{ count_received_apps }}</div>
+                <div class="stat-icon bg-secondary-subtle text-secondary"><i class="ti ti-inbox"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted mb-2">En attente</div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="stat-value text-warning">{{ count_pending }}</div>
+                <div class="stat-icon bg-warning-subtle text-warning"><i class="ti ti-clock"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted mb-2">Acceptés</div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="stat-value text-success">{{ count_accepted }}</div>
+                <div class="stat-icon bg-success-subtle text-success"><i class="ti ti-circle-check"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted mb-2">Refusés</div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="stat-value text-danger">{{ count_rejected }}</div>
+                <div class="stat-icon bg-danger-subtle text-danger"><i class="ti ti-circle-x"></i></div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card card-lg">
-    <div class="card-header border-bottom-0 d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Dernières offres</h5>
-        <a href="{{ path('app_job_offre_index') }}" class="small">Tout voir</a>
+{# ── Administration Système (Visible seulement pour Admin) ── #}
+{% if admin_stats %}
+<h6 class="text-indigo fw-bold text-uppercase mb-3 mt-5" style="letter-spacing:1px;font-size:.75rem;">
+    <i class="ti ti-settings me-1"></i>Aperçu Administration Système
+</h6>
+<div class="row row-cols-2 row-cols-xl-4 g-3 mb-5">
+    <div class="col">
+        <div class="card stat-card p-3 h-100 border-start border-indigo border-4">
+            <div class="stat-label text-muted mb-2">Total Utilisateurs</div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="stat-value text-indigo">{{ admin_stats.total_users }}</div>
+                <div class="stat-icon bg-indigo-subtle text-indigo"><i class="ti ti-users"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card stat-card p-3 h-100 border-start border-primary border-4">
+            <div class="stat-label text-muted mb-2">Total Offres Plateforme</div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="stat-value text-primary">{{ admin_stats.total_offres }}</div>
+                <div class="stat-icon bg-primary-subtle text-primary"><i class="ti ti-briefcase"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card stat-card p-3 h-100 border-start border-success border-4">
+            <div class="stat-label text-muted mb-2">Total Candidatures</div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="stat-value text-success">{{ admin_stats.total_applications }}</div>
+                <div class="stat-icon bg-success-subtle text-success"><i class="ti ti-file-analytics"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card stat-card p-3 h-100 border-start border-warning border-4">
+            <div class="stat-label text-muted mb-2">Total Contrats</div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="stat-value text-warning">{{ admin_stats.total_contracts }}</div>
+                <div class="stat-icon bg-warning-subtle text-warning"><i class="ti ti-file-certificate"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ── Stats Candidat + Prochains entretiens ── #}
+<div class="row g-4 mb-5">
+    <div class="col-lg-4">
+        <h6 class="text-muted fw-bold text-uppercase mb-3" style="letter-spacing:1px;font-size:.75rem;">
+            <i class="ti ti-send me-1"></i>Mes Candidatures Envoyées
+        </h6>
+        <div class="row g-3">
+            <div class="col-6">
+                <div class="card stat-card p-3 h-100">
+                    <div class="stat-label text-muted mb-2">Total envoyées</div>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="stat-value text-info">{{ count_my_apps }}</div>
+                        <div class="stat-icon bg-info-subtle text-info"><i class="ti ti-send"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card stat-card p-3 h-100">
+                    <div class="stat-label text-muted mb-2">Acceptées</div>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="stat-value text-success">{{ count_my_accepted }}</div>
+                        <div class="stat-icon bg-success-subtle text-success"><i class="ti ti-trophy"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-3">
+            <a href="{{ path('app_job_application_index') }}" class="btn btn-outline-primary btn-sm rounded-pill px-4 w-100">
+                <i class="ti ti-eye me-1"></i>Voir le Pipeline complet
+            </a>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <h6 class="text-muted fw-bold text-uppercase mb-3" style="letter-spacing:1px;font-size:.75rem;">
+            <i class="ti ti-calendar-time me-1"></i>Prochains Entretiens
+        </h6>
+        <div class="card stat-card p-3">
+            {% if upcoming_interviews is not empty %}
+                {% for interview in upcoming_interviews %}
+                <div class="interview-item">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="fw-bold small text-dark">
+                                {{ interview.application.candidat.firstName }} {{ interview.application.candidat.lastName }}
+                            </div>
+                            <div class="text-muted" style="font-size:.78rem;">
+                                <i class="ti ti-briefcase me-1"></i>{{ interview.application.jobOffre.title }}
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold text-primary small">{{ interview.scheduledAt|date('d/m') }}</div>
+                            <div class="text-muted" style="font-size:.75rem;">{{ interview.scheduledAt|date('H:i') }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                <a href="{{ path('app_interview_index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-4 w-100 mt-2">
+                    <i class="ti ti-calendar me-1"></i>Voir tous les entretiens
+                </a>
+            {% else %}
+                <div class="text-center py-3 text-muted">
+                    <i class="ti ti-calendar-off fs-2 d-block mb-2 opacity-50"></i>
+                    <span class="small">Aucun entretien prévu prochainement.</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# ── Statistiques Visuelles ── #}
+<div class="row g-4 mb-5">
+    <div class="col-lg-6">
+        <div class="card stat-card h-100 p-4">
+            <h6 class="text-muted fw-bold text-uppercase mb-4" style="letter-spacing:1px;font-size:.75rem;">
+                <i class="ti ti-chart-donut me-1 text-primary"></i>Répartition du Pipeline
+            </h6>
+            <div style="height: 250px;">
+                <canvas id="pipelineChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card stat-card h-100 p-4">
+            <h6 class="text-muted fw-bold text-uppercase mb-4" style="letter-spacing:1px;font-size:.75rem;">
+                <i class="ti ti-chart-bar me-1 text-primary"></i>Performance des Candidats évalués
+            </h6>
+            <div style="height: 250px;">
+                <canvas id="performanceChart"></canvas>
+            </div>
+            <p class="text-center small text-muted mt-3 mb-0">Basé sur {{ count_accepted + count_rejected }} évaluation(s) d'entretien.</p>
+        </div>
+    </div>
+</div>
+
+{# ── Dernières offres ── #}
+<div class="card stat-card">
+    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+        <h6 class="mb-0 fw-bold"><i class="ti ti-news me-2 text-primary"></i>Dernières offres publiées</h6>
+        <a href="{{ path('app_job_offre_index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">Tout voir</a>
     </div>
     <div class="table-responsive">
-        <table class="table table-hover mb-0">
+        <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
-                <tr><th>Titre</th><th>Lieu</th><th></th></tr>
+                <tr>
+                    <th class="ps-4">Titre</th>
+                    <th>Lieu</th>
+                    <th class="pe-4 text-end"></th>
+                </tr>
             </thead>
             <tbody>
                 {% for job in latest_jobs %}
                 <tr>
-                    <td>{{ job.title }}</td>
-                    <td>{{ job.location }}</td>
-                    <td><a href="{{ path('app_job_offre_show', {id: job.id}) }}" class="btn btn-sm btn-outline-primary">Voir</a></td>
+                    <td class="ps-4 fw-medium">{{ job.title }}</td>
+                    <td class="text-muted small"><i class="ti ti-map-pin me-1"></i>{{ job.location }}</td>
+                    <td class="pe-4 text-end">
+                        <a href="{{ path('app_job_offre_show', {id: job.id}) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">Voir</a>
+                    </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="3" class="text-center py-4 text-secondary">Aucune offre.</td></tr>
+                <tr><td colspan="3" class="text-center py-4 text-muted">Aucune offre publiée.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 6, font: { size: 10 } } } }
+    };
+
+    // 1. Chart Pipeline (Donut)
+    const ctxPipeline = document.getElementById('pipelineChart').getContext('2d');
+    new Chart(ctxPipeline, {
+        type: 'doughnut',
+        data: {
+            labels: {{ status_labels|json_encode|raw }},
+            datasets: [{
+                data: {{ status_data|json_encode|raw }},
+                backgroundColor: ['#6366f1', '#0ea5e9', '#f59e0b', '#8b5cf6', '#22c55e', '#ef4444'],
+                hoverOffset: 10,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            ...commonOptions,
+            cutout: '70%'
+        }
+    });
+
+    // 2. Chart Performance (Bar)
+    const ctxPerf = document.getElementById('performanceChart').getContext('2d');
+    new Chart(ctxPerf, {
+        type: 'bar',
+        data: {
+            labels: ['Tech', 'Communication', 'Motivation'],
+            datasets: [{
+                label: 'Score Moyen (sur 5)',
+                data: [{{ avg_ratings.tech }}, {{ avg_ratings.comm }}, {{ avg_ratings.mot }}],
+                backgroundColor: ['#6366f190', '#0ea5e990', '#f59e0b90'],
+                borderColor: ['#6366f1', '#0ea5e9', '#f59e0b'],
+                borderWidth: 2,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            ...commonOptions,
+            scales: {
+                y: { beginAtZero: true, max: 5, grid: { display: false } },
+                x: { grid: { display: false } }
+            },
+            plugins: { ...commonOptions.plugins, legend: { display: false } }
+        }
+    });
+});
+</script>
 {% endblock %}

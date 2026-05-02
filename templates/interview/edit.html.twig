@@ -1,0 +1,80 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Modifier l'entretien | SyfonuRH{% endblock %}
+{% block page_title %}Modifier l'entretien{% endblock %}
+
+{% block content %}
+<div class="row g-6 mt-2 justify-content-center">
+    <div class="col-xl-6">
+        <div class="card card-lg overflow-hidden border-0 shadow-sm">
+            <div class="bg-warning-subtle p-6 py-8 border-bottom border-warning-subtle">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icon-shape icon-lg rounded-circle bg-warning text-white">
+                        <i class="ti ti-calendar-event fs-2"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-1 text-warning-emphasis">Modifier l'entretien</h4>
+                        <p class="mb-0 text-secondary small">Candidat : {{ job_application.candidat.firstName }} {{ job_application.candidat.lastName }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-6">
+                <form method="post" id="interviewForm" class="needs-validation" novalidate>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Date et heure de l'entretien <span class="text-danger">*</span></label>
+                        <input type="datetime-local" id="scheduledAt" name="scheduledAt" value="{{ interview.scheduledAt|date('Y-m-d\\TH:i') }}" class="form-control form-control-lg" required />
+                        <div class="invalid-feedback">Veuillez indiquer une date future.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Statut de l'entretien</label>
+                        <select name="status" class="form-select form-control-lg">
+                            <option value="Prévue" {{ interview.status == 'Prévue' ? 'selected' }}>Prévue</option>
+                            <option value="Confirmée" {{ interview.status == 'Confirmée' ? 'selected' }}>Confirmée</option>
+                            <option value="Réalisée" {{ interview.status == 'Réalisée' ? 'selected' }}>Réalisée</option>
+                            <option value="Annulée" {{ interview.status == 'Annulée' ? 'selected' }}>Annulée</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Lien de la réunion (visio) ou lieu <span class="text-danger">*</span></label>
+                        <input type="text" name="meetingLink" value="{{ interview.meetingLink }}" class="form-control form-control-lg" placeholder="ex: https://meet.google.com/..." minlength="5" maxlength="255" required />
+                        <div class="invalid-feedback">Un lieu ou lien valide est requis (min 5 caractères).</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Notes / Instructions <span class="text-danger">*</span></label>
+                        <textarea name="notes" class="form-control" rows="5" minlength="10" maxlength="500" required placeholder="Détails de l'entretien, matériel à prévoir...">{{ interview.notes }}</textarea>
+                        <div class="invalid-feedback">Un minimum de 10 caractères est requis.</div>
+                    </div>
+                    
+                    <div class="d-grid gap-3 mt-6">
+                        <button type="submit" class="btn btn-warning btn-lg text-white">Mettre à jour l'entretien</button>
+                        <a href="{{ path('app_interview_index') }}" class="btn btn-light btn-lg">Annuler</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const dateInput = document.getElementById('scheduledAt');
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        // For editing, we don't strictly enforce future-only if it was already scheduled,
+        // but we keep the helper for new changes.
+        // dateInput.min = now.toISOString().slice(0, 16);
+        
+        const form = document.getElementById('interviewForm');
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+</script>
+{% endblock %}

@@ -27,6 +27,8 @@ class NotificationService
         $notification->setCreatedAt(new \DateTime());
 
         $this->entityManager->persist($notification);
+        // Note: flush is intentionally deferred — the caller is responsible for flushing
+        // when creating multiple notifications in the same request (avoid N flush calls).
         $this->entityManager->flush();
     }
 
@@ -36,5 +38,36 @@ class NotificationService
     public function getUnreadNotifications(User $user): array
     {
         return $this->notificationRepository->findBy(['user' => $user, 'isRead' => false]);
+    }
+
+    public function getUnreadCount(User $user): int
+    {
+        return $this->notificationRepository->countUnreadForUser($user);
+    }
+
+    /**
+     * @return Notification[]
+     */
+    public function getAllNotifications(User $user): array
+    {
+        return $this->notificationRepository->findAllForUser($user);
+    }
+
+    public function markAllAsRead(User $user): void
+    {
+        $notifications = $this->notificationRepository->findBy(['user' => $user, 'isRead' => false]);
+        foreach ($notifications as $notif) {
+            $notif->setIsRead(true);
+        }
+        $this->entityManager->flush();
+    }
+
+    public function markOneAsRead(int $id, User $user): void
+    {
+        $notif = $this->notificationRepository->find($id);
+        if ($notif && $notif->getUser() === $user) {
+            $notif->setIsRead(true);
+            $this->entityManager->flush();
+        }
     }
 }

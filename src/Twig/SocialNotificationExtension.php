@@ -5,6 +5,7 @@ namespace App\Twig;
 use App\Service\SocialNotificationService;
 use Symfony\Bundle\SecurityBundle\Security;
 use Twig\Extension\AbstractExtension;
+use Twig\TwigFilter;
 use Twig\TwigFunction;
 
 final class SocialNotificationExtension extends AbstractExtension
@@ -20,6 +21,21 @@ final class SocialNotificationExtension extends AbstractExtension
         return [
             new TwigFunction('social_notifications', $this->getCounts(...)),
         ];
+    }
+
+    public function getFilters(): array
+    {
+        return [
+            new TwigFilter('json_decode', [$this, 'jsonDecode']),
+        ];
+    }
+
+    public function jsonDecode(?string $string): array
+    {
+        if (!$string) {
+            return [];
+        }
+        return json_decode($string, true) ?? [];
     }
 
     /**

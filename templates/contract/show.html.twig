@@ -1,590 +1,220 @@
 {% extends 'layout/admin.html.twig' %}
 
 {% block title %}Contrat #{{ contract.id }} | SyfonuRH{% endblock %}
-{% block page_title %}
-    Aperçu du contrat
-    {% if contract.endDate and date(contract.endDate) < date() %}
-        <span class="badge bg-danger ms-2 px-3 py-2 shadow-sm" style="font-size: 0.8rem;">
-            <i class="ti ti-alert-triangle me-1"></i> Contrat expiré
-        </span>
-    {% elseif contract.isSigned %}
-        <span class="badge bg-success ms-2 px-3 py-2 shadow-sm" style="font-size: 0.8rem;">
-            <i class="ti ti-shield-check me-1"></i> Contrat actif
-        </span>
-    {% else %}
-        <span class="badge bg-warning text-dark ms-2 px-3 py-2 shadow-sm" style="font-size: 0.8rem;">
-            <i class="ti ti-clock me-1"></i> En attente de signature
-        </span>
-    {% endif %}
-{% endblock %}
-
-{% block stylesheets %}
-  {{ parent() }}
-  <style>
-    .contract-paper {
-      background: #fff;
-      padding: 45px; /* Reduced from 60px */
-      width: 100%;
-      max-width: 1000px;
-      min-height: 1100px;
-      border: 1px solid #e0e0e0;
-    }
-    .watermark-ia {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) rotate(-45deg);
-      font-size: 8rem;
-      color: rgba(0,0,0,0.03);
-      font-weight: 900;
-      text-transform: uppercase;
-      z-index: 0;
-      pointer-events: none;
-    }
-    .signature-seal {
-      width: 100px;
-      height: 100px;
-      border: 3px double #0d6efd;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      font-weight: 900;
-      font-size: 0.7rem;
-      color: #0d6efd;
-      transform: rotate(-15deg);
-    }
-    .career-timeline {
-      list-style: none;
-      padding: 0;
-      position: relative;
-    }
-    .career-timeline::before {
-      content: '';
-      position: absolute;
-      left: 7px;
-      top: 0;
-      bottom: 0;
-      width: 2px;
-      background: #e9ecef;
-    }
-    .timeline-item {
-      position: relative;
-      padding-left: 30px;
-      margin-bottom: 25px;
-    }
-    .timeline-item::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 4px;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: #fff;
-      border: 2px solid #ced4da;
-      z-index: 1;
-    }
-    .timeline-item.completed::before {
-      background: #0d6efd;
-      border-color: #0d6efd;
-    }
-
-    /* Styles pour la refonte Sidebar */
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 2px;
-    }
-    .calendar-day {
-      font-size: 0.75rem;
-      padding: 4px 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .calendar-day:hover:not(.today) {
-      background: #f8f9fa;
-      border-radius: 4px;
-    }
-    .status-dot {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-  </style>
-{% endblock %}
+{% block page_title %}Détails du contrat{% endblock %}
 
 {% block content %}
-{# ─── Summary Bar ────────────────────────────────────────────── #}
-<div class="row mb-6 mt-2 animate__animated animate__fadeIn">
-  <div class="col-12">
-    <div class="card border-0 shadow-sm overflow-hidden">
-      <div class="card-body p-0">
-        <div class="row g-0">
-          <div class="col-md-3 p-3 border-end bg-light-subtle">
-            <label class="small text-secondary text-uppercase fw-bold mb-1 d-block">Candidat</label>
-            <div class="fw-bold text-dark text-truncate">{{ contract.candidate ? (contract.candidate.firstName ~ ' ' ~ contract.candidate.lastName) : '—' }}</div>
-          </div>
-          <div class="col-md-3 p-3 border-end">
-            <label class="small text-secondary text-uppercase fw-bold mb-1 d-block">Recruteur</label>
-            <div class="fw-bold text-dark text-truncate">{{ contract.recruiter ? (contract.recruiter.firstName ~ ' ' ~ contract.recruiter.lastName) : '—' }}</div>
-          </div>
-          <div class="col-md-2 p-3 border-end bg-light-subtle">
-            <label class="small text-secondary text-uppercase fw-bold mb-1 d-block">Type</label>
-            <div class="fw-bold text-dark text-truncate">{{ contract.typeContrat ? contract.typeContrat.name : '—' }}</div>
-          </div>
-          <div class="col-md-2 p-3 border-end">
-            <label class="small text-secondary text-uppercase fw-bold mb-1 d-block">Rémunération</label>
-            <div class="fw-bold text-primary">{{ contract.salary|number_format(0, ',', ' ') }} <span class="small fw-normal text-secondary">TND</span></div>
-          </div>
-          <div class="col-md-2 p-3 d-flex align-items-center justify-content-center bg-primary-subtle bg-opacity-10">
-            <div class="text-center">
-              <label class="small text-secondary text-uppercase fw-bold mb-1 d-block">Statut</label>
-              <div class="badge bg-primary px-3">{{ contract.status }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <div class="row g-6 mt-2">
-
-  {# ─── Document Zone (Plus large) ─── #}
-  <div class="col-lg-9">
-    <div class="contract-paper shadow-lg position-relative animate__animated animate__fadeInUp">
-      <div class="watermark-ia">Confidentiel</div>
-
-      <div class="d-flex justify-content-between align-items-center mb-6">
-        <div class="bg-dark p-3 rounded-circle text-white shadow">
-          <i class="ti ti-building-skyscraper fs-1"></i>
-        </div>
-        <div class="text-end">
-          <h4 class="mb-0 fw-bold">Contrat professionnel</h4>
-          <p class="text-secondary small mb-0">Identifiant Digital : #{{ contract.id }}</p>
-          <div class="badge bg-light text-dark border mt-1 px-3">Origine Certifiée</div>
-          <div class="mt-2 small text-secondary font-monospace" style="font-size: 0.65rem;">
-            ID-SEC: SYF-{{ contract.id }}-{{ contract.candidate ? contract.candidate.id : '0' }}-{{ "now"|date('Ymd') }}
-          </div>
-        </div>
-      </div>
-
-      <div class="my-7">
-        <div class="text-center mb-5">
-          <h3 class="mb-1 text-dark fw-bolder text-uppercase" style="letter-spacing: 1px;">
-            {{ contract.typeContrat ? contract.typeContrat.name : 'Contrat de Travail' }}
-          </h3>
-          <div class="bg-primary mx-auto rounded-pill" style="height: 3px; width: 80px;"></div>
+  {# Zone Document (Papier Digital) #}
+  <div class="col-lg-8">
+     <div class="contract-paper shadow-lg position-relative mx-auto animate__animated animate__fadeInUp">
+        <div class="watermark-ia">SYFONURH CERTIFIED</div>
+        
+        <div class="d-flex justify-content-between align-items-center mb-6">
+           <div class="bg-dark p-3 rounded-circle text-white shadow">
+              <i class="ti ti-building-skyscraper fs-1"></i>
+           </div>
+            <div class="text-end">
+               <h4 class="mb-0 fw-bold">CERTIFICAT RÉGLEMENTAIRE</h4>
+               <p class="text-secondary small mb-0">Identifiant Digital : #{{ contract.id|number_format(0, '', '') }}</p>
+               <div class="badge bg-light text-dark border mt-1 px-3">Origine Certifiée</div>
+              
+               <div class="mt-2 small text-secondary font-monospace" style="font-size: 0.65rem;">
+                  ID-SEC: SYF-{{ contract.id }}-{{ contract.candidate ? contract.candidate.id : '0' }}-{{ "now"|date('Ymd') }}
+               </div>
+           </div>
         </div>
 
-        <div class="p-6 bg-white rounded shadow-sm mb-6 border-top border-4 border-dark">
-          <div class="contract-content" style="white-space: pre-wrap; line-height: 1.8; font-size: 1.05rem; color: #2c3e50;">
+        <div class="my-7">
+           <div class="text-center mb-6">
+              <h2 class="mb-2 text-dark fw-bolder text-uppercase tracking-widest" style="letter-spacing: 2px;">
+                 {{ contract.typeContrat ? contract.typeContrat.name : 'Contrat de Travail' }}
+              </h2>
+              <div class="h-1 bg-primary w-25 mx-auto rounded-pill" style="height: 4px;"></div>
+           </div>
+           
+           <div class="p-5 border-start border-primary border-4 bg-light-subtle rounded shadow-sm mb-6">
+              <h6 class="text-uppercase small fw-bold text-secondary tracking-wider mb-4">Clauses Particulières & Engagements</h6>
+              <div class="contract-content" style="white-space: pre-wrap; line-height: 2; font-size: 1.1rem; color: #34495e;">
+                 {{ contract.content ?: 'Aucun contenu spécifique n\'a été rattaché à ce certificat digital.' }}
+              </div>
+           </div>
+        </div>
 
-            <h5 class="fw-bold mb-4 pb-2 border-bottom">Article 1 : Objet du contrat</h5>
-            <p class="mb-6">Le présent contrat régit les relations professionnelles entre l'entreprise
-              <strong>{{ contract.recruiter ? (contract.recruiter.firstName ~ ' ' ~ contract.recruiter.lastName) : 'SyfonuRH Corp' }}</strong>
-              (ci-après désignée comme "le Recruteur") et l'employé
-              <strong>{{ contract.candidate ? (contract.candidate.firstName ~ ' ' ~ contract.candidate.lastName) : 'le Collaborateur' }}</strong>
-              (ci-après désigné comme "le Candidat").
-            </p>
+        <div class="mt-auto d-flex justify-content-between align-items-end pt-6 border-top border-2 border-light">
+           <div class="text-start">
+              <div class="signature-seal shadow-sm">
+                 <div class="p-1">
+                    CERTIFIÉ<br>SYFONURH<br>DEPT. RH
+                 </div>
+              </div>
+              <p class="small text-secondary mt-2 mb-0 font-monospace">Validé numériquement</p>
+           </div>
+           
+           <div class="text-center" style="min-width: 250px;">
+              <p class="small text-secondary mb-3 text-uppercase tracking-tighter">Signature Électronique du Salarié</p>
+              <div class="bg-light rounded p-3 mb-2" style="border: 1px dashed #ced4da;">
+                 {% if contract.signatureBase64 %}
+                    <img src="{{ contract.signatureBase64 }}" alt="Signature Biométrique" 
+                         class="img-fluid" style="max-height: 80px; filter: contrast(120%) grayscale(100%);">
+                 {% else %}
+                    <div class="text-muted small italic py-4">Pas de signature enregistrée</div>
+                 {% endif %}
+              </div>
+              <div class="fw-bold text-dark fs-5">{{ contract.candidate ? (contract.candidate.firstName ~ ' ' ~ contract.candidate.lastName) : 'Document non signé' }}</div>
+              <div class="small text-secondary">{{ contract.signedAt ? ('Signé le ' ~ contract.signedAt|date('d/m/Y H:i')) : '' }}</div>
+           </div>
+        </div>
+     </div>
+  </div>
 
-            <h5 class="fw-bold mb-4 pb-2 border-bottom">Article 2 : Durée et période d'essai</h5>
-            <p class="mb-6">
-              Le contrat débute le <strong>{{ contract.startDate ? contract.startDate|date('d/m/Y') : '—' }}</strong>.
-              {% if contract.endDate %}
-                Il s'achèvera le <strong>{{ contract.endDate|date('d/m/Y') }}</strong>.
-              {% else %}
-                Il est conclu pour une durée indéterminée (CDI).
-              {% endif %}
-              Une période d'essai de 3 mois est appliquée à partir de la date de prise de poste effective.
-            </p>
-
-            <h5 class="fw-bold mb-4 pb-2 border-bottom">Article 3 : Rémunération</h5>
-            <p class="mb-6">
-              En contrepartie de ses fonctions,
-              <strong>{{ contract.candidate ? contract.candidate.lastName : 'le Candidat' }}</strong>
-              percevra une rémunération annuelle brute de
-              <strong>{{ contract.salary|number_format(0, ',', ' ') }} TND</strong>,
-              payable en douze mensualités.
-            </p>
-
-            <h5 class="fw-bold mb-4 pb-2 border-bottom">Article 4 : Obligations & Confidentialité</h5>
-            <p class="mb-6">Le Candidat s'engage à exercer ses fonctions avec diligence et à respecter les clauses de confidentialité relatives aux données et secrets de l'entreprise. Toute violation pourra entraîner une résiliation immédiate.</p>
-
-            <h5 class="fw-bold mb-4 pb-2 border-bottom text-primary">Article Additionnel : Clauses Spécifiques</h5>
-            <div class="p-4 bg-light-subtle rounded border-start border-3 border-primary mb-6">
-              {{ contract.content ?: 'Aucune clause additionnelle spécifique n\'a été rattachée à ce contrat professionnel.' }}
+  {# Barre Latérale : Authenticité & Actions #}
+  <div class="col-lg-4 animate__animated animate__fadeInRight">
+     {# Quick Info #}
+     <div class="card mb-6 overflow-hidden shadow-sm border-0">
+        <div class="card-header bg-dark text-white p-4 d-flex align-items-center justify-content-between">
+           <h6 class="mb-0 text-uppercase tracking-wider">Certificat de Validité</h6>
+           <i class="ti ti-shield-check text-success fs-4"></i>
+        </div>
+         <div class="card-body p-6 text-center">
+            {% set full_url = url('app_contract_show', {id: contract.id}) %}
+            <div class="bg-white p-3 d-inline-block rounded shadow-sm mb-4 border">
+               <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ full_url|url_encode }}" 
+                    alt="Lien de Vérification" class="img-fluid" style="width: 150px;">
             </div>
-
-            <h5 class="fw-bold mb-4 pb-2 border-bottom">Article 5 : Résiliation</h5>
-            <p class="mb-0">Chacune des parties peut mettre fin au contrat sous réserve du respect du préavis légal en vigueur pour le secteur d'activité concerné.</p>
-          </div>
+           
+           <div class="d-grid gap-2 mb-4">
+              <button onclick="window.print()" class="btn btn-outline-dark d-flex align-items-center justify-content-center gap-2">
+                 <i class="ti ti-printer fs-5"></i> Imprimer le Certificat
+              </button>
+              <button data-bs-toggle="modal" data-bs-target="#emailPreviewModal" class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2">
+                 <i class="ti ti-mail fs-5"></i> Aperçu e-mail
+              </button>
+              <button id="exportCalendarBtn" class="btn btn-outline-info d-flex align-items-center justify-content-center gap-2">
+                 <i class="ti ti-calendar-event fs-5"></i> Ajouter à l'agenda
+              </button>
+              <a href="https://wa.me/?text={{ '✨ Contrat SyfonuRH Certifié ✨\n\nBonjour ' ~ (contract.candidate ? contract.candidate.firstName : '') ~ ',\nVous pouvez consulter votre contrat officiel ici : '|url_encode }}{{ full_url|url_encode }}" 
+                 target="_blank"
+                 class="btn btn-success d-flex align-items-center justify-content-center gap-2">
+                 <i class="ti ti-brand-whatsapp fs-5"></i> 
+                 <span>Partager WhatsApp</span>
+              </a>
+           </div>
         </div>
-      </div>
+     </div>
 
-      {# ─── Signature Footer ─── #}
-      <div class="d-flex justify-content-between align-items-end pt-6 border-top border-2 border-light">
-        <div class="text-start">
-          <div class="signature-seal shadow-sm">
-            <div class="p-1">CERTIFIÉ<br>SYFONURH<br>DEPT. RH</div>
-          </div>
-          <p class="small text-secondary mt-2 mb-0 font-monospace">Validé numériquement</p>
+     {# Assistance RH #}
+     <div class="card mb-6 border-0 shadow-sm" style="background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);">
+         <div class="card-body p-6">
+            <h6 class="mb-4 d-flex align-items-center gap-2 text-dark">
+               <i class="ti ti-info-circle fs-4"></i> Assistance RH
+            </h6>
+           <div class="alert bg-white border shadow-sm small text-secondary mb-0">
+              <ul class="ps-3 mb-0">
+                 {% if not contract.signed %}
+                    <li class="mb-2">⚠️ <strong class="text-danger">Signature manquante</strong> : Relancer le candidat via WhatsApp.</li>
+                 {% endif %}
+                 {% if contract.startDate %}
+                    <li class="mb-2">📅 <strong>Point de mi-parcours</strong> : Prévoyez un entretien de suivi le <strong>{{ contract.startDate|date_modify('+45 days')|date('d/m/Y') }}</strong>.</li>
+                 {% endif %}
+                 <li>💡 <strong>Optimisation</strong> : Ce profil semble éligible aux avantages fiscaux tunisiens (Programme SIVP/Karama).</li>
+              </ul>
+           </div>
         </div>
+     </div>
 
-        <div class="text-center" style="min-width: 250px;">
-          <p class="small text-secondary mb-3 text-uppercase">Signé électroniquement</p>
-          <div class="bg-light rounded p-3 mb-2" style="border: 1px dashed #ced4da;">
-            {% if contract.signatureBase64 %}
-              <img src="{{ contract.signatureBase64 }}" alt="Signature"
-                   class="img-fluid" style="max-height: 80px; filter: contrast(120%) grayscale(100%);">
-            {% else %}
-              <div class="text-muted small py-4">Signature en attente</div>
-            {% endif %}
-          </div>
-          <div class="fw-bold text-dark fs-5">
-            {{ contract.candidate ? (contract.candidate.firstName ~ ' ' ~ contract.candidate.lastName) : 'Destinataire inconnu' }}
-          </div>
-          <div class="small text-secondary">
-            {% if contract.isSigned and contract.signedAt %}
-              Le {{ contract.signedAt|date('d/m/Y') }} à {{ contract.signedAt|date('H:i') }}
-            {% else %}
-              Document en attente de validation
-            {% endif %}
-          </div>
+     {# Career Timeline Card #}
+     <div class="card mb-6 shadow-sm border-0">
+        <div class="card-body p-6">
+           <h6 class="mb-6 d-flex align-items-center gap-3">
+              <span class="bg-primary p-2 rounded-circle text-white d-flex">
+                 <i class="ti ti-timeline fs-6"></i>
+              </span>
+              Cycle de Vie du Salarié
+           </h6>
+           <ul class="career-timeline">
+              <li class="timeline-item completed">
+                 <div class="fw-bold text-dark">Signature du contrat</div>
+                 <div class="small text-secondary">{{ contract.startDate ? contract.startDate|date('d F Y', 'Europe/Paris') : '—' }}</div>
+                 <div class="badge bg-success-subtle text-success mt-1">Étape Validée</div>
+              </li>
+              <li class="timeline-item">
+                 <div class="fw-bold text-dark">Fin de Période d'essai</div>
+                 <div class="small text-secondary">{{ contract.startDate ? contract.startDate|date_modify('+90 days')|date('d F Y', 'Europe/Paris') : '—' }}</div>
+                 <div class="small text-primary mt-1 fw-bold">Échéance automatique</div>
+              </li>
+              <li class="timeline-item {{ contract.endDate and "now"|date('Ymd') > contract.endDate|date('Ymd') ? 'completed' : '' }}">
+                 <div class="fw-bold text-dark">Renouvellement ou Fin</div>
+                 <div class="small text-secondary">{{ contract.endDate ? contract.endDate|date('d F Y', 'Europe/Paris') : 'Contrat à durée indéterminée' }}</div>
+              </li>
+           </ul>
+        </div>
+     </div>
+
+     {# Actions Rapides #}
+     <div class="card border-0 shadow-sm">
+        <div class="card-body p-5">
+           <div class="row g-2">
+              <div class="col-12">
+                 <a href="{{ path('app_contract_edit', {id: contract.id}) }}" class="btn btn-primary btn-lg w-100 shadow-sm d-flex align-items-center justify-content-center gap-2">
+                    <i class="ti ti-pencil fs-4"></i> Modifier
+                 </a>
+              </div>
+              <div class="col-12 mt-3">
+                 <a href="{{ path('app_contract_index') }}" class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2">
+                    <i class="ti ti-arrow-back-up fs-4"></i> Liste des contrats
+                 </a>
+              </div>
+           </div>
+        </div>
+     </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+  {# Modal Aperçu E-mail #}
+  <div class="modal fade" id="emailPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content shadow-lg border-0">
+        <div class="modal-header bg-primary text-white p-4">
+           <h5 class="modal-title d-flex align-items-center gap-2">
+              <i class="ti ti-mail-forward fs-4"></i> Aperçu de l'e-mail Candidat
+           </h5>
+           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-5">
+           <div class="border rounded p-4 bg-light shadow-inner mb-4">
+              <div class="mb-3">
+                 <label class="small text-secondary fw-bold text-uppercase">Destinataire :</label>
+                 <div class="fw-bold text-dark">{{ contract.candidate ? contract.candidate.email : 'candidat@email.com' }}</div>
+              </div>
+              <div class="mb-3">
+                 <label class="small text-secondary fw-bold text-uppercase">Objet :</label>
+                 <div class="text-primary fw-bold">Votre contrat SyfonuRH - Action Requise</div>
+              </div>
+              <hr>
+              <div class="email-mockup p-4 bg-white border shadow-sm rounded">
+                 <p>Bonjour <strong>{{ contract.candidate ? contract.candidate.firstName : 'Candidat' }}</strong>,</p>
+                 <p>Nous sommes ravis de vous accueillir chez <strong>SyfonuRH Corp</strong>.</p>
+                 <p>Votre contrat de type <strong>{{ contract.typeContrat ? contract.typeContrat.name : 'Standard' }}</strong> est maintenant disponible pour signature électronique sur notre plateforme.</p>
+                 <div class="my-4 text-center">
+                    <button class="btn btn-primary px-5 py-3 fw-bold shadow-sm">Accéder à mon Contrat Digital</button>
+                 </div>
+                 <p class="text-secondary small">Ce document est certifié par notre système d'IA et dispose d'un identifiant unique de vérification.</p>
+                 <p>Cordialement,<br>L'équipe Recrutement SyfonuRH</p>
+              </div>
+           </div>
+        </div>
+        <div class="modal-footer p-4 border-top">
+           <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Annuler</button>
+           <button id="sendFakeEmailBtn" type="button" class="btn btn-primary px-4 d-flex align-items-center gap-2">
+              <i class="ti ti-send fs-5"></i> Envoyer maintenant
+           </button>
         </div>
       </div>
     </div>
   </div>
-
-  {# ─── Sidebar (Plus fine) ─── #}
-  <div class="col-lg-3 animate__animated animate__fadeInRight">
-
-    {# ── QR + Actions Card ── #}
-    <div class="card mb-4 overflow-hidden shadow-sm border-0">
-      <div class="card-header p-4 d-flex align-items-center justify-content-between" style="background-color: #212529 !important; border-bottom: none;">
-        <h6 class="mb-0 text-white text-uppercase tracking-wider fw-bold" style="color: #ffffff !important;">Certificat de Validité</h6>
-        <i class="ti ti-shield-check text-success fs-4"></i>
-      </div>
-      <div class="card-body p-6 text-center">
-        {% set full_url = url('app_contract_show', {id: contract.id}) %}
-        {# Clean phone: strip spaces, dashes, leading +, keep digits only #}
-        {% set raw_phone = contract.candidate and contract.candidate.phone ? contract.candidate.phone : '' %}
-        {# Strip all non-digit characters #}
-        {% set phone = raw_phone|replace({' ': '', '-': '', '(': '', ')': '', '.': '', '+': ''})|trim %}
-        {# Normalize to Tunisian international format (always +216) #}
-        {% if phone starts with '216' %}
-          {# already correct, e.g. 21612345678 #}
-        {% elseif phone starts with '0' %}
-          {% set phone = '216' ~ phone[1:] %}
-        {% elseif phone|length == 8 %}
-          {# Raw 8-digit local number, e.g. 12345678 #}
-          {% set phone = '216' ~ phone %}
-        {% endif %}
-
-        <div class="bg-white p-3 d-inline-block rounded shadow-sm mb-4 border">
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ full_url|url_encode }}"
-               alt="Lien de Vérification" class="img-fluid" style="width: 100px;">
-        </div>
-
-        <div class="d-grid gap-2 mb-2">
-          {# ── Download PDF ── #}
-          <button onclick="saveAsPdf('{{ path('app_contract_pdf', {id: contract.id, filename: 'contrat-' ~ contract.id ~ '.pdf'}) }}', 'contrat-{{ contract.id }}.pdf', this)"
-                  class="btn btn-dark d-flex align-items-center justify-content-center gap-2 py-2">
-            <i class="ti ti-file-download fs-5"></i> Télécharger PDF officiel
-          </button>
-        </div>
-      </div>
-    </div>
-
-    {# ── Agenda & Rappels ── #}
-    <div class="card mb-4 shadow-sm border-0 overflow-hidden">
-      <div class="card-header bg-primary-subtle border-0 p-4 d-flex justify-content-between align-items-center">
-        <h6 class="mb-0 d-flex align-items-center gap-2 text-primary fw-bold">
-          <i class="ti ti-calendar-event fs-4"></i> Agenda & Rappels
-        </h6>
-      </div>
-      <div class="card-body p-4">
-        {# Mini Calendar Widget #}
-        <div class="mini-calendar mb-4">
-           {# ... Calendar header ... #}
-           <div class="d-flex justify-content-between align-items-center mb-3">
-             <span class="fw-bold month-name">{{ "now"|date('F Y') }}</span>
-           </div>
-           <div class="calendar-grid text-center small text-secondary">
-             <div class="fw-bold">L</div><div class="fw-bold">M</div><div class="fw-bold">M</div>
-             <div class="fw-bold">J</div><div class="fw-bold">V</div><div class="fw-bold">S</div><div class="fw-bold">D</div>
-             {# Mock current month grid #}
-             {% for i in 1..31 %}
-                <div class="py-1 calendar-day {{ i == "now"|date('d') ? 'today bg-primary text-white rounded' : '' }}">{{ i }}</div>
-             {% endfor %}
-           </div>
-        </div>
-        
-        <div class="agenda-list">
-          <label class="small text-secondary fw-bold text-uppercase mb-3 d-block">Événements Clés</label>
-          <div class="d-flex flex-column gap-3">
-             <div class="d-flex gap-3 align-items-start">
-               <div class="bg-primary-subtle text-primary p-2 rounded small fw-bold" style="min-width: 45px; text-align: center;">
-                 {{ contract.startDate ? contract.startDate|date('d') : '01' }}<br><span style="font-size: 0.6rem;">{{ contract.startDate ? contract.startDate|date('M') : 'AVR' }}</span>
-               </div>
-               <div>
-                 <div class="small fw-bold">Début du contrat</div>
-                 <div class="text-secondary" style="font-size: 0.75rem;">Prise de poste effective</div>
-               </div>
-             </div>
-             <div class="d-flex gap-3 align-items-start">
-               <div class="bg-warning-subtle text-warning p-2 rounded small fw-bold" style="min-width: 45px; text-align: center;">
-                 {{ contract.startDate ? contract.startDate|date_modify('+45 days')|date('d') : '15' }}<br><span style="font-size: 0.6rem;">{{ contract.startDate ? contract.startDate|date_modify('+45 days')|date('M') : 'MAI' }}</span>
-               </div>
-               <div>
-                 <div class="small fw-bold">Point mi-parcours</div>
-                 <div class="text-secondary" style="font-size: 0.75rem;">Recommandé par le système</div>
-               </div>
-             </div>
-             <div class="d-flex gap-3 align-items-start">
-               <div class="bg-danger-subtle text-danger p-2 rounded small fw-bold" style="min-width: 45px; text-align: center;">
-                 {{ contract.startDate ? contract.startDate|date_modify('+90 days')|date('d') : '01' }}<br><span style="font-size: 0.6rem;">{{ contract.startDate ? contract.startDate|date_modify('+90 days')|date('M') : 'JUIL' }}</span>
-               </div>
-               <div>
-                 <div class="small fw-bold">Fin période d'essai</div>
-                 <div class="text-secondary" style="font-size: 0.75rem;">Validation finale requise</div>
-               </div>
-             </div>
-          </div>
-          <button class="btn btn-outline-primary btn-sm w-100 mt-4 d-flex align-items-center justify-content-center gap-2">
-            <i class="ti ti-plus"></i> Ajouter un rappel RH
-          </button>
-        </div>
-      </div>
-    </div>
-
-    {# ── Assistance RH (Regroupé) ── #}
-    <div class="card mb-4 border-0 shadow-sm overflow-hidden">
-      <div class="card-header bg-light border-0 p-4">
-        <h6 class="mb-0 d-flex align-items-center gap-2 text-dark fw-bold">
-          <i class="ti ti-bell-ringing fs-4"></i> Notifications & Conseils
-        </h6>
-      </div>
-      <div class="card-body p-4">
-        <div class="list-group list-group-flush gap-2">
-          {% if not contract.isSigned %}
-          <div class="list-group-item border-0 p-0 mb-3">
-            <div class="d-flex align-items-start gap-3">
-              <span class="status-dot bg-danger mt-1 animate__animated animate__pulse animate__infinite"></span>
-              <div>
-                <div class="small fw-bold text-dark">Urgent : Signature manquante</div>
-                <p class="small text-secondary mb-2">Le candidat n'a pas encore validé le document. Une relance est nécessaire.</p>
-                <div class="d-flex gap-2">
-                  <button class="btn btn-xs btn-danger">Relancer par mail</button>
-                </div>
-              </div>
-            </div>
-          </div>
-          {% endif %}
-
-          <div class="list-group-item border-0 p-0 mb-3">
-            <div class="d-flex align-items-start gap-3">
-              <span class="status-dot bg-warning mt-1"></span>
-              <div>
-                <div class="small fw-bold text-dark">Conseil : Suivi calendrier</div>
-                <p class="small text-secondary mb-0">Un entretien de mi-parcours est recommandé pour ce type de contrat.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="list-group-item border-0 p-0">
-            <div class="d-flex align-items-start gap-3">
-              <span class="status-dot bg-success mt-1"></span>
-              <div>
-                <div class="small fw-bold text-dark">Information : Fiscalité</div>
-                <p class="small text-secondary mb-0">Profil éligible au programme SIVP (Tunisie).</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {# ── Career Timeline (Cycle de Vie) ── #}
-    <div class="card mb-4 shadow-sm border-0">
-      <div class="card-body p-6">
-        <h6 class="mb-6 d-flex align-items-center gap-3">
-          <span class="bg-primary p-2 rounded-circle text-white d-flex">
-            <i class="ti ti-timeline fs-6"></i>
-          </span>
-          Cycle de Vie du Salarié
-        </h6>
-        <ul class="career-timeline">
-          <li class="timeline-item {{ contract.isSigned ? 'completed' : '' }}">
-            <div class="d-flex justify-content-between align-items-center">
-              <div class="fw-bold text-dark">Signature du contrat</div>
-              {% if contract.isSigned %}
-                <span class="badge bg-success-subtle text-success">Terminé</span>
-              {% else %}
-                <span class="badge bg-warning-subtle text-warning">En cours</span>
-              {% endif %}
-            </div>
-            <div class="small text-secondary">{{ contract.startDate ? contract.startDate|date('d F Y') : '—' }}</div>
-          </li>
-          <li class="timeline-item">
-            <div class="d-flex justify-content-between align-items-center">
-              <div class="fw-bold text-dark">Fin de Période d'essai</div>
-              <span class="badge bg-light-subtle text-secondary border">À venir</span>
-            </div>
-            <div class="small text-secondary">{{ contract.startDate ? contract.startDate|date_modify('+90 days')|date('d F Y') : '—' }}</div>
-          </li>
-          <li class="timeline-item {{ contract.endDate and date(contract.endDate) < date() ? 'completed' : '' }}">
-            <div class="d-flex justify-content-between align-items-center">
-              <div class="fw-bold text-dark">Echéance finale</div>
-              {% if contract.endDate and date(contract.endDate) < date() %}
-                <span class="badge bg-danger-subtle text-danger">Expiré</span>
-              {% elseif not contract.endDate %}
-                <span class="badge bg-info-subtle text-info">CDI</span>
-              {% else %}
-                <span class="badge bg-light-subtle text-secondary border">À venir</span>
-              {% endif %}
-            </div>
-            <div class="small text-secondary">{{ contract.endDate ? contract.endDate|date('d F Y') : 'Durée indéterminée' }}</div>
-          </li>
-        </ul>
-      </div>
-    </div>
-
-    {# Bloc Quick Actions remonté #}
-    <div class="card border-0 shadow-sm mb-4">
-      <div class="card-body p-4">
-        <div class="d-grid gap-2">
-          <a href="{{ path('app_contract_edit', {id: contract.id}) }}"
-             class="btn btn-primary d-flex align-items-center justify-content-center gap-2 border-0 shadow-sm">
-            <i class="ti ti-pencil fs-5"></i> Modifier la fiche
-          </a>
-          <a href="{{ path('app_contract_index') }}"
-             class="btn btn-ghost-secondary btn-sm d-flex align-items-center justify-content-center gap-2">
-            <i class="ti ti-arrow-back-up fs-5"></i> Liste des contrats
-          </a>
-        </div>
-      </div>
-    </div>
-
-  </div>{# end sidebar #}
-</div>
 {% endblock %}
 
-{% block javascripts %}
-  {{ parent() }}
-  <script>
-    // ── Agenda Integration: Add RH Reminders ──
-    const btnAddReminder = document.querySelector('.agenda-list button');
-    if (btnAddReminder) {
-      btnAddReminder.addEventListener('click', async () => {
-        const { value: formValues } = await Swal.fire({
-          title: 'Nouveau rappel RH',
-          html:
-            '<input id="swal-input1" class="swal2-input" placeholder="Titre du rappel (ex: Point 3 mois)">' +
-            '<input id="swal-input2" type="date" class="swal2-input">',
-          focusConfirm: false,
-          confirmButtonText: 'Ajouter à l\'agenda',
-          confirmButtonColor: '#2563eb',
-          preConfirm: () => {
-            return [
-              document.getElementById('swal-input1').value,
-              document.getElementById('swal-input2').value
-            ]
-          }
-        });
 
-        if (formValues && formValues[0]) {
-          Swal.fire({
-            title: 'Ajouté !',
-            text: 'Le rappel "' + formValues[0] + '" a été ajouté à votre agenda SyfonuRH.',
-            icon: 'success',
-            confirmButtonColor: '#2563eb'
-          });
-          // In a real app, we would push this to the DB. Here we just mock success.
-        }
-      });
-    }
-
-    // ── Quick Actions logic ──
-    // Les actions d'envoi manuel ont été supprimées au profit de l'automatisation.
-
-    window.saveAsPdf = async function(url, fileName, btn = null) {
-        if (window.showSaveFilePicker) {
-            try {
-                const handle = await window.showSaveFilePicker({
-                    suggestedName: fileName,
-                    types: [{ description: 'Document PDF', accept: {'application/pdf': ['.pdf']} }],
-                });
-                const originalHtml = btn ? btn.innerHTML : '';
-                if (btn) { btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>...'; btn.disabled = true; }
-                const response = await fetch(url);
-                if (!response.ok) throw new Error('Erreur serveur');
-                const blob = await response.blob();
-                const writable = await handle.createWritable();
-                await writable.write(blob);
-                await writable.close();
-                if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
-            } catch (err) {
-                if (err.name !== 'AbortError') { console.error('Erreur:', err); window.open(url, '_blank'); }
-            }
-        } else {
-            window.open(url, '_blank');
-        }
-    };
-
-    // ── Background Email Sending ──
-    document.addEventListener('DOMContentLoaded', async function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('send_email') === '1') {
-            const contractId = {{ contract.id }};
-            const sendUrl = '{{ path('api_contract_send_email', {id: contract.id}) }}';
-            
-            Swal.fire({
-                title: 'Envoi en cours...',
-                text: 'Nous envoyons le contrat par e-mail au candidat.',
-                icon: 'info',
-                showConfirmButton: false,
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-
-            try {
-                const response = await fetch(sendUrl, { method: 'POST' });
-                const result = await response.json();
-                
-                if (result.success) {
-                    Swal.fire({
-                        title: 'E-mail envoyé !',
-                        text: 'Le candidat a bien reçu le contrat.',
-                        icon: 'success',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                } else {
-                    throw new Error(result.error || 'Erreur inconnue');
-                }
-            } catch (err) {
-                Swal.fire({
-                    title: 'Échec de l\'envoi',
-                    text: 'Le contrat a été enregistré, mais l\'e-mail n\'a pas pu être envoyé : ' + err.message,
-                    icon: 'warning',
-                    confirmButtonColor: '#2563eb'
-                });
-            }
-            
-            // Clean URL
-            const nextUrl = window.location.href.split('?')[0];
-            window.history.replaceState({}, document.title, nextUrl);
-        }
-    });
-  </script>
-{% endblock %}

@@ -1,0 +1,236 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Modifier l'entreprise | SyfonuRH{% endblock %}
+{% block page_title %}Modifier mon entreprise{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<style>
+.logo-ring-wrapper { position:relative; width:140px; height:140px; }
+.logo-ring-inner {
+    width:140px; height:140px; border-radius:18px;
+    background:linear-gradient(135deg,#eef0ff,#dde1ff);
+    border:3px solid #c7cbf5;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; transition:all .25s;
+    box-shadow:0 4px 20px rgba(92,103,245,.12);
+}
+.logo-ring-inner img { width:100%; height:100%; object-fit:cover; }
+.logo-ring-overlay {
+    position:absolute; inset:0; border-radius:18px;
+    background:rgba(92,103,245,.78); backdrop-filter:blur(3px);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    color:#fff; opacity:0; transition:opacity .22s;
+}
+.logo-ring-wrapper:hover .logo-ring-inner { border-color:#5c67f5; transform: translateY(-3px); }
+.logo-ring-wrapper:hover .logo-ring-overlay { opacity:1; }
+.btn-light-primary { background-color: #eef0ff; color: #5c67f5; transition: all 0.2s; }
+.btn-light-primary:hover { background-color: #5c67f5; color: #fff; }
+.btn-xs { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-6 mt-2 justify-content-center">
+    <div class="col-xl-7">
+        <div class="card card-lg overflow-hidden border-0 shadow-sm">
+            <div class="card-body p-6">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    
+                    <div class="logo-upload-section mb-6 text-center">
+                        <div class="d-flex flex-column align-items-center" style="cursor:pointer;" onclick="document.getElementById('logoInput').click()">
+                            <div class="logo-ring-wrapper">
+                                <div id="logoPreview" class="logo-ring-inner">
+                                    {% if entreprise.logo %}
+                                        <img src="{{ entreprise.logo }}" alt="{{ entreprise.name }}">
+                                    {% else %}
+                                        <i class="ti ti-building-factory-2" style="font-size:3.5rem;color:#5c67f5;"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="logo-ring-overlay">
+                                    <i class="ti ti-camera fs-3"></i>
+                                    <span class="small fw-bold mt-1">Changer</span>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <h5 class="fw-bold mb-1">{{ entreprise.name }}</h5>
+                                <p class="text-secondary small mb-0">Modifier le logo • Max 2Mo</p>
+                            </div>
+                            <input type="file" id="logoInput" name="logo" accept="image/*" class="d-none" onchange="previewLogo(this)">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-600">Nom de l'entreprise <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control {% if errors.name is defined %}is-invalid{% endif %}" 
+                               value="{{ entreprise.name }}">
+                        {% if errors.name is defined %}
+                            <div class="invalid-feedback">{{ errors.name }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-600">Site Web</label>
+                            <input type="url" name="website" class="form-control {% if errors.website is defined %}is-invalid{% endif %}" 
+                                   value="{{ entreprise.website }}">
+                            {% if errors.website is defined %}
+                                <div class="invalid-feedback">{{ errors.website }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-600">Adresse / Siège</label>
+                            <input type="text" name="address" class="form-control" value="{{ entreprise.address }}">
+                        </div>
+                    </div>
+
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-600">Secteur d'activité</label>
+                            <select name="sector" class="form-select">
+                                <option value="">Sélectionnez un secteur</option>
+                                <option value="Informatique / Technologie" {{ entreprise.sector == 'Informatique / Technologie' ? 'selected' : '' }}>Informatique / Technologie</option>
+                                <option value="Finance / Banque" {{ entreprise.sector == 'Finance / Banque' ? 'selected' : '' }}>Finance / Banque</option>
+                                <option value="Santé / Médical" {{ entreprise.sector == 'Santé / Médical' ? 'selected' : '' }}>Santé / Médical</option>
+                                <option value="Éducation / Formation" {{ entreprise.sector == 'Éducation / Formation' ? 'selected' : '' }}>Éducation / Formation</option>
+                                <option value="Industrie / Énergie" {{ entreprise.sector == 'Industrie / Énergie' ? 'selected' : '' }}>Industrie / Énergie</option>
+                                <option value="Commerce / Retail" {{ entreprise.sector == 'Commerce / Retail' ? 'selected' : '' }}>Commerce / Retail</option>
+                                <option value="Autre" {{ entreprise.sector == 'Autre' ? 'selected' : '' }}>Autre</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-600">Taille de l'entreprise</label>
+                            <select name="size" class="form-select">
+                                <option value="">Sélectionnez une taille</option>
+                                <option value="1-10 employés" {{ entreprise.size == '1-10 employés' ? 'selected' : '' }}>1-10 employés</option>
+                                <option value="11-50 employés" {{ entreprise.size == '11-50 employés' ? 'selected' : '' }}>11-50 employés</option>
+                                <option value="51-200 employés" {{ entreprise.size == '51-200 employés' ? 'selected' : '' }}>51-200 employés</option>
+                                <option value="201-500 employés" {{ entreprise.size == '201-500 employés' ? 'selected' : '' }}>201-500 employés</option>
+                                <option value="500+ employés" {{ entreprise.size == '500+ employés' ? 'selected' : '' }}>500+ employés</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-600">Année de création</label>
+                            <input type="number" name="foundedAt" class="form-control" placeholder="Ex: 2010" value="{{ entreprise.foundedAt }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-600">Téléphone de contact</label>
+                            <input type="tel" name="phone" class="form-control" placeholder="+216 XX XXX XXX" value="{{ entreprise.phone }}">
+                        </div>
+                    </div>
+
+
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-600">Email de contact</label>
+                            <input type="email" name="contactEmail" class="form-control {% if errors.contactEmail is defined %}is-invalid{% endif %}" 
+                                   placeholder="contact@entreprise.com" value="{{ entreprise.contactEmail }}">
+                            {% if errors.contactEmail is defined %}
+                                <div class="invalid-feedback">{{ errors.contactEmail }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-600">Page LinkedIn</label>
+                            <input type="url" name="socialLinkedin" class="form-control {% if errors.socialLinkedin is defined %}is-invalid{% endif %}" 
+                                   placeholder="https://linkedin.com/company/..." value="{{ entreprise.socialLinkedin }}">
+                            {% if errors.socialLinkedin is defined %}
+                                <div class="invalid-feedback">{{ errors.socialLinkedin }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-600">Slogan</label>
+                        <input type="text" name="slogan" class="form-control" placeholder="Votre phrase d'accroche..." value="{{ entreprise.slogan }}">
+                    </div>
+
+                    <div class="mb-5">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label fw-600 mb-0">Présentation</label>
+                            <button type="button" id="generateAiBtn" class="btn btn-xs btn-light-primary border-0 shadow-none py-1 px-2 rounded-2 d-flex align-items-center gap-1">
+                                <i class="ti ti-sparkles fs-6"></i>
+                                <span class="small fw-bold">Générer avec l'IA</span>
+                                <span id="aiSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                            </button>
+                        </div>
+                        <textarea id="descriptionTextarea" name="description" class="form-control" rows="5">{{ entreprise.description }}</textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{{ path('app_entreprise_my') }}" class="text-secondary small fw-bold">Annuler</a>
+                        <button type="submit" class="btn btn-primary px-5 py-2 fw-bold">
+                            Enregistrer les modifications <i class="ti ti-check ms-2"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+function previewLogo(input) {
+    const preview = document.getElementById('logoPreview');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.innerHTML = '<img src="' + e.target.result + '" alt="Aperçu">';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const generateAiBtn = document.getElementById('generateAiBtn');
+    if (!generateAiBtn) return;
+
+    generateAiBtn.addEventListener('click', async function() {
+        const btn = this;
+        const spinner = document.getElementById('aiSpinner');
+        const textarea = document.getElementById('descriptionTextarea');
+        
+        // Collect data
+        const formData = new FormData();
+        formData.append('name', document.querySelector('input[name="name"]').value);
+        formData.append('sector', document.querySelector('select[name="sector"]').value);
+        formData.append('slogan', document.querySelector('input[name="slogan"]').value);
+        formData.append('size', document.querySelector('select[name="size"]').value);
+        formData.append('address', document.querySelector('input[name="address"]').value);
+        formData.append('foundedAt', document.querySelector('input[name="foundedAt"]').value);
+
+        if (!document.querySelector('input[name="name"]').value) {
+            alert("Veuillez d'abord saisir le nom de l'entreprise.");
+            return;
+        }
+
+        try {
+            btn.disabled = true;
+            spinner.classList.remove('d-none');
+            
+            const response = await fetch("{{ path('app_entreprise_generate_ai') }}", {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.description) {
+                textarea.value = result.description;
+            } else {
+                alert(result.error || "Une erreur est survenue.");
+            }
+        } catch (error) {
+            alert("Erreur de connexion.");
+        } finally {
+            btn.disabled = false;
+            spinner.classList.add('d-none');
+        }
+    });
+});
+</script>
+{% endblock %}

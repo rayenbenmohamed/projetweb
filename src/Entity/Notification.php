@@ -6,6 +6,7 @@ use App\Repository\NotificationRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: NotificationRepository::class)]
+#[ORM\Index(name: 'idx_notif_user_read', columns: ['user_id', 'is_read'])]
 class Notification
 {
     #[ORM\Id]
