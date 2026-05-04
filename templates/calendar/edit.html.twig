@@ -1,0 +1,45 @@
+{% extends 'layout/front.html.twig' %}
+
+{% block title %}Modifier un événement | SyfonuRH{% endblock %}
+{% block page_title %}Modifier un événement{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-1">
+    <div class="col-xl-7">
+        <div class="card card-lg">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Modifier l'événement</h5>
+                <a href="{{ path('app_calendar_index') }}" class="btn btn-sm btn-outline-secondary">Retour</a>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" action="{{ path('app_calendar_edit', {id: event.id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('calendar_edit' ~ event.id) }}">
+
+                    <div class="mb-3">
+                        <label class="form-label">Titre <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control" maxlength="150" required value="{{ event.title }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Début <span class="text-danger">*</span></label>
+                        <input type="datetime-local" name="startAt" class="form-control" required value="{{ event.startAt|date('Y-m-d\\TH:i') }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Fin</label>
+                        <input type="datetime-local" name="endAt" class="form-control" value="{{ event.endAt ? event.endAt|date('Y-m-d\\TH:i') : '' }}">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="4">{{ event.description|default('') }}</textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

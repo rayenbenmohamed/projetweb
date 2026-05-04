@@ -7,9 +7,11 @@ use App\Entity\Candidat;
 use App\Entity\Recruiter;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -18,9 +20,13 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 class SecurityController extends AbstractController
 {
     #[Route('/login', name: 'app_login')]
-    public function login(AuthenticationUtils $authenticationUtils): Response
+    public function login(AuthenticationUtils $authenticationUtils, RequestStack $requestStack): Response
     {
         if ($this->getUser() instanceof UserInterface) {
+            if ($this->getUser() instanceof User && $this->getUser()->isTwoFactorEnabled() && !$this->getSessionPassed($requestStack->getSession())) {
+                return $this->redirectToRoute('app_two_factor_verify');
+            }
+
             $roles = $this->getUser()->getRoles();
             if (\in_array('ROLE_ADMIN', $roles, true)) {
                 return $this->redirectToRoute('admin_dashboard');
@@ -137,6 +143,60 @@ class SecurityController extends AbstractController
         return $this->render('security/register.html.twig');
     }
 
+    #[Route('/two-factor', name: 'app_two_factor_verify', methods: ['GET', 'POST'])]
+    public function verifyTwoFactor(Request $request, EntityManagerInterface $entityManager): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User || !$user->isTwoFactorEnabled()) {
+            return $this->redirectToRoute('app_login');
+        }
+
+        $session = $request->getSession();
+        if ($this->getSessionPassed($session)) {
+            return \in_array('ROLE_ADMIN', $user->getRoles(), true)
+                ? $this->redirectToRoute('admin_dashboard')
+                : $this->redirectToRoute('app_app_dashboard');
+        }
+
+        if ($request->isMethod('POST')) {
+            if (!$this->isCsrfTokenValid('two_factor_verify', (string) $request->request->get('_token'))) {
+                $this->addFlash('error', FlashMessages::CSRF_INVALID);
+
+                return $this->redirectToRoute('app_two_factor_verify');
+            }
+
+            $code = trim((string) $request->request->get('code'));
+            if (!preg_match('/^[0-9]{4}$/', $code)) {
+                $this->addFlash('error', 'Le code doit comporter 4 chiffres.');
+
+                return $this->redirectToRoute('app_two_factor_verify');
+            }
+
+            $hash = $user->getTwoFactorCode();
+            $expiry = $user->getTwoFactorExpiry();
+            if ($hash === null || $expiry === null || $expiry < new \DateTimeImmutable() || !password_verify($code, $hash)) {
+                $this->addFlash('error', 'Le code est invalide ou expiré.');
+
+                return $this->redirectToRoute('app_two_factor_verify');
+            }
+
+            $user->setTwoFactorCode(null);
+            $user->setTwoFactorExpiry(null);
+            $entityManager->flush();
+            $session->set('app_2fa_passed', true);
+
+            $this->addFlash('success', 'Double authentification validée.');
+
+            return \in_array('ROLE_ADMIN', $user->getRoles(), true)
+                ? $this->redirectToRoute('admin_dashboard')
+                : $this->redirectToRoute('app_app_dashboard');
+        }
+
+        return $this->render('security/two_factor.html.twig', [
+            'email' => $user->getEmail(),
+        ]);
+    }
+
     private static function normalizeCompanyRne(string $raw): string
     {
         $s = preg_replace('/\s+/', '', $raw);
@@ -155,5 +215,10 @@ class SecurityController extends AbstractController
         }
 
         return (bool) preg_match('/^[A-Z0-9]{5,20}$/', $rne);
+    }
+
+    private function getSessionPassed(?SessionInterface $session): bool
+    {
+        return (bool) ($session?->get('app_2fa_passed', false) ?? false);
     }
 }

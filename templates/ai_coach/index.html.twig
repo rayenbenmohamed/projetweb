@@ -1,0 +1,228 @@
+{% extends 'layout/front.html.twig' %}
+
+{% block title %}Coach IA Entretien | SyfonuRH{% endblock %}
+{% block page_title %}Coach IA Entretien{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-2">
+    <div class="col-xl-9">
+        <div class="card card-lg mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center gap-2">
+                <div>
+                    <h5 class="mb-0">Préparation entretien & recrutement</h5>
+                    <small class="text-secondary">Pose tes questions : simulation, réponses STAR, CV, négociation salariale.</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <form method="post" action="{{ path('app_ai_coach_export_pdf') }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('ai_coach_export_pdf') }}">
+                        <button type="submit" class="btn btn-sm btn-outline-primary">Télécharger PDF</button>
+                    </form>
+                    <form method="post" action="{{ path('app_ai_coach_reset') }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('ai_coach_reset') }}">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">Réinitialiser</button>
+                    </form>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="aiCoachMessages" class="border rounded p-3 mb-3 bg-body-secondary" style="min-height: 360px; max-height: 65vh; overflow-y: auto;">
+                    {% if history is empty %}
+                        <div class="text-secondary small" id="aiCoachEmptyState">Exemple: "Je passe un entretien développeur PHP demain, fais-moi une simulation de questions + réponses."</div>
+                    {% endif %}
+                    {% for m in history %}
+                        <div class="d-flex {{ m.role == 'assistant' ? 'justify-content-start' : 'justify-content-end' }} mb-2">
+                            <div class="px-3 py-2 rounded-3 {{ m.role == 'assistant' ? 'bg-white border' : 'bg-primary text-white' }}" style="max-width: 85%; white-space: pre-wrap;">
+                                {{ m.content }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <form id="aiCoachForm" method="post" action="{{ path('app_ai_coach_message') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('ai_coach_message') }}">
+                    <div class="mb-2">
+                        <label for="aiCoachInput" class="form-label">Ta question</label>
+                        <textarea id="aiCoachInput" name="message" class="form-control" rows="3" maxlength="2000" placeholder="Ex: J'ai 2 ans d'expérience en Symfony, comment répondre à 'parlez-moi d'un échec' ?" required></textarea>
+                    </div>
+                    <div id="aiCoachError" class="alert alert-danger py-2 small d-none" role="alert"></div>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" id="aiCoachSubmit" class="btn btn-primary">Envoyer</button>
+                    </div>
+                </form>
+
+                <hr class="my-4">
+
+                <form id="aiCoachPhotoForm" method="post" action="{{ path('app_ai_coach_enhance_photo') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="_token" value="{{ csrf_token('ai_coach_enhance_photo') }}">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-8">
+                            <label for="aiCoachPhoto" class="form-label">Améliorer une photo (style pro)</label>
+                            <input type="file" id="aiCoachPhoto" name="photo" class="form-control" accept="image/*">
+                            <div class="form-text">Format image uniquement, max 8 Mo.</div>
+                        </div>
+                        <div class="col-md-4 d-grid">
+                            <button type="submit" id="aiCoachPhotoSubmit" class="btn btn-outline-primary">Rendre la photo plus pro</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        (() => {
+            const form = document.getElementById('aiCoachForm');
+            const input = document.getElementById('aiCoachInput');
+            const messages = document.getElementById('aiCoachMessages');
+            const errorBox = document.getElementById('aiCoachError');
+            const submitBtn = document.getElementById('aiCoachSubmit');
+            const photoForm = document.getElementById('aiCoachPhotoForm');
+            const photoInput = document.getElementById('aiCoachPhoto');
+            const photoSubmit = document.getElementById('aiCoachPhotoSubmit');
+            const emptyState = document.getElementById('aiCoachEmptyState');
+
+            if (!form || !input || !messages || !submitBtn) {
+                return;
+            }
+
+            const scrollBottom = () => {
+                messages.scrollTop = messages.scrollHeight;
+            };
+
+            const appendBubble = (role, content) => {
+                if (emptyState) {
+                    emptyState.classList.add('d-none');
+                }
+
+                const row = document.createElement('div');
+                row.className = 'd-flex ' + (role === 'assistant' ? 'justify-content-start' : 'justify-content-end') + ' mb-2';
+                const bubble = document.createElement('div');
+                bubble.className = 'px-3 py-2 rounded-3 ' + (role === 'assistant' ? 'bg-white border' : 'bg-primary text-white');
+                bubble.style.maxWidth = '85%';
+                bubble.style.whiteSpace = 'pre-wrap';
+                bubble.textContent = content;
+                row.appendChild(bubble);
+                messages.appendChild(row);
+                scrollBottom();
+            };
+
+            const appendImageComparison = (originalUrl, enhancedUrl) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'd-flex justify-content-start mb-3';
+                wrapper.innerHTML = `
+                    <div class="border rounded-3 bg-white p-3" style="max-width: 95%;">
+                        <div class="small fw-semibold mb-2">Avant / Après (photo pro)</div>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <div class="small text-secondary mb-1">Original</div>
+                                <a href="${originalUrl}" target="_blank" rel="noopener">
+                                    <img src="${originalUrl}" alt="Photo originale" class="img-fluid rounded border" style="max-height: 220px; object-fit: cover;">
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="small text-secondary mb-1">Améliorée</div>
+                                <a href="${enhancedUrl}" target="_blank" rel="noopener">
+                                    <img src="${enhancedUrl}" alt="Photo améliorée" class="img-fluid rounded border" style="max-height: 220px; object-fit: cover;">
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                messages.appendChild(wrapper);
+                scrollBottom();
+            };
+
+            const setError = (msg) => {
+                if (!errorBox) return;
+                if (!msg) {
+                    errorBox.classList.add('d-none');
+                    errorBox.textContent = '';
+                    return;
+                }
+                errorBox.textContent = msg;
+                errorBox.classList.remove('d-none');
+            };
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                setError('');
+                const text = (input.value || '').trim();
+                if (!text) {
+                    setError('Écris une question avant d’envoyer.');
+                    return;
+                }
+
+                appendBubble('user', text);
+                input.value = '';
+                submitBtn.disabled = true;
+
+                const data = new FormData(form);
+                data.set('message', text);
+
+                try {
+                    const res = await fetch(form.action, {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        body: data
+                    });
+                    const json = await res.json().catch(() => ({}));
+                    if (!res.ok || !json.ok) {
+                        setError(json.error || 'Erreur lors de la réponse IA.');
+                        submitBtn.disabled = false;
+                        return;
+                    }
+                    appendBubble('assistant', json.assistant || 'Je n’ai pas de réponse pour le moment.');
+                } catch (err) {
+                    setError('Erreur réseau. Réessaie.');
+                }
+
+                submitBtn.disabled = false;
+                input.focus();
+            });
+
+            if (photoForm && photoInput && photoSubmit) {
+                photoForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    setError('');
+                    if (!photoInput.files || photoInput.files.length === 0) {
+                        setError('Choisis une photo avant d’envoyer.');
+                        return;
+                    }
+
+                    appendBubble('user', '[Photo envoyée pour amélioration]');
+                    photoSubmit.disabled = true;
+
+                    const data = new FormData(photoForm);
+                    try {
+                        const res = await fetch(photoForm.action, {
+                            method: 'POST',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            body: data
+                        });
+                        const json = await res.json().catch(() => ({}));
+                        if (!res.ok || !json.ok) {
+                            setError(json.error || 'Erreur pendant le traitement de la photo.');
+                            photoSubmit.disabled = false;
+                            return;
+                        }
+                        appendBubble('assistant', json.assistant || 'Photo traitée.');
+                        if (json.original_url && json.enhanced_url) {
+                            appendImageComparison(json.original_url, json.enhanced_url);
+                        }
+                        photoInput.value = '';
+                    } catch (err) {
+                        setError('Erreur réseau. Réessaie.');
+                    }
+
+                    photoSubmit.disabled = false;
+                });
+            }
+
+            scrollBottom();
+        })();
+    </script>
+{% endblock %}
+

@@ -1,0 +1,56 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Double authentification | SyfonuRH{% endblock %}
+
+{% block body %}
+<main class="d-flex flex-column justify-content-center vh-100">
+    <section>
+        <div class="container">
+            <div class="row mb-8">
+                <div class="col-xl-4 offset-xl-4 col-md-12 col-12">
+                    <div class="text-center">
+                        <a href="{{ path('app_home') }}" class="fs-2 fw-bold d-flex align-items-center gap-2 justify-content-center mb-6">
+                            <img src="{{ asset('dasher/images/brand/logo/logo-icon.svg') }}" alt="Logo"/>
+                            <span>SyfonuRH</span>
+                        </a>
+                        <h1 class="mb-1">Code de vérification</h1>
+                        <p class="mb-0 text-secondary">Un code à 4 chiffres a été envoyé sur <strong>{{ email }}</strong>.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-xl-5 col-lg-6 col-md-8 col-12">
+                    <div class="mb-4">{% include '_flashes.html.twig' %}</div>
+                    <div class="card card-lg mb-6">
+                        <div class="card-body p-6">
+                            <form method="post" action="{{ path('app_two_factor_verify') }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('two_factor_verify') }}">
+                                <div class="mb-3">
+                                    <label for="twoFactorCode" class="form-label">Code à 4 chiffres <span class="text-danger">*</span></label>
+                                    <input
+                                        type="text"
+                                        id="twoFactorCode"
+                                        name="code"
+                                        class="form-control"
+                                        required
+                                        inputmode="numeric"
+                                        pattern="[0-9]{4}"
+                                        maxlength="4"
+                                        placeholder="0000"
+                                        autocomplete="one-time-code"
+                                    >
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary">Valider le code</button>
+                                    <a href="{{ path('app_logout') }}" class="btn btn-outline-secondary btn-sm">Se déconnecter</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}
+

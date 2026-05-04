@@ -4,28 +4,28 @@
      data-notify-url="{{ path('app_notifications_summary') }}"
      data-initial-fr="{{ sn.friend_requests }}"
      data-initial-um="{{ sn.unread_messages }}">
-    <button class="btn btn-light btn-sm position-relative border-0 rounded-circle p-2" type="button"
+    <button class="btn btn-sm position-relative rounded-circle p-2 social-notify-toggle" type="button"
             id="socialNotifyToggle" data-bs-toggle="dropdown" aria-expanded="false"
             aria-label="Notifications sociales">
         <i class="ti ti-bell fs-5"></i>
         <span id="socialNotifyBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ sn.total > 0 ? '' : 'd-none' }}"
               data-count="{{ sn.total }}">{{ sn.total > 99 ? '99+' : sn.total }}</span>
     </button>
-    <ul class="dropdown-menu dropdown-menu-end shadow" style="min-width: 16rem;" aria-labelledby="socialNotifyToggle">
+    <ul class="dropdown-menu dropdown-menu-end shadow social-notify-menu p-2" style="min-width: 16rem;" aria-labelledby="socialNotifyToggle">
         <li class="px-3 py-2 border-bottom small text-secondary">Notifications</li>
         <li>
-            <a class="dropdown-item d-flex justify-content-between align-items-center py-2" href="{{ path('app_friends_index') }}#section-incoming-requests">
+            <a class="dropdown-item d-flex justify-content-between align-items-center py-2 social-notify-item" href="{{ path('app_friends_index') }}#section-incoming-requests">
                 <span><i class="ti ti-user-plus me-2 text-primary"></i> Demandes d’ami</span>
                 <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill" data-sn-friend-requests>{{ sn.friend_requests }}</span>
             </a>
         </li>
         <li>
-            <a class="dropdown-item d-flex justify-content-between align-items-center py-2" href="{{ path('app_friends_index') }}#section-friends">
+            <a class="dropdown-item d-flex justify-content-between align-items-center py-2 social-notify-item" href="{{ path('app_friends_index') }}#section-friends">
                 <span><i class="ti ti-messages me-2 text-success"></i> Messages non lus</span>
                 <span class="badge bg-success-subtle text-success-emphasis rounded-pill" data-sn-unread-messages>{{ sn.unread_messages }}</span>
             </a>
         </li>
-        <li class="border-top"><a class="dropdown-item small py-2" href="{{ path('app_friends_index') }}">Ouvrir la page Amis</a></li>
+        <li class="border-top mt-1 pt-1"><a class="dropdown-item small py-2 social-notify-item" href="{{ path('app_friends_index') }}">Ouvrir la page Amis</a></li>
     </ul>
 </div>
 <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090;" id="socialNotifyToastHost"></div>

@@ -133,3 +133,145 @@
   }
 }
 
+/* --- Social UI (friends + chat) glass/soft refresh --- */
+.social-shell {
+  --social-glass-bg: rgba(255, 255, 255, 0.72);
+  --social-glass-border: rgba(255, 255, 255, 0.45);
+  --social-glass-shadow: 0 20px 35px rgba(31, 40, 55, 0.08);
+  --social-title: #1d2734;
+  --social-muted: #5a6b80;
+  --social-pill: #f3f7ff;
+}
+
+[data-bs-theme='dark'] .social-shell {
+  --social-glass-bg: rgba(23, 32, 42, 0.72);
+  --social-glass-border: rgba(123, 141, 163, 0.22);
+  --social-glass-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
+  --social-title: #e8eef6;
+  --social-muted: #b9c7d7;
+  --social-pill: #223244;
+}
+
+.social-glass-card {
+  background: var(--social-glass-bg) !important;
+  border: 1px solid var(--social-glass-border) !important;
+  border-radius: 18px !important;
+  box-shadow: var(--social-glass-shadow) !important;
+  backdrop-filter: blur(14px);
+}
+
+.social-card-header {
+  border-bottom: 1px solid rgba(131, 145, 162, 0.2) !important;
+  background: transparent !important;
+}
+
+.social-title {
+  color: var(--social-title) !important;
+}
+
+.social-subtitle {
+  color: var(--social-muted) !important;
+}
+
+.social-soft-badge {
+  background: var(--social-pill) !important;
+  color: var(--social-title) !important;
+  border: 1px solid rgba(116, 136, 160, 0.25);
+}
+
+.social-search-group .input-group-text,
+.social-search-group .form-control {
+  border-color: rgba(133, 153, 176, 0.35) !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+}
+
+[data-bs-theme='dark'] .social-search-group .input-group-text,
+[data-bs-theme='dark'] .social-search-group .form-control {
+  background: rgba(25, 35, 46, 0.88) !important;
+  color: #eaf1fb !important;
+}
+
+.social-soft-btn {
+  border-radius: 12px !important;
+}
+
+.social-list-item {
+  border-color: rgba(131, 145, 162, 0.2) !important;
+  background: transparent !important;
+}
+
+.social-list-item:hover {
+  background: rgba(59, 130, 246, 0.06) !important;
+}
+
+.social-empty {
+  color: var(--social-muted) !important;
+  background: rgba(148, 163, 184, 0.08) !important;
+  border-radius: 12px;
+}
+
+.social-chat-scroll {
+  min-height: 340px;
+  max-height: 55vh;
+  overflow-y: auto;
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.08), rgba(148, 163, 184, 0.08));
+}
+
+.social-chat-bubble {
+  max-width: 85%;
+  white-space: pre-wrap;
+  border-radius: 14px;
+  padding: 0.7rem 0.9rem;
+}
+
+.social-chat-bubble.mine {
+  background: linear-gradient(135deg, #2f7cf8, #5595ff);
+  color: #fff;
+  box-shadow: 0 10px 25px rgba(47, 124, 248, 0.24);
+}
+
+.social-chat-bubble.theirs {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(133, 153, 176, 0.32);
+  color: #1f2937;
+}
+
+[data-bs-theme='dark'] .social-chat-bubble.theirs {
+  background: rgba(26, 35, 45, 0.88);
+  border-color: rgba(122, 141, 165, 0.36);
+  color: #e6edf6;
+}
+
+.social-chat-meta {
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.social-chat-form textarea {
+  border-radius: 12px;
+}
+
+.social-notify-toggle {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border: 1px solid rgba(131, 145, 162, 0.28) !important;
+  box-shadow: 0 8px 18px rgba(16, 24, 40, 0.12);
+}
+
+[data-bs-theme='dark'] .social-notify-toggle {
+  background: rgba(20, 29, 40, 0.8) !important;
+}
+
+.social-notify-menu {
+  border-radius: 14px !important;
+  border: 1px solid rgba(131, 145, 162, 0.28) !important;
+  backdrop-filter: blur(12px);
+}
+
+.social-notify-item {
+  border-radius: 10px;
+}
+
+#calendar-holder {
+  min-height: 680px;
+}
+

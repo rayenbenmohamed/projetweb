@@ -4,54 +4,58 @@
 {% block page_title %}Discussion{% endblock %}
 
 {% block content %}
-{% if is_granted('ROLE_ADMIN') %}
-<div class="alert alert-light border d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-    <span class="small text-secondary">Mode administrateur</span>
-    <a href="{{ path('admin_dashboard') }}" class="btn btn-sm btn-outline-dark">Back-office</a>
-</div>
-{% endif %}
-<div
-    id="friend-chat-app"
-    class="card card-lg mt-1"
-    data-my-id="{{ app.user.id }}"
-    data-peer-id="{{ peer.id }}"
-    data-chat-action="{{ path('app_chat_with', {id: peer.id}) }}"
-    data-poll-url="{{ path('app_chat_poll', {id: peer.id}) }}"
-    data-csrf-token="{{ csrf_token('friend_chat' ~ peer.id) }}"
->
-    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div>
-            <h5 class="mb-0">{{ peer.firstName|default('') }} {{ peer.lastName|default('') }}</h5>
-            <span class="text-secondary small">{{ peer.email }}</span>
+<section class="social-shell">
+    {% if is_granted('ROLE_ADMIN') %}
+        <div class="alert social-glass-card d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <span class="small social-subtitle">Mode administrateur actif.</span>
+            <a href="{{ path('admin_dashboard') }}" class="btn btn-sm btn-outline-dark social-soft-btn">Back-office</a>
         </div>
-        <a href="{{ path('app_friends_index') }}" class="btn btn-sm btn-outline-secondary">← Amis</a>
-    </div>
-    <div id="friend-chat-scroll" class="card-body border-bottom bg-body-secondary" style="min-height: 320px; max-height: 55vh; overflow-y: auto;">
-        <p id="friend-chat-placeholder" class="text-secondary small mb-0 {{ messages is not empty ? 'd-none' : '' }}">Aucun message pour l’instant. Dites bonjour !</p>
-        <div id="friend-chat-bubbles">
-            {% for m in messages %}
-                {% set mine = m.sender.id == app.user.id %}
-                <div class="d-flex mb-3 {{ mine ? 'justify-content-end' : 'justify-content-start' }}" data-message-id="{{ m.id }}">
-                    <div class="rounded-3 px-3 py-2 {{ mine ? 'bg-primary text-white' : 'bg-white border' }}" style="max-width: 85%; white-space: pre-wrap;">
-                        <div class="small {{ mine ? 'text-white-50' : 'text-secondary' }}">{{ m.createdAt|date('d/m/Y H:i') }}</div>
-                        <div class="message-content">{{ m.content|e }}</div>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-    </div>
-    <div class="card-body">
-        <form id="friend-chat-form" method="post" action="{{ path('app_chat_with', {id: peer.id}) }}">
-            <input type="hidden" name="_token" value="{{ csrf_token('friend_chat' ~ peer.id) }}">
-            <div class="mb-2">
-                <label class="form-label visually-hidden">Message</label>
-                <textarea name="content" id="friend-chat-content" class="form-control" rows="3" required maxlength="5000" placeholder="Votre message…"></textarea>
+    {% endif %}
+    <div
+        id="friend-chat-app"
+        class="card social-glass-card mt-1"
+        data-my-id="{{ app.user.id }}"
+        data-peer-id="{{ peer.id }}"
+        data-chat-action="{{ path('app_chat_with', {id: peer.id}) }}"
+        data-poll-url="{{ path('app_chat_poll', {id: peer.id}) }}"
+        data-csrf-token="{{ csrf_token('friend_chat' ~ peer.id) }}"
+    >
+        <div class="card-header social-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h5 class="mb-0 social-title">{{ peer.firstName|default('') }} {{ peer.lastName|default('') }}</h5>
+                <span class="social-subtitle small">{{ peer.email }}</span>
             </div>
-            <div id="friend-chat-send-error" class="alert alert-danger py-2 small d-none" role="alert"></div>
-            <button type="submit" class="btn btn-primary" id="friend-chat-submit">Envoyer</button>
-        </form>
+            <a href="{{ path('app_friends_index') }}" class="btn btn-sm btn-outline-secondary social-soft-btn">Retour aux amis</a>
+        </div>
+        <div id="friend-chat-scroll" class="card-body border-bottom social-chat-scroll">
+            <p id="friend-chat-placeholder" class="social-subtitle small mb-0 {{ messages is not empty ? 'd-none' : '' }}">Aucun message pour l’instant. Dites bonjour.</p>
+            <div id="friend-chat-bubbles">
+                {% for m in messages %}
+                    {% set mine = m.sender.id == app.user.id %}
+                    <div class="d-flex mb-3 {{ mine ? 'justify-content-end' : 'justify-content-start' }}" data-message-id="{{ m.id }}">
+                        <div class="social-chat-bubble {{ mine ? 'mine' : 'theirs' }}">
+                            <div class="social-chat-meta {{ mine ? 'text-white-50' : 'social-subtitle' }}">{{ m.createdAt|date('d/m/Y H:i') }}</div>
+                            <div class="message-content">{{ m.content|e }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="card-body social-chat-form">
+            <form id="friend-chat-form" method="post" action="{{ path('app_chat_with', {id: peer.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('friend_chat' ~ peer.id) }}">
+                <div class="mb-2">
+                    <label class="form-label visually-hidden">Message</label>
+                    <textarea name="content" id="friend-chat-content" class="form-control" rows="3" required maxlength="5000" placeholder="Écrire un message..."></textarea>
+                </div>
+                <div id="friend-chat-send-error" class="alert alert-danger py-2 small d-none" role="alert"></div>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary social-soft-btn px-4" id="friend-chat-submit">Envoyer</button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
+</section>
 <script type="application/json" id="friend-chat-mercure-url">{{ mercure(mercure_topic)|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_HEX_TAG'))|raw }}</script>
 {% endblock %}
 
@@ -101,12 +105,10 @@
                 row.dataset.messageId = String(msg.id);
 
                 const bubble = document.createElement('div');
-                bubble.className = 'rounded-3 px-3 py-2 ' + (mine ? 'bg-primary text-white' : 'bg-white border');
-                bubble.style.maxWidth = '85%';
-                bubble.style.whiteSpace = 'pre-wrap';
+                bubble.className = 'social-chat-bubble ' + (mine ? 'mine' : 'theirs');
 
                 const meta = document.createElement('div');
-                meta.className = 'small ' + (mine ? 'text-white-50' : 'text-secondary');
+                meta.className = 'social-chat-meta ' + (mine ? 'text-white-50' : 'social-subtitle');
                 const d = msg.createdAt ? new Date(msg.createdAt) : new Date();
                 meta.textContent = d.toLocaleString('fr-FR', {
                     day: '2-digit', month: '2-digit', year: 'numeric',

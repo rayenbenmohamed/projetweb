@@ -37,16 +37,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $phone = null;
 
-    #[ORM\Column(length: 10, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $twoFactorCode = null;
 
-    #[ORM\Column(type: "datetime", nullable: true)]
+    #[ORM\Column(options: ['default' => false])]
+    private bool $twoFactorEnabled = false;
+
+    #[ORM\Column(name: 'profile_photo_url', length: 512, nullable: true)]
+    private ?string $profilePhotoUrl = null;
+
+    #[ORM\Column(type: "datetime_immutable", nullable: true)]
     private ?\DateTimeInterface $twoFactorExpiry = null;
 
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $resetToken = null;
 
-    #[ORM\Column(type: "datetime", nullable: true)]
+    #[ORM\Column(type: "datetime_immutable", nullable: true)]
     private ?\DateTimeInterface $resetTokenExpiry = null;
 
     /** Compte bloqué par un admin : connexion refusée jusqu’au déverrouillage. */
@@ -168,6 +174,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setTwoFactorCode(?string $twoFactorCode): self
     {
         $this->twoFactorCode = $twoFactorCode;
+        return $this;
+    }
+
+    public function isTwoFactorEnabled(): bool
+    {
+        return $this->twoFactorEnabled;
+    }
+
+    public function setTwoFactorEnabled(bool $twoFactorEnabled): self
+    {
+        $this->twoFactorEnabled = $twoFactorEnabled;
+
+        return $this;
+    }
+
+    public function getProfilePhotoUrl(): ?string
+    {
+        return $this->profilePhotoUrl;
+    }
+
+    public function setProfilePhotoUrl(?string $profilePhotoUrl): self
+    {
+        $this->profilePhotoUrl = $profilePhotoUrl;
+
         return $this;
     }
 

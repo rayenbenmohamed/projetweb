@@ -52,6 +52,20 @@
             </a>
         </li>
         <li class="nav-item">
+            <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_calendar' ? 'active' }}"
+               href="{{ path('app_calendar_index') }}">
+                <span class="nav-icon"><i class="ti ti-calendar-event"></i></span>
+                <span class="text">Calendrier</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_ai_coach' ? 'active' }}"
+               href="{{ path('app_ai_coach') }}">
+                <span class="nav-icon"><i class="ti ti-message-chatbot"></i></span>
+                <span class="text">Coach IA</span>
+            </a>
+        </li>
+        <li class="nav-item">
             <a class="nav-link" href="{{ path('app_forum_index') }}">
                 <span class="nav-icon"><i class="ti ti-message-2"></i></span>
                 <span class="text">Forum</span>
@@ -105,6 +119,14 @@
         <span class="navbar-brand fw-semibold">{% block page_title 'Mon espace' %}</span>
         <div class="ms-auto d-flex align-items-center gap-2">
             {% include '_social_notifications_nav.html.twig' with { sn: sn } only %}
+            {% if app.user and app.user.profilePhotoUrl %}
+                <img
+                    src="{{ app.user.profilePhotoUrl }}"
+                    alt="Photo de profil"
+                    class="rounded-circle border"
+                    style="width: 32px; height: 32px; object-fit: cover;"
+                >
+            {% endif %}
             <span class="text-secondary small text-truncate" style="max-width: 12rem;">{{ app.user.userIdentifier }}</span>
         </div>
     </nav>
