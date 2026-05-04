@@ -27,24 +27,21 @@
                 <div class="badge bg-white text-primary mt-2">{{ job_application.jobOffre.title }}</div>
             </div>
             <div class="card-body p-5">
-                <form method="post" id="interviewForm" class="needs-validation" novalidate>
+                {{ form_start(form, {'attr': {'id': 'interviewForm', 'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
                     <div class="mb-4">
-                        <label class="form-label fw-bold">Date et heure choisie <span class="text-danger">*</span></label>
+                        <label class="form-label fw-bold">{{ form_label(form.scheduledAt) }} <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <span class="input-group-text bg-light"><i class="ti ti-calendar"></i></span>
-                            <input type="datetime-local" id="scheduledAt" name="scheduledAt" class="form-control" required />
+                            {{ form_widget(form.scheduledAt, {'id': 'interview_scheduledAt'}) }}
                         </div>
                         <div class="form-text small">Cliquez sur un créneau dans le calendrier pour remplir automatiquement ce champ.</div>
+                        {{ form_errors(form.scheduledAt) }}
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label fw-bold">Lien ou Lieu <span class="text-danger">*</span></label>
-                        <input type="text" name="meetingLink" class="form-control" placeholder="Lien visio ou salle de réunion" minlength="5" maxlength="255" required />
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Notes / Ordre du jour <span class="text-danger">*</span></label>
-                        <textarea name="notes" class="form-control" rows="5" minlength="10" maxlength="500" placeholder="Ex: Revue technique, discussion salaire..." required></textarea>
+                        <label class="form-label fw-bold">{{ form_label(form.notes) }} <span class="text-danger">*</span></label>
+                        {{ form_widget(form.notes) }}
+                        {{ form_errors(form.notes) }}
                     </div>
                     
                     <div class="d-grid mt-4">
@@ -55,7 +52,8 @@
                     <div class="text-center mt-3">
                         <a href="{{ path('app_job_application_index') }}" class="btn btn-link btn-sm text-secondary">Annuler</a>
                     </div>
-                </form>
+                    {{ form_rest(form) }}
+                {{ form_end(form) }}
             </div>
         </div>
     </div>
@@ -76,77 +74,73 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        const dateInput = document.getElementById('scheduledAt');
+        const dateInput = document.getElementById('interview_scheduledAt');
         
         // Configuration de la date min (aujourd'hui)
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        dateInput.min = now.toISOString().slice(0, 16);
+        if (dateInput) dateInput.min = now.toISOString().slice(0, 16);
 
         // Initialisation de FullCalendar
         const calendarEl = document.getElementById('calendar');
-        const calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'timeGridWeek',
-            locale: 'fr',
-            headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: 'dayGridMonth,timeGridWeek,timeGridDay'
-            },
-            slotMinTime: '08:00:00',
-            slotMaxTime: '20:00:00',
-            selectable: true,
-            allDaySlot: false,
-            events: [
-                {% for interview in existingInterviews %}
-                {
-                    title: "Rendez-vous ({{ interview.application.candidat.firstName }})",
-                    start: "{{ interview.scheduledAt|date('Y-m-d\\TH:i:s') }}",
-                    end: "{{ interview.scheduledAt|date_modify('+1 hour')|date('Y-m-d\\TH:i:s') }}",
-                    color: '#dc3545', // Rouge pour les rendez-vous existants
-                    display: 'block'
+        if (calendarEl) {
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                locale: 'fr',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
                 },
-                {% endfor %}
-            ],
-            dateClick: function(info) {
-                // Remplir le champ datetime-local quand on clique sur une case
-                const clickedDate = info.date;
-                clickedDate.setMinutes(clickedDate.getMinutes() - clickedDate.getTimezoneOffset());
-                dateInput.value = clickedDate.toISOString().slice(0, 16);
-                
-                // Effet visuel
-                dateInput.classList.add('is-valid');
-                setTimeout(() => dateInput.classList.remove('is-valid'), 1000);
-            }
-        });
-        calendar.render();
-
-        dateInput.addEventListener('change', function() {
-            if (this.value) {
-                const selectedDate = new Date(this.value);
-                // Synchroniser le calendrier avec la date choisie
-                calendar.gotoDate(selectedDate);
-                // Basculer en vue "Jour" pour voir précisément les rendez-vous de ce jour
-                calendar.changeView('timeGridDay');
-                
-                // Validation simple
-                if (this.value < this.min) {
-                    this.setCustomValidity('La date de l\'entretien doit être dans le futur.');
-                } else {
-                    this.setCustomValidity('');
+                slotMinTime: '08:00:00',
+                slotMaxTime: '20:00:00',
+                selectable: true,
+                allDaySlot: false,
+                events: [
+                    {% for interview in existingInterviews %}
+                    {
+                        title: "Rendez-vous ({{ interview.application.candidat.firstName }})",
+                        start: "{{ interview.scheduledAt|date('Y-m-d\\TH:i:s') }}",
+                        end: "{{ interview.scheduledAt|date_modify('+1 hour')|date('Y-m-d\\TH:i:s') }}",
+                        color: '#dc3545', // Rouge pour les rendez-vous existants
+                        display: 'block'
+                    },
+                    {% endfor %}
+                ],
+                dateClick: function(info) {
+                    if (dateInput) {
+                        const clickedDate = info.date;
+                        clickedDate.setMinutes(clickedDate.getMinutes() - clickedDate.getTimezoneOffset());
+                        dateInput.value = clickedDate.toISOString().slice(0, 16);
+                        
+                        dateInput.classList.add('is-valid');
+                        setTimeout(() => dateInput.classList.remove('is-valid'), 1000);
+                    }
                 }
-            }
-        });
+            });
+            calendar.render();
 
-        // Validation du formulaire
-        const form = document.getElementById('interviewForm');
-        form.addEventListener('submit', function (event) {
-            if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
+            if (dateInput) {
+                dateInput.addEventListener('change', function() {
+                    if (this.value) {
+                        const selectedDate = new Date(this.value);
+                        calendar.gotoDate(selectedDate);
+                        calendar.changeView('timeGridDay');
+                    }
+                });
             }
-            form.classList.add('was-validated');
-        }, false);
+        }
+
+        const form = document.getElementById('interviewForm');
+        if (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        }
     });
 </script>
 {% endblock %}

@@ -17,6 +17,7 @@ use App\Service\CVKeywordScorerService;
 use App\Service\CVAnalyzerService;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Knp\Component\Pager\PaginatorInterface;
 
 #[Route('/job/application')]
 #[IsGranted('IS_AUTHENTICATED_FULLY')]
@@ -28,30 +29,33 @@ class JobApplicationController extends AbstractController
      * - Sinon : voit ses propres candidatures (en tant que candidat)
      */
     #[Route('/', name: 'app_job_application_index', methods: ['GET'])]
-    public function index(Request $request, JobApplicationRepository $jobApplicationRepository): Response
+    public function index(Request $request, JobApplicationRepository $jobApplicationRepository, PaginatorInterface $paginator): Response
     {
         $user = $this->getUser();
-        $limit = 10;
 
         // --- PIPELINE RECRUTEUR (Candidatures reçues) ---
         $recvStatus = $request->query->get('recv_status');
         $recvOffer = $request->query->get('recv_offer');
-        $recvPage = max(1, $request->query->getInt('recv_page', 1));
-        $recvOffset = ($recvPage - 1) * $limit;
-
-        $totalRecv = $jobApplicationRepository->countByRecruiter($user, $recvStatus, $recvOffer);
-        $maxRecvPage = ceil($totalRecv / $limit);
-        $asRecruiter = $jobApplicationRepository->findByRecruiter($user, $recvStatus, $recvOffer, $limit, $recvOffset);
+        
+        $recvQuery = $jobApplicationRepository->getQueryByRecruiter($user, $recvStatus, $recvOffer);
+        $asRecruiter = $paginator->paginate(
+            $recvQuery,
+            $request->query->getInt('recv_page', 1),
+            10,
+            ['pageParameterName' => 'recv_page']
+        );
 
         // --- MES CANDIDATURES (Candidatures envoyées) ---
         $sentStatus = $request->query->get('sent_status');
         $sentOffer = $request->query->get('sent_offer');
-        $sentPage = max(1, $request->query->getInt('sent_page', 1));
-        $sentOffset = ($sentPage - 1) * $limit;
-
-        $totalSent = $jobApplicationRepository->countForCandidate($user, $sentStatus, $sentOffer);
-        $maxSentPage = ceil($totalSent / $limit);
-        $asCandidat = $jobApplicationRepository->findForCandidate($user, $sentStatus, $sentOffer, $limit, $sentOffset);
+        
+        $sentQuery = $jobApplicationRepository->getQueryForCandidate($user, $sentStatus, $sentOffer);
+        $asCandidat = $paginator->paginate(
+            $sentQuery,
+            $request->query->getInt('sent_page', 1),
+            5,
+            ['pageParameterName' => 'sent_page']
+        );
 
         // Grouper les candidatures reçues par offre
         $applicationsByOffer = [];
@@ -73,12 +77,9 @@ class JobApplicationController extends AbstractController
             'my_applications'       => $asCandidat,
             'recvStatus'            => $recvStatus,
             'recvOffer'             => $recvOffer,
-            'recvPage'              => $recvPage,
-            'maxRecvPage'           => $maxRecvPage,
             'sentStatus'            => $sentStatus,
             'sentOffer'             => $sentOffer,
-            'sentPage'              => $sentPage,
-            'maxSentPage'           => $maxSentPage,
+            'asRecruiter'           => $asRecruiter, // To render pagination
         ]);
     }
 

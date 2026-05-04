@@ -2,8 +2,11 @@
 
 namespace App\Controller;
 
+use Knp\Component\Pager\PaginatorInterface;
+
 use App\Entity\Interview;
 use App\Entity\JobApplication;
+use App\Form\InterviewType;
 use App\Service\InterviewService;
 use App\Service\NotificationService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -36,56 +39,28 @@ class InterviewController extends AbstractController
             return $this->redirectToRoute('app_job_application_index');
         }
 
-        if ($request->isMethod('POST')) {
-            $dateStr = $request->request->get('scheduledAt');
-            $notes = $request->request->get('notes');
-            $meetingLink = $request->request->get('meetingLink');
+        $interview = new Interview();
+        $interview->setApplication($jobApplication);
+        $form = $this->createForm(InterviewType::class, $interview);
+        $form->handleRequest($request);
 
-            // Validation manuelle (car symfony/validator n'est pas présent dans ce projet)
-            $errors = [];
-            if (!$dateStr) $errors[] = "La date est obligatoire.";
-            if (strlen($notes) < 10) $errors[] = "Les notes doivent faire au moins 10 caractères.";
-            if (!$meetingLink) $meetingLink = "Entretien Vidéo Interne";
+        if ($form->isSubmitted() && $form->isValid()) {
+            $entityManager->persist($interview);
+            $entityManager->flush();
 
-            $date = null;
-            try {
-                $date = $dateStr ? new \DateTime($dateStr) : null;
-                if ($date && $date < new \DateTime()) {
-                    $errors[] = "La date doit être dans le futur.";
-                }
-            } catch (\Exception $e) {
-                $errors[] = "Format de date invalide.";
+            // ── Notification au candidat ─────────────────────────────
+            $candidate  = $jobApplication->getCandidat();
+            $offreTitle = $jobApplication->getJobOffre()?->getTitle() ?? 'votre candidature';
+            $dateFormatted = $interview->getScheduledAt() ? $interview->getScheduledAt()->format('d/m/Y \u00e0 H:i') : '';
+            if ($candidate) {
+                $this->notificationService->addNotification(
+                    $candidate,
+                    '📅 Un entretien a été planifié pour "' . $offreTitle . '". Date : ' . $dateFormatted
+                );
             }
 
-            if (empty($errors)) {
-                $interview = new Interview();
-                $interview->setApplication($jobApplication);
-                $interview->setScheduledAt($date);
-                $interview->setNotes($notes);
-                $interview->setMeetingLink($meetingLink);
-                $interview->setStatus('Prévue');
-
-                $entityManager->persist($interview);
-                $entityManager->flush();
-
-                // ── Notification au candidat ─────────────────────────────
-                $candidate  = $jobApplication->getCandidat();
-                $offreTitle = $jobApplication->getJobOffre()?->getTitle() ?? 'votre candidature';
-                $dateFormatted = $date ? $date->format('d/m/Y \u00e0 H:i') : '';
-                if ($candidate) {
-                    $this->notificationService->addNotification(
-                        $candidate,
-                        '📅 Un entretien a été planifié pour "' . $offreTitle . '". Date : ' . $dateFormatted
-                    );
-                }
-
-                $this->addFlash('success', 'Entretien planifié avec succès.');
-                return $this->redirectToRoute('app_interview_index');
-            }
-
-            foreach ($errors as $error) {
-                $this->addFlash('danger', $error);
-            }
+            $this->addFlash('success', 'Entretien planifié avec succès.');
+            return $this->redirectToRoute('app_interview_index');
         }
 
         $existingInterviews = $this->interviewService->getAllInterviews($user);
@@ -93,6 +68,7 @@ class InterviewController extends AbstractController
         return $this->render('interview/new.html.twig', [
             'job_application' => $jobApplication,
             'existingInterviews' => $existingInterviews,
+            'form' => $form->createView(),
         ]);
     }
 
@@ -107,40 +83,13 @@ class InterviewController extends AbstractController
             return $this->redirectToRoute('app_interview_index');
         }
 
-        if ($request->isMethod('POST')) {
-            $dateStr = $request->request->get('scheduledAt');
-            $notes = $request->request->get('notes');
-            $meetingLink = $request->request->get('meetingLink');
-            $status = $request->request->get('status');
+        $form = $this->createForm(InterviewType::class, $interview);
+        $form->handleRequest($request);
 
-            // Validation manuelle
-            $errors = [];
-            if (!$dateStr) $errors[] = "La date est obligatoire.";
-            if (strlen($notes) < 10) $errors[] = "Les notes doivent faire au moins 10 caractères.";
-            if (!$meetingLink) $meetingLink = "Entretien Vidéo Interne";
-
-            $date = null;
-            try {
-                $date = $dateStr ? new \DateTime($dateStr) : null;
-            } catch (\Exception $e) {
-                $errors[] = "Format de date invalide.";
-            }
-
-            if (empty($errors)) {
-                $interview->setScheduledAt($date);
-                $interview->setNotes($notes);
-                $interview->setMeetingLink($meetingLink);
-                $interview->setStatus($status);
-
-                $entityManager->flush();
-
-                $this->addFlash('success', 'Entretien mis à jour avec succès.');
-                return $this->redirectToRoute('app_interview_index');
-            }
-
-            foreach ($errors as $error) {
-                $this->addFlash('danger', $error);
-            }
+        if ($form->isSubmitted() && $form->isValid()) {
+            $entityManager->flush();
+            $this->addFlash('success', 'Entretien mis à jour avec succès.');
+            return $this->redirectToRoute('app_interview_index');
         }
 
         $existingInterviews = $this->interviewService->getAllInterviews($user);
@@ -149,6 +98,7 @@ class InterviewController extends AbstractController
             'interview' => $interview,
             'job_application' => $interview->getApplication(),
             'existingInterviews' => $existingInterviews,
+            'form' => $form->createView(),
         ]);
     }
 
@@ -185,7 +135,7 @@ class InterviewController extends AbstractController
     }
 
     #[Route('/', name: 'app_interview_index')]
-    public function index(): Response
+    public function index(Request $request, PaginatorInterface $paginator): Response
     {
         /** @var \App\Entity\User $user */
         $user = $this->getUser();
@@ -195,38 +145,43 @@ class InterviewController extends AbstractController
 
         // ── Interviews en tant que RECRUTEUR (candidatures reçues) ──────────
         $recruiterInterviews = $this->interviewService->getInterviewsAsRecruiter($user);
-        $recruiterUpcoming   = [];
-        $recruiterCompleted  = [];
+        $ruList = [];
+        $rcList = [];
         foreach ($recruiterInterviews as $interview) {
             $isDone = in_array($interview->getStatus(), ['Réalisée', 'Archivée']);
             if ($isDone && $interview->getFinalVerdict()) {
-                $tp = $interview->getTechnicalRating() + $interview->getCommunicationRating() + $interview->getMotivationRating();
+                $tp = ($interview->getTechnicalRating() ?? 0) + ($interview->getCommunicationRating() ?? 0) + ($interview->getMotivationRating() ?? 0);
                 $interview->averageScore = round(($tp / 15) * 100, 1);
-                $recruiterCompleted[] = $interview;
+                $rcList[] = $interview;
             } else {
-                $recruiterUpcoming[] = $interview;
+                $ruList[] = $interview;
             }
         }
-        usort($recruiterCompleted, fn($a, $b) => $b->averageScore <=> $a->averageScore);
+        usort($rcList, fn($a, $b) => ($b->averageScore ?? 0) <=> ($a->averageScore ?? 0));
+
+        // Paginator handles arrays as well
+        $recruiterUpcoming = $paginator->paginate($ruList, $request->query->getInt('ru_page', 1), 5, ['pageParameterName' => 'ru_page']);
+        $recruiterCompleted = $paginator->paginate($rcList, $request->query->getInt('rc_page', 1), 5, ['pageParameterName' => 'rc_page']);
 
         // ── Interviews en tant que CANDIDAT (candidatures envoyées) ─────────
         $candidateInterviews = $this->interviewService->getInterviewsAsCandidate($user);
-        $candidateUpcoming   = [];
-        $candidatePast       = [];
+        $cuList = [];
+        $cpList = [];
         foreach ($candidateInterviews as $interview) {
             $isDone = in_array($interview->getStatus(), ['Réalisée', 'Archivée']);
             if ($isDone) {
-                $candidatePast[] = $interview;
+                $cpList[] = $interview;
             } else {
-                $candidateUpcoming[] = $interview;
+                $cuList[] = $interview;
             }
         }
 
+        $candidateUpcoming = $paginator->paginate($cuList, $request->query->getInt('cu_page', 1), 5, ['pageParameterName' => 'cu_page']);
+        $candidatePast = $paginator->paginate($cpList, $request->query->getInt('cp_page', 1), 5, ['pageParameterName' => 'cp_page']);
+
         return $this->render('interview/index.html.twig', [
-            // Section recruteur
             'recruiterUpcoming'  => $recruiterUpcoming,
             'recruiterCompleted' => $recruiterCompleted,
-            // Section candidat
             'candidateUpcoming'  => $candidateUpcoming,
             'candidatePast'      => $candidatePast,
         ]);

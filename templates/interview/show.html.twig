@@ -19,8 +19,10 @@
                         </div>
                     </div>
                     <div class="text-end">
-                        <span class="badge bg-white text-primary border-0 fs-6 px-3 py-2 shadow-sm">
-                            <i class="ti ti-circle-filled me-1 small"></i> {{ interview.status }}
+                        {% set isLate = interview.scheduledAt < date() and interview.status not in ['Réalisée', 'Archivée', 'Annulée'] %}
+                        <span class="badge bg-{{ isLate ? 'danger' : 'white' }} text-{{ isLate ? 'white' : 'primary' }} border-0 fs-6 px-3 py-2 shadow-sm">
+                            <i class="ti ti-{{ isLate ? 'alert-triangle' : 'circle-filled' }} me-1 small"></i>
+                            {{ isLate ? 'En retard' : interview.status }}
                         </span>
                     </div>
                 </div>

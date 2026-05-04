@@ -22,8 +22,17 @@ class JobApplicationRepository extends ServiceEntityRepository
      */
     public function findByRecruiter(User $recruiter, ?string $status = null, ?string $offerName = null, int $limit = 10, int $offset = 0): array
     {
+        return $this->getQueryByRecruiter($recruiter, $status, $offerName)
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function getQueryByRecruiter(User $recruiter, ?string $status = null, ?string $offerName = null)
+    {
         $qb = $this->createQueryBuilder('a')
-            ->join('a.jobOffre', 'o')
+            ->leftJoin('a.jobOffre', 'o')
             ->where('o.user = :recruiter')
             ->setParameter('recruiter', $recruiter)
             ->orderBy('a.aiScore', 'DESC')
@@ -39,10 +48,7 @@ class JobApplicationRepository extends ServiceEntityRepository
                ->setParameter('offerName', '%' . $offerName . '%');
         }
 
-        $qb->setFirstResult($offset)
-           ->setMaxResults($limit);
-
-        return $qb->getQuery()->getResult();
+        return $qb;
     }
 
     /**
@@ -50,8 +56,17 @@ class JobApplicationRepository extends ServiceEntityRepository
      */
     public function findForCandidate(User $candidate, ?string $status = null, ?string $offerName = null, int $limit = 10, int $offset = 0): array
     {
+        return $this->getQueryForCandidate($candidate, $status, $offerName)
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function getQueryForCandidate(User $candidate, ?string $status = null, ?string $offerName = null)
+    {
         $qb = $this->createQueryBuilder('a')
-            ->leftJoin('a.jobOffre', 'o') // left join pour au cas où l'offre n'est pas chargée directement, mais utile pour la recherche
+            ->leftJoin('a.jobOffre', 'o') 
             ->where('a.candidat = :candidate')
             ->setParameter('candidate', $candidate)
             ->orderBy('a.applyDate', 'DESC');
@@ -66,10 +81,7 @@ class JobApplicationRepository extends ServiceEntityRepository
                ->setParameter('offerName', '%' . $offerName . '%');
         }
 
-        $qb->setFirstResult($offset)
-           ->setMaxResults($limit);
-
-        return $qb->getQuery()->getResult();
+        return $qb;
     }
 
     /**

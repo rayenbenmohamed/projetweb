@@ -1,0 +1,158 @@
+{% extends 'layout/admin.html.twig' %}
+
+{% block title %}Smart Matches | SyfonuRH{% endblock %}
+{% block page_title %}Recommandations d'Opportunités par IA{% endblock %}
+
+{% block content %}
+<style>
+    .match-header {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        border-radius: 20px;
+        padding: 40px;
+        color: white;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    .match-header::before {
+        content: '';
+        position: absolute;
+        top: -50px;
+        right: -50px;
+        width: 200px;
+        height: 200px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+    }
+    .match-card {
+        border: none;
+        border-radius: 20px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+        background: white;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    .match-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px rgba(79, 70, 229, 0.1);
+    }
+    .score-circle {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1.2rem;
+        border: 4px solid #f3f4f6;
+    }
+    .score-high { color: #059669; border-color: #d1fae5; background: #ecfdf5; }
+    .score-medium { color: #d97706; border-color: #fef3c7; background: #fffbeb; }
+    
+    .why-badge {
+        background: #f3f4f6;
+        color: #4b5563;
+        padding: 5px 15px;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+    .glow-button {
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+        transition: all 0.3s;
+    }
+    .glow-button:hover {
+        transform: scale(1.05);
+        color: white;
+        box-shadow: 0 8px 25px rgba(79, 70, 229, 0.6);
+    }
+    .empty-state {
+        text-align: center;
+        padding: 100px 20px;
+        background: #f9fafb;
+        border-radius: 30px;
+        border: 2px dashed #e5e7eb;
+    }
+</style>
+
+<div class="match-header">
+    <div class="row align-items-center">
+        <div class="col-lg-8">
+            <h1 class="display-5 fw-bold mb-3">SyfonuMatch™ <span class="badge bg-white text-primary fs-6 py-2 px-3 rounded-pill ms-2">Beta IA</span></h1>
+            <p class="lead mb-0 opacity-75">Notre intelligence artificielle a analysé votre parcours. Voici les opportunités qui correspondent le mieux à votre ADN professionnel.</p>
+        </div>
+        <div class="col-lg-4 text-end d-none d-lg-block">
+            <div class="display-1 opacity-25"><i class="ti ti-sparkles"></i></div>
+        </div>
+    </div>
+</div>
+
+{% if error is defined %}
+    <div class="empty-state">
+        <div class="display-1 text-muted mb-4"><i class="ti ti-file-search"></i></div>
+        <h3 class="fw-bold">{{ error }}</h3>
+        <p class="text-muted">Pour obtenir des recommandations, assurez-vous d'avoir téléchargé un CV à jour sur votre profil.</p>
+        <a href="{{ path('app_job_offre_index') }}" class="btn btn-primary rounded-pill px-5 mt-3">Parcourir les offres manuellement</a>
+    </div>
+{% elseif recommendations is empty %}
+    <div class="empty-state">
+        <div class="display-1 text-muted mb-4"><i class="ti ti-loader"></i></div>
+        <h3 class="fw-bold">Aucune recommandation pour le moment</h3>
+        <p class="text-muted">Nous n'avons pas trouvé d'offres correspondant exactement à votre profil technique actuel.</p>
+        <a href="{{ path('app_job_offre_index') }}" class="btn btn-outline-primary rounded-pill px-5 mt-3">Voir toutes les offres</a>
+    </div>
+{% else %}
+    <div class="row g-4">
+        {% for rec in recommendations %}
+            <div class="col-md-6 col-xl-4">
+                <div class="card match-card h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-4">
+                            {% set scoreClass = rec.score >= 80 ? 'score-high' : 'score-medium' %}
+                            <div class="score-circle {{ scoreClass }}" title="Indice de compatibilité">
+                                {{ rec.score }}%
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-light text-dark border rounded-pill">{{ rec.job.employmentType }}</span>
+                                <div class="text-muted small mt-1"><i class="ti ti-map-pin me-1"></i>{{ rec.job.location }}</div>
+                            </div>
+                        </div>
+
+                        <h4 class="fw-bold text-dark mb-2">{{ rec.job.title }}</h4>
+                        <div class="mb-3">
+                            <span class="why-badge"><i class="ti ti-brain me-1"></i>Analyse IA</span>
+                        </div>
+                        
+                        <p class="text-secondary small mb-4" style="line-height: 1.6;">
+                            "{{ rec.why }}"
+                        </p>
+
+                        <div class="d-flex align-items-center justify-content-between mt-auto pt-3 border-top">
+                            <div class="fw-bold text-primary">{{ rec.job.salary }}€ <span class="small text-muted fw-normal">/an</span></div>
+                            <a href="{{ path('app_job_offre_show', {id: rec.job.id}) }}" class="btn glow-button rounded-pill px-4 btn-sm">
+                                Voir l'offre <i class="ti ti-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="alert bg-white shadow-sm border-0 rounded-4 mt-5 p-4 d-flex align-items-center gap-3">
+        <div class="icon-shape bg-info-subtle text-info rounded-circle">
+            <i class="ti ti-info-circle fs-4"></i>
+        </div>
+        <div>
+            <h6 class="mb-0 fw-bold">Basé sur votre CV : <code class="text-primary">{{ user_cv|split('/')|last }}</code></h6>
+            <p class="mb-0 small text-muted">Ces recommandations sont recalculées à chaque mise à jour de votre dossier.</p>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}

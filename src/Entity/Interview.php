@@ -28,10 +28,7 @@ class Interview
     #[Assert\Length(min: 10, minMessage: "Les notes doivent faire au moins 10 caractères.")]
     private ?string $notes = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Assert\NotBlank(message: "Le lieu ou le lien de réunion est obligatoire.")]
-    #[Assert\Length(min: 5, minMessage: "Le lieu ou lien doit faire au moins 5 caractères.")]
-    private ?string $meetingLink = null;
+
 
     #[ORM\ManyToOne(targetEntity: JobApplication::class, inversedBy: 'interviews')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
@@ -93,16 +90,7 @@ class Interview
         return $this;
     }
 
-    public function getMeetingLink(): ?string
-    {
-        return $this->meetingLink;
-    }
 
-    public function setMeetingLink(?string $meetingLink): self
-    {
-        $this->meetingLink = $meetingLink;
-        return $this;
-    }
 
     public function getApplication(): ?JobApplication
     {

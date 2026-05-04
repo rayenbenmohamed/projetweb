@@ -319,25 +319,9 @@
     </div>
     
     {# Pagination Pipeline Recruteur #}
-    {% if maxRecvPage > 1 %}
     <div class="card-footer bg-white border-top py-3">
-        <nav aria-label="Page navigation">
-            <ul class="pagination pagination-sm justify-content-center mb-0 gap-1">
-                <li class="page-item {{ recvPage <= 1 ? 'disabled' : '' }}">
-                    <a class="page-link rounded-pill border-0 px-3" href="{{ path('app_job_application_index', app.request.query.all|merge({'recv_page': recvPage - 1})) }}">Précédent</a>
-                </li>
-                {% for i in 1..maxRecvPage %}
-                    <li class="page-item {{ i == recvPage ? 'active' : '' }}">
-                        <a class="page-link rounded-pill border-0 px-3 {{ i == recvPage ? 'shadow-sm' : '' }}" href="{{ path('app_job_application_index', app.request.query.all|merge({'recv_page': i})) }}">{{ i }}</a>
-                    </li>
-                {% endfor %}
-                <li class="page-item {{ recvPage >= maxRecvPage ? 'disabled' : '' }}">
-                    <a class="page-link rounded-pill border-0 px-3" href="{{ path('app_job_application_index', app.request.query.all|merge({'recv_page': recvPage + 1})) }}">Suivant</a>
-                </li>
-            </ul>
-        </nav>
+        {{ knp_pagination_render(asRecruiter) }}
     </div>
-    {% endif %}
     {% else %}
     <div class="text-center py-5">
         <div class="mb-3" style="font-size:3rem;opacity:.3;">📭</div>
@@ -402,26 +386,20 @@
         </table>
     </div>
 
-    {# Pagination Mes Candidatures #}
-    {% if maxSentPage > 1 %}
     <div class="card-footer bg-white border-top py-3">
-        <nav aria-label="Page navigation">
-            <ul class="pagination pagination-sm justify-content-center mb-0 gap-1">
-                <li class="page-item {{ sentPage <= 1 ? 'disabled' : '' }}">
-                    <a class="page-link rounded-pill border-0 px-3" href="{{ path('app_job_application_index', app.request.query.all|merge({'sent_page': sentPage - 1})) }}">Précédent</a>
-                </li>
-                {% for i in 1..maxSentPage %}
-                    <li class="page-item {{ i == sentPage ? 'active' : '' }}">
-                        <a class="page-link rounded-pill border-0 px-3 {{ i == sentPage ? 'shadow-sm' : '' }}" href="{{ path('app_job_application_index', app.request.query.all|merge({'sent_page': i})) }}">{{ i }}</a>
-                    </li>
-                {% endfor %}
-                <li class="page-item {{ sentPage >= maxSentPage ? 'disabled' : '' }}">
-                    <a class="page-link rounded-pill border-0 px-3" href="{{ path('app_job_application_index', app.request.query.all|merge({'sent_page': sentPage + 1})) }}">Suivant</a>
-                </li>
-            </ul>
-        </nav>
+        {{ knp_pagination_render(my_applications) }}
     </div>
-    {% endif %}
+</div>
+{% else %}
+<div class="card premium-card">
+    <div class="sent-section-header">
+        <h5 class="mb-0 fw-bold"><i class="ti ti-send me-2"></i>Mes Candidatures Envoyées</h5>
+    </div>
+    <div class="text-center py-5 bg-white">
+        <div class="mb-3" style="font-size:3rem;opacity:.3;">📤</div>
+        <h6 class="text-muted">Vous n'avez pas encore envoyé de candidatures.</h6>
+        <a href="{{ path('app_job_offre_index') }}" class="btn btn-outline-primary btn-sm rounded-pill px-4 mt-2">Découvrir les offres</a>
+    </div>
 </div>
 {% endif %}
 

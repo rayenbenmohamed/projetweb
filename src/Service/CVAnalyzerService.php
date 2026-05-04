@@ -281,5 +281,65 @@ PROMPT;
 
         return ['error' => json_last_error_msg(), 'debug_text' => substr($aiText, 0, 500)];
     }
+
+    /**
+     * Recommends the top 5 job offers from a list based on the candidate's CV.
+     */
+    public function recommendTopJobs(string $cvText, array $jobOffers): ?array
+    {
+        $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=" . $this->apiKey;
+
+        // Prepare a simplified list of jobs to save tokens and focus on ranking
+        $jobsList = array_map(function($job) {
+            return [
+                'id' => $job->getId(),
+                'title' => $job->getTitle(),
+                'description' => mb_substr(strip_tags($job->getDescription()), 0, 200) . '...'
+            ];
+        }, $jobOffers);
+
+        $prompt = <<<PROMPT
+Tu es un consultant en carrière senior chez SyfonuRH. Ta mission est de recommander les MEILLEURS postes à un candidat en fonction de son CV.
+Analyse le CV ci-dessous et les offres d'emploi disponibles.
+
+EXIGENCE : Sélectionne exactement les 5 meilleures offres (ou moins s'il n'y en a pas assez).
+Pour chaque offre sélectionnée, fournis :
+- "id": l'ID de l'offre
+- "score": un score de compatibilité (0-100)
+- "why": une explication très courte et motivante (ex: "Tes compétences en React matchent parfaitement avec leur stack technique").
+
+Donne ta réponse UNIQUEMENT en JSON valide sous la forme d'une liste d'objets.
+
+CV DU CANDIDAT :
+$cvText
+
+OFFRES DISPONIBLES :
+JSON formaté des offres : 
+PROMPT;
+        
+        $prompt .= json_encode($jobsList);
+
+        try {
+            $response = $this->httpClient->request('POST', $apiUrl, [
+                'json' => [
+                    'contents' => [['parts' => [['text' => $prompt]]]],
+                    'generationConfig' => [
+                        'temperature' => 0.2,
+                        'maxOutputTokens' => 2048,
+                        'response_mime_type' => 'application/json',
+                    ],
+                ]
+            ]);
+
+            $data = $response->toArray();
+            if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) return null;
+
+            $aiText = $data['candidates'][0]['content']['parts'][0]['text'];
+            return $this->decodeAiResponse($aiText);
+
+        } catch (\Exception $e) {
+            return ['error' => $e->getMessage()];
+        }
+    }
 }
 

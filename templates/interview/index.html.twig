@@ -129,9 +129,11 @@
                                 <span class="fw-medium small">{{ interview.application.jobOffre.title }}</span>
                             </td>
                             <td class="text-center py-3">
-                                {% set sc = interview.status == 'Confirmée' ? 'success' : (interview.status == 'Prévue' ? 'primary' : 'secondary') %}
+                                {% set isLate = interview.scheduledAt < date() and interview.status not in ['Réalisée', 'Archivée', 'Annulée'] %}
+                                {% set sc = isLate ? 'danger' : (interview.status == 'Confirmée' ? 'success' : (interview.status == 'Prévue' ? 'primary' : 'secondary')) %}
                                 <span class="status-pill bg-{{ sc }}-subtle text-{{ sc }}-emphasis">
-                                    <i class="ti ti-circle-filled" style="font-size:.5rem;"></i>{{ interview.status }}
+                                    <i class="ti ti-{{ isLate ? 'alert-triangle' : 'circle-filled' }}" style="font-size:.5rem;"></i>
+                                    {{ isLate ? 'En retard' : interview.status }}
                                 </span>
                             </td>
                             <td class="text-center py-3">
@@ -140,21 +142,19 @@
                                 </a>
                             </td>
                             <td class="text-end pe-4 py-3">
-                                <div class="dropdown">
-                                    <button class="btn btn-light btn-sm rounded-circle p-2 shadow-sm" type="button" data-bs-toggle="dropdown">
-                                        <i class="ti ti-dots-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <li><a class="dropdown-item" href="{{ path('app_interview_show', {id: interview.id}) }}"><i class="ti ti-eye me-2 text-primary"></i>Détails</a></li>
-                                        <li><a class="dropdown-item" href="{{ path('app_interview_edit', {id: interview.id}) }}"><i class="ti ti-pencil me-2 text-warning"></i>Modifier</a></li>
-                                        <li><hr class="dropdown-divider my-1"></li>
-                                        <li>
-                                            <form method="post" action="{{ path('app_interview_delete', {id: interview.id}) }}" onsubmit="return confirm('Annuler cet entretien ?');">
-                                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ interview.id) }}">
-                                                <button type="submit" class="dropdown-item text-danger"><i class="ti ti-trash me-2"></i>Annuler</button>
-                                            </form>
-                                        </li>
-                                    </ul>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{{ path('app_interview_show', {id: interview.id}) }}" class="btn btn-sm btn-outline-primary rounded-circle p-2" title="Détails">
+                                        <i class="ti ti-eye"></i>
+                                    </a>
+                                    <a href="{{ path('app_interview_edit', {id: interview.id}) }}" class="btn btn-sm btn-outline-warning rounded-circle p-2" title="Modifier">
+                                        <i class="ti ti-pencil"></i>
+                                    </a>
+                                    <form method="post" action="{{ path('app_interview_delete', {id: interview.id}) }}" onsubmit="return confirm('Annuler cet entretien ?');" style="display:inline;">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ interview.id) }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle p-2" title="Annuler">
+                                            <i class="ti ti-trash"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
@@ -163,6 +163,9 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+            <div class="px-4 py-3 border-top">
+                {{ knp_pagination_render(recruiterUpcoming) }}
             </div>
         </div>
 
@@ -218,9 +221,17 @@
                                 {% endif %}
                             </td>
                             <td class="text-end pe-4 py-3">
-                                <a href="{{ path('app_interview_show', {id: interview.id}) }}" class="btn btn-sm btn-outline-dark rounded-pill px-3 fw-bold">
-                                    <i class="ti ti-file-search me-1"></i>Avis
-                                </a>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{{ path('app_interview_show', {id: interview.id}) }}" class="btn btn-sm btn-outline-dark rounded-pill px-3 fw-bold" title="Voir l'avis">
+                                        <i class="ti ti-file-search me-1"></i>Avis
+                                    </a>
+                                    <form method="post" action="{{ path('app_interview_delete', {id: interview.id}) }}" onsubmit="return confirm('Supprimer cet enregistrement d\'entretien ?');" style="display:inline;">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ interview.id) }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle p-2" title="Supprimer">
+                                            <i class="ti ti-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         {% else %}
@@ -228,6 +239,9 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+            <div class="px-4 py-3 border-top">
+                {{ knp_pagination_render(recruiterCompleted) }}
             </div>
         </div>
     </div>
@@ -300,9 +314,11 @@
                                 </div>
                             </td>
                             <td class="text-center py-3">
-                                {% set sc = interview.status == 'Confirmée' ? 'success' : (interview.status == 'Prévue' ? 'primary' : 'secondary') %}
+                                {% set isLate = interview.scheduledAt < date() and interview.status not in ['Réalisée', 'Archivée', 'Annulée'] %}
+                                {% set sc = isLate ? 'danger' : (interview.status == 'Confirmée' ? 'success' : (interview.status == 'Prévue' ? 'primary' : 'secondary')) %}
                                 <span class="status-pill bg-{{ sc }}-subtle text-{{ sc }}-emphasis">
-                                    <i class="ti ti-circle-filled" style="font-size:.5rem;"></i>{{ interview.status }}
+                                    <i class="ti ti-{{ isLate ? 'alert-triangle' : 'circle-filled' }}" style="font-size:.5rem;"></i>
+                                    {{ isLate ? 'En retard' : interview.status }}
                                 </span>
                             </td>
                             <td class="text-center py-3">
@@ -321,6 +337,9 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+            <div class="px-4 py-3 border-top">
+                {{ knp_pagination_render(candidateUpcoming) }}
             </div>
         </div>
 
@@ -372,6 +391,9 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+            <div class="px-4 py-3 border-top">
+                {{ knp_pagination_render(candidatePast) }}
             </div>
         </div>
     </div>
