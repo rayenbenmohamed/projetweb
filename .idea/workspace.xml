@@ -4,7 +4,49 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ceec944b-fd09-4c67-abfd-653fda511633" name="Changes" comment="" />
+    <list default="true" id="ceec944b-fd09-4c67-abfd-653fda511633" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/debug_forum_apis.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test_services.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/composer.json" beforeDir="false" afterPath="$PROJECT_DIR$/composer.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/bundles.php" beforeDir="false" afterPath="$PROJECT_DIR$/config/bundles.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/packages/asset_mapper.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/packages/framework.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config/packages/framework.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/packages/mercure.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config/packages/mercure.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/packages/security.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config/packages/security.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/services.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config/services.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Command/CreateAdminCommand.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Command/CreateAdminCommand.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Command/FixUserTableColumnsCommand.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Command/FixUserTableColumnsCommand.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Command/SendInterviewRemindersCommand.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Command/SendInterviewRemindersCommand.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Controller/Admin/UserManagementController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/Admin/UserManagementController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Controller/DashboardController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/DashboardController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Controller/GoogleAuthController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/GoogleAuthController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Security/AuthenticationSuccessHandler.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Security/AuthenticationSuccessHandler.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Service/AiCommentService.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/AiCommentService.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Service/CVAnalyzerService.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/CVAnalyzerService.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Service/CallMeBotService.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/CallMeBotService.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Service/CloudinaryService.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/CloudinaryService.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Service/EmailService.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/EmailService.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Service/FriendService.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/FriendService.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Service/GeminiService.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/GeminiService.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Service/GoogleCalendarService.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/GoogleCalendarService.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Service/JobOffreAiService.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/JobOffreAiService.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Service/PdfGeneratorService.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/PdfGeneratorService.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Service/PdfTemplateService.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/PdfTemplateService.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Service/SocialNotificationService.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/SocialNotificationService.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Service/TranslationService.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/TranslationService.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Service/TwilioWhatsAppService.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Service/TwilioWhatsAppService.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Twig/SocialNotificationExtension.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Twig/SocialNotificationExtension.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/symfony.lock" beforeDir="false" afterPath="$PROJECT_DIR$/symfony.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/base.html.twig" beforeDir="false" afterPath="$PROJECT_DIR$/templates/base.html.twig" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/dashboard/index.html.twig" beforeDir="false" afterPath="$PROJECT_DIR$/templates/dashboard/index.html.twig" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/forum/index.html.twig" beforeDir="false" afterPath="$PROJECT_DIR$/templates/forum/index.html.twig" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/forum/show.html.twig" beforeDir="false" afterPath="$PROJECT_DIR$/templates/forum/show.html.twig" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/pdf_template/edit.html.twig" beforeDir="false" afterPath="$PROJECT_DIR$/templates/pdf_template/edit.html.twig" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/pdf_template/new.html.twig" beforeDir="false" afterPath="$PROJECT_DIR$/templates/pdf_template/new.html.twig" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -18,6 +60,9 @@
     <persistenceIdMap>
       <entry key="_C:/Users/ousse/Desktop/projetweb" value="3Byz0sJLymUYoLlouDwqK1UK28I" />
     </persistenceIdMap>
+  </component>
+  <component name="CopilotUserSelectedChatMode">
+    <option name="chatModeId" value="Agent" />
   </component>
   <component name="CopilotUserSelectedModel">
     <selectedModels>
@@ -121,26 +166,27 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;oussema&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/ousse/Desktop/projetweb&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.keymap&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "dhia-integration",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/ousse/Desktop/projetweb",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "preferences.keymap",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager">
     <configuration default="true" type="JetRunConfigurationType">
       <module name="projetweb" />
@@ -183,17 +229,6 @@
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="php">
-          <url>file://$PROJECT_DIR$/src/Controller/ContractController.php</url>
-          <line>4</line>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

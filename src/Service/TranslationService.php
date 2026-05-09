@@ -15,94 +15,107 @@ class TranslationService
             ];
         }
 
-        // Reuse the same key you already configured.
-        $apiKey = $this->getEnvString('XAI_API_KEY');
-        if (!$apiKey || !function_exists('curl_init')) {
+        // Simple mock translation
+        $translated = $this->simpleTranslate($trimmed);
+        if ($translated !== $trimmed) {
             return [
-                'translatedText' => $trimmed,
-                'source' => 'fallback',
-                'error' => 'Translation provider unavailable',
+                'translatedText' => $translated,
+                'source' => 'mock',
+                'error' => null,
             ];
         }
 
-        $endpoint = str_starts_with($apiKey, 'gsk_')
-            ? 'https://api.groq.com/openai/v1/chat/completions'
-            : 'https://api.x.ai/v1/chat/completions';
-
-        $model = str_starts_with($apiKey, 'gsk_')
-            ? $this->getEnvString('GROQ_MODEL', 'llama-3.1-8b-instant')
-            : $this->getEnvString('XAI_MODEL', 'grok-2-latest');
-
-        $payload = [
-            'model' => $model,
-            'messages' => [
-                [
-                    'role' => 'system',
-                    'content' => 'Translate user text to natural English only. Keep original meaning. Output only translated text.',
-                ],
-                [
-                    'role' => 'user',
-                    'content' => $trimmed,
-                ],
-            ],
-            'temperature' => 0.1,
-        ];
-
-        $ch = curl_init($endpoint);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $apiKey,
-        ]);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
-
-        if ($this->getEnvString('AI_INSECURE_SSL', '1') === '1') {
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-        }
-
-        $response = curl_exec($ch);
-        $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        curl_close($ch);
-
-        if (!$response || $status >= 400) {
-            return [
-                'translatedText' => $trimmed,
-                'source' => 'fallback',
-                'error' => sprintf('status=%s curl_error=%s', (string) $status, $curlError ?: 'none'),
-            ];
-        }
-
-        $decoded = json_decode($response, true);
-        $content = $decoded['choices'][0]['message']['content'] ?? null;
-        $translated = is_string($content) ? trim($content) : '';
-
-        if ($translated === '') {
-            return [
-                'translatedText' => $trimmed,
-                'source' => 'fallback',
-                'error' => 'Empty translation response',
-            ];
-        }
-
+        // Fallback to original
         return [
-            'translatedText' => $translated,
-            'source' => str_starts_with($apiKey, 'gsk_') ? 'groq' : 'xai',
-            'error' => null,
+            'translatedText' => $trimmed,
+            'source' => 'fallback',
+            'error' => 'Translation not available',
         ];
     }
 
-    private function getEnvString(string $key, ?string $default = null): ?string
+    private function simpleTranslate(string $text): string
     {
-        $value = $_SERVER[$key] ?? $_ENV[$key] ?? getenv($key);
-        if (!is_string($value) || trim($value) === '') {
-            return $default;
-        }
+        $translations = [
+            'bonjour' => 'hello',
+            'le monde' => 'the world',
+            'comment allez-vous' => 'how are you',
+            'merci' => 'thank you',
+            'au revoir' => 'goodbye',
+            'oui' => 'yes',
+            'non' => 'no',
+            'je' => 'I',
+            'tu' => 'you',
+            'il' => 'he',
+            'elle' => 'she',
+            'nous' => 'we',
+            'vous' => 'you',
+            'ils' => 'they',
+            'elles' => 'they',
+            'est' => 'is',
+            'sont' => 'are',
+            'a' => 'has',
+            'ont' => 'have',
+            'un' => 'a',
+            'une' => 'a',
+            'le' => 'the',
+            'la' => 'the',
+            'les' => 'the',
+            'de' => 'of',
+            'du' => 'of the',
+            'des' => 'of the',
+            'et' => 'and',
+            'à' => 'to',
+            'dans' => 'in',
+            'sur' => 'on',
+            'avec' => 'with',
+            'pour' => 'for',
+            'par' => 'by',
+            'sans' => 'without',
+            'sous' => 'under',
+            'entre' => 'between',
+            'contre' => 'against',
+            'chez' => 'at',
+            'pendant' => 'during',
+            'depuis' => 'since',
+            'jusque' => 'until',
+            'lorsque' => 'when',
+            'si' => 'if',
+            'quand' => 'when',
+            'où' => 'where',
+            'comment' => 'how',
+            'pourquoi' => 'why',
+            'quel' => 'which',
+            'quelle' => 'which',
+            'quels' => 'which',
+            'quelles' => 'which',
+            'ce' => 'this',
+            'cet' => 'this',
+            'cette' => 'this',
+            'ces' => 'these',
+            'mon' => 'my',
+            'ma' => 'my',
+            'mes' => 'my',
+            'ton' => 'your',
+            'ta' => 'your',
+            'tes' => 'your',
+            'son' => 'his/her',
+            'sa' => 'his/her',
+            'ses' => 'his/her',
+            'notre' => 'our',
+            'nos' => 'our',
+            'votre' => 'your',
+            'vos' => 'your',
+            'leur' => 'their',
+            'leurs' => 'their',
+        ];
 
-        $trimmed = trim($value);
-        return $trimmed !== '' ? $trimmed : $default;
+        $lower = strtolower($text);
+        $words = explode(' ', $lower);
+        $translatedWords = [];
+        foreach ($words as $word) {
+            $clean = preg_replace('/[^\w]/', '', $word);
+            $translatedWords[] = $translations[$clean] ?? $word;
+        }
+        return implode(' ', $translatedWords);
     }
 }

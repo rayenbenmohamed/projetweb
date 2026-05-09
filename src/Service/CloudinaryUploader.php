@@ -12,11 +12,13 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class CloudinaryUploader
 {
-    private Cloudinary $cloudinary;
+    private ?Cloudinary $cloudinary;
 
-    public function __construct(string $cloudinaryUrl)
+    public function __construct(?string $cloudinaryUrl = null)
     {
-        $this->cloudinary = new Cloudinary($cloudinaryUrl);
+        $this->cloudinary = ($cloudinaryUrl && trim($cloudinaryUrl) !== '')
+            ? new Cloudinary($cloudinaryUrl)
+            : null;
     }
 
     /**
@@ -28,6 +30,14 @@ class CloudinaryUploader
      */
     public function uploadLogo(UploadedFile $file): array
     {
+        // If Cloudinary is not configured, return empty array
+        if (!$this->cloudinary) {
+            return [
+                'url' => '',
+                'publicId' => '',
+            ];
+        }
+
         // Validation type MIME (via le type déclaré par le client + extension)
         $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
         $clientMime   = $file->getClientMimeType();
@@ -63,7 +73,7 @@ class CloudinaryUploader
      */
     public function deleteLogo(string $publicId): void
     {
-        if ($publicId === '') {
+        if (!$this->cloudinary || $publicId === '') {
             return;
         }
         try {

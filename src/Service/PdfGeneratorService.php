@@ -10,9 +10,9 @@ use Twig\Environment;
 class PdfGeneratorService
 {
     public function __construct(
-        private readonly Environment $twig,
-        private readonly PdfTemplateService $templateService,
-        private readonly string $projectDir
+        private Environment $twig,
+        private PdfTemplateService $templateService,
+        private string $projectDir
     ) {}
 
     /**

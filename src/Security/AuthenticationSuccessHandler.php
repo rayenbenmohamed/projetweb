@@ -13,11 +13,11 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationSuccessHandlerI
 class AuthenticationSuccessHandler implements AuthenticationSuccessHandlerInterface
 {
     public function __construct(
-        private readonly UrlGeneratorInterface $urlGenerator,
+        private UrlGeneratorInterface $urlGenerator,
     ) {
     }
 
-    public function onAuthenticationSuccess(Request $request, TokenInterface $token): ?Response
+    public function onAuthenticationSuccess(Request $request, TokenInterface $token): Response
     {
         $user = $token->getUser();
         $roles = $user instanceof UserInterface ? $user->getRoles() : $token->getRoleNames();

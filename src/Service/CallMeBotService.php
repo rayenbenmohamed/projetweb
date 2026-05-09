@@ -18,8 +18,8 @@ class CallMeBotService
     private const API_URL = 'https://api.callmebot.com/whatsapp.php';
 
     public function __construct(
-        private readonly LoggerInterface $logger,
-        private readonly string $callMeBotApiKey = ''
+        private LoggerInterface $logger,
+        private ?string $callMeBotApiKey = ''
     ) {}
 
     /**

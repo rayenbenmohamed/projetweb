@@ -11,9 +11,9 @@ use Symfony\Component\Security\Core\User\UserInterface;
 final class SocialNotificationService
 {
     public function __construct(
-        private readonly FriendRequestRepository $friendRequestRepository,
-        private readonly FriendMessageRepository $friendMessageRepository,
-        private readonly NotificationRepository $notificationRepository,
+        private FriendRequestRepository $friendRequestRepository,
+        private FriendMessageRepository $friendMessageRepository,
+        private NotificationRepository $notificationRepository,
     ) {
     }
 

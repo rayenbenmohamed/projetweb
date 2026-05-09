@@ -10,8 +10,8 @@ use Symfony\Component\Mime\Address;
 class EmailService
 {
     public function __construct(
-        private readonly MailerInterface $mailer,
-        private readonly PdfGeneratorService $pdfGenerator
+        private MailerInterface $mailer,
+        private PdfGeneratorService $pdfGenerator
     ) {}
 
     /**

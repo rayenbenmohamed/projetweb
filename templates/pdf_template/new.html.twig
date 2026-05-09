@@ -5,6 +5,6 @@
 
 {% block content %}
 <div class="container-fluid animate__animated animate__fadeIn">
-    {{ include('pdf_template/_form.html.twig') }}
+    {{ include('pdf_template/_form.html.twig', {'form': form.createView(), 'pdf_template': pdf_template}) }}
 </div>
 {% endblock %}

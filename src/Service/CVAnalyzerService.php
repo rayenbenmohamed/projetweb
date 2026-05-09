@@ -10,8 +10,8 @@ class CVAnalyzerService
     private const MODEL = 'llama-3.3-70b-versatile';
 
     public function __construct(
-        private readonly HttpClientInterface $httpClient,
-        private readonly string $groqApiKey = ''
+        private HttpClientInterface $httpClient,
+        private ?string $groqApiKey = ''
     ) {}
 
     /**

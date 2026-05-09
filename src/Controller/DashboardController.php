@@ -2,16 +2,13 @@
 
 namespace App\Controller;
 
-<<<<<<< HEAD
 use App\Entity\JobApplication;
 use App\Repository\ContractRepository;
 use App\Repository\InterviewRepository;
 use App\Repository\JobApplicationRepository;
 use App\Repository\JobOffreRepository;
-=======
 use App\Repository\ForumPostRepository;
 use App\Repository\ForumCategoryRepository;
->>>>>>> dhia
 use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,14 +17,15 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class DashboardController extends AbstractController
 {
-<<<<<<< HEAD
-    #[Route('/app', name: 'app_app_dashboard')]
+    #[Route('/', name: 'app_app_dashboard')]
     public function index(
         JobOffreRepository $jobOffreRepo,
         JobApplicationRepository $appRepo,
         InterviewRepository $interviewRepo,
         UserRepository $userRepo,
         ContractRepository $contractRepo,
+        ForumPostRepository $postRepo,
+        ForumCategoryRepository $catRepo,
         \App\Service\JobOffreAiService $jobOffreAiService
     ): Response {
         $user = $this->getUser();
@@ -35,7 +33,7 @@ class DashboardController extends AbstractController
             return $this->redirectToRoute('app_login');
         }
 
-        // ── Stats Recruteur — SQL COUNT (no full memory load) ─────────────────
+        // ── Stats Recruteur ──────────────────────────────────────────────────
         $myOffresCount = $jobOffreRepo->count(['user' => $user]);
         $receivedCount = $appRepo->countByRecruiter($user);
         $pendingCount  = $appRepo->countByRecruiter($user, null, JobApplication::STATUS_PENDING);
@@ -45,7 +43,7 @@ class DashboardController extends AbstractController
 
         $conversionRate = $receivedCount > 0 ? round(($acceptedCount / $receivedCount) * 100) : 0;
 
-        // AI scores — only load apps that have a score (small set)
+        // AI scores
         $scoredApps = $appRepo->findScoredForRecruiter($user);
         $avgScore   = null;
         $topName    = null;
@@ -59,7 +57,7 @@ class DashboardController extends AbstractController
             $topScore = $best->getAiScore();
         }
 
-        // ── Status distribution chart — limited slice ─────────────────────────
+        // Status distribution
         $recentApps = $appRepo->findByRecruiter($user, null, null, 200, 0);
         $statusDistribution = [
             'Nouveaux'  => 0,
@@ -90,12 +88,17 @@ class DashboardController extends AbstractController
         $statusLabels = array_keys($statusDistribution);
         $statusData   = array_values($statusDistribution);
 
-        // ── Stats Candidat — SQL COUNT ────────────────────────────────────────
+        // ── Stats Forum (from dhia) ──────────────────────────────────────────
+        $countPosts = $postRepo->count([]);
+        $countCategories = $catRepo->count([]);
+        $latestPosts = $postRepo->findBy([], ['createdAt' => 'DESC'], 5);
+
+        // ── Stats Candidat ───────────────────────────────────────────────────
         $myApplicationsCount = $appRepo->count(['candidat' => $user]);
         $myAcceptedCount     = $appRepo->countForCandidate($user, JobApplication::STATUS_ACCEPTED)
                              + $appRepo->countForCandidate($user, JobApplication::STATUS_READY_FOR_CONTRACT);
 
-        // ── Completed interviews ──────────────────────────────────────────────
+        // ── Interviews ───────────────────────────────────────────────────────
         $completedInterviews = $interviewRepo->createQueryBuilder('i')
             ->join('i.application', 'a')
             ->join('a.jobOffre', 'jo')
@@ -114,7 +117,6 @@ class DashboardController extends AbstractController
             $avgRatings['mot']  = array_sum(array_map(fn($i) => $i->getMotivationRating() ?? 0, $completedInterviews)) / $ciCount;
         }
 
-        // ── Upcoming interviews (max 3) ───────────────────────────────────────
         $upcomingInterviews = $interviewRepo->createQueryBuilder('i')
             ->join('i.application', 'a')
             ->join('a.jobOffre', 'jo')
@@ -129,7 +131,7 @@ class DashboardController extends AbstractController
             ->getQuery()
             ->getResult();
 
-        // ── Admin stats ───────────────────────────────────────────────────────
+        // ── Admin stats ──────────────────────────────────────────────────────
         $adminStats = null;
         if ($this->isGranted('ROLE_ADMIN')) {
             $adminStats = [
@@ -140,12 +142,10 @@ class DashboardController extends AbstractController
             ];
         }
 
-        // ── Smart Matcher pour Candidat ───────────────────────────────────────
+        // ── Smart Matcher ────────────────────────────────────────────────────
         $smartMatches = [];
         if ($this->isGranted('ROLE_USER')) {
-            // Récupérer le dernier CV envoyé par cet utilisateur (pour simuler son profil)
             $lastApp = $appRepo->findOneBy(['candidat' => $user], ['applyDate' => 'DESC']);
-            
             if ($lastApp) {
                 $allOffres = $jobOffreRepo->findAll();
                 $profileText = ($lastApp->getCoverLetter() ?? '') . ' ' . ($lastApp->getCvPath() ?? '');
@@ -153,7 +153,7 @@ class DashboardController extends AbstractController
             }
         }
 
-        return $this->render('dashboard/front_index.html.twig', [
+        return $this->render('dashboard/front_index_fixed.html.twig', [
             // Recruteur
             'count_my_offres'         => $myOffresCount,
             'count_received_apps'     => $receivedCount,
@@ -169,12 +169,17 @@ class DashboardController extends AbstractController
             'avg_ratings'             => $avgRatings,
             'upcoming_interviews'     => $upcomingInterviews,
             'admin_stats'             => $adminStats,
+            // Forum
+            'count_posts'             => $countPosts,
+            'count_categories'        => $countCategories,
+            'latest_posts'            => $latestPosts,
             // Candidat
             'count_my_apps'           => $myApplicationsCount,
             'count_my_accepted'       => $myAcceptedCount,
             'smart_matches'           => $smartMatches,
             // Autres
             'latest_jobs'             => $jobOffreRepo->findBy([], ['createdAt' => 'DESC'], 5),
+            'count_users'             => $userRepo->count([]),
         ]);
     }
 
@@ -188,14 +193,12 @@ class DashboardController extends AbstractController
         $user = $this->getUser();
         if (!$user) return $this->redirectToRoute('app_login');
 
-        // 1. Récupérer le dernier CV
         $lastApp = $appRepo->findOneBy(['candidat' => $user], ['applyDate' => 'DESC']);
         if (!$lastApp || !$lastApp->getCvPath()) {
             $this->addFlash('warning', "Vous n'avez pas encore téléversé de CV. Postulez à une offre pour commencer l'analyse !");
             return $this->redirectToRoute('app_app_dashboard');
         }
 
-        // 2. Extraire le texte du CV (PDF Parser)
         $cvText = "Profil candidat : " . ($lastApp->getCoverLetter() ?? '');
         try {
             $response = $httpClient->request('GET', $lastApp->getCvPath());
@@ -205,14 +208,11 @@ class DashboardController extends AbstractController
                 $cvText = $pdf->getText();
             }
         } catch (\Exception $e) {
-            // Fallback sur le texte de la lettre si le PDF échoue
         }
 
-        // 3. Demander à l'IA de choisir les 3 meilleures offres
         $allOffres = $jobOffreRepo->findBy([], ['createdAt' => 'DESC'], 15);
         $recommendations = $jobOffreAiService->getAiRecommendations($cvText, $allOffres);
 
-        // 4. Mapper les résultats IA avec les objets Offre réels
         $finalResults = [];
         foreach ($recommendations as $rec) {
             $offre = $jobOffreRepo->find($rec['id'] ?? 0);
@@ -227,16 +227,6 @@ class DashboardController extends AbstractController
 
         return $this->render('dashboard/smart_matching.html.twig', [
             'recommendations' => $finalResults,
-=======
-    #[Route('/', name: 'app_dashboard')]
-    public function index(ForumPostRepository $postRepo, ForumCategoryRepository $catRepo, UserRepository $userRepo): Response
-    {
-        return $this->render('dashboard/index.html.twig', [
-            'count_users' => $userRepo->count([]),
-            'count_posts' => $postRepo->count([]),
-            'count_categories' => $catRepo->count([]),
-            'latest_posts' => $postRepo->findBy([], ['createdAt' => 'DESC'], 5),
->>>>>>> dhia
         ]);
     }
 }

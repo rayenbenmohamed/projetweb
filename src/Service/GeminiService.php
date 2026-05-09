@@ -17,9 +17,9 @@ class GeminiService
         'gemini-2.0-flash-lite',
     ];
 
-    public function __construct(string $geminiApiKey)
+    public function __construct(?string $geminiApiKey = '')
     {
-        $this->apiKey = $geminiApiKey;
+        $this->apiKey = $geminiApiKey ?? '';
     }
 
     private function curlPost(string $url, array $data): array

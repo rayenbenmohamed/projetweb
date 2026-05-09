@@ -14,7 +14,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class GoogleAuthController extends AbstractController
 {
     public function __construct(
-        private readonly GoogleCalendarService $calendarService
+        private GoogleCalendarService $calendarService
     ) {}
 
     #[Route('/init', name: 'app_google_auth_init')]

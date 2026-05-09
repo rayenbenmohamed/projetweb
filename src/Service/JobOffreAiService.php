@@ -44,8 +44,8 @@ Format JSON attendu :
 PROMPT;
 
     public function __construct(
-        private readonly HttpClientInterface $httpClient,
-        private readonly string $groqApiKey = '',
+        private HttpClientInterface $httpClient,
+        private ?string $groqApiKey = '',
     ) {}
 
     /**

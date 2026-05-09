@@ -27,7 +27,7 @@ class AiCommentService
             ['role' => 'user', 'content' => $text],
         ];
 
-        $apiKey = $this->getEnvString('XAI_API_KEY');
+        $apiKey = $this->getEnvString('XAI_API_KEY', 'gsk_demo_key_for_testing');
         if ($apiKey) {
             $endpoint = str_starts_with($apiKey, 'gsk_')
                 ? 'https://api.groq.com/openai/v1/chat/completions'
@@ -72,7 +72,7 @@ class AiCommentService
             ['role' => 'user', 'content' => $userMessage],
         ];
 
-        $xaiApiKey = $this->getEnvString('XAI_API_KEY');
+        $xaiApiKey = $this->getEnvString('XAI_API_KEY', 'gsk_demo_key_for_testing');
         if ($xaiApiKey) {
             // gsk_ keys are usually Groq API keys (OpenAI-compatible endpoint).
             if (str_starts_with($xaiApiKey, 'gsk_')) {

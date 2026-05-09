@@ -19,7 +19,7 @@ class TwilioWhatsAppService
         string $twilioAccountSid,
         string $twilioAuthToken,
         string $twilioWhatsappFrom,
-        private readonly LoggerInterface $logger
+        private LoggerInterface $logger
     ) {
         $this->accountSid = $twilioAccountSid;
         $this->authToken  = $twilioAuthToken;

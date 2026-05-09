@@ -16,7 +16,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class FixUserTableColumnsCommand extends Command
 {
     public function __construct(
-        private readonly Connection $connection,
+        private Connection $connection,
     ) {
         parent::__construct();
     }

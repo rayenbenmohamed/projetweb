@@ -3,7 +3,7 @@
 namespace App\Twig;
 
 use App\Service\SocialNotificationService;
-use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\Security\Core\Security;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
@@ -11,15 +11,15 @@ use Twig\TwigFunction;
 final class SocialNotificationExtension extends AbstractExtension
 {
     public function __construct(
-        private readonly SocialNotificationService $socialNotificationService,
-        private readonly Security $security,
+        private SocialNotificationService $socialNotificationService,
+        private Security $security,
     ) {
     }
 
     public function getFunctions(): array
     {
         return [
-            new TwigFunction('social_notifications', $this->getCounts(...)),
+            new TwigFunction('social_notifications', [$this, 'getCounts']),
         ];
     }
 

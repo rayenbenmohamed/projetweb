@@ -8,7 +8,7 @@ use App\Entity\PdfTemplate;
 class PdfTemplateService
 {
     public function __construct(
-        private readonly string $projectDir
+        private string $projectDir
     ) {}
 
     /**

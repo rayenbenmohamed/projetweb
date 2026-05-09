@@ -10,8 +10,8 @@ use Doctrine\ORM\EntityManagerInterface;
 class FriendService
 {
     public function __construct(
-        private readonly FriendRequestRepository $friendRequestRepository,
-        private readonly EntityManagerInterface $entityManager,
+        private FriendRequestRepository $friendRequestRepository,
+        private EntityManagerInterface $entityManager,
     ) {
     }
 

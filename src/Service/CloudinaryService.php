@@ -11,8 +11,9 @@ class CloudinaryService
 
     public function __construct()
     {
-        // Cloudinary needs the configuration explicitly if not in getenv()
-        $this->cloudinary = new Cloudinary($_ENV['CLOUDINARY_URL'] ?? null);
+        // Cloudinary needs to be configured explicitly if not in getenv()
+        $cloudinaryUrl = $_ENV['CLOUDINARY_URL'] ?? $_SERVER['CLOUDINARY_URL'] ?? getenv('CLOUDINARY_URL') ?? 'cloudinary://demo_key:demo_secret@demo_cloud';
+        $this->cloudinary = new Cloudinary($cloudinaryUrl);
     }
 
     /**

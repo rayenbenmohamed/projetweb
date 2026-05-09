@@ -17,8 +17,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class SendInterviewRemindersCommand extends Command
 {
     public function __construct(
-        private readonly InterviewRepository $interviewRepository,
-        private readonly NotificationService $notificationService,
+        private InterviewRepository $interviewRepository,
+        private NotificationService $notificationService,
     ) {
         parent::__construct();
     }

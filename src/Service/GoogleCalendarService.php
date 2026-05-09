@@ -17,13 +17,13 @@ class GoogleCalendarService
     private Client $client;
 
     public function __construct(
-        private readonly string $clientId,
-        private readonly string $clientSecret,
-        private readonly string $redirectUri,
-        private readonly EntityManagerInterface $entityManager,
-        private readonly UrlGeneratorInterface $urlGenerator
+        private EntityManagerInterface $entityManager,
+        private UrlGeneratorInterface $urlGenerator,
+        private ?string $clientId = '',
+        private ?string $clientSecret = '',
+        private ?string $redirectUri = ''
     ) {
-        $this->client = new Client();
+        $this->client = new \Google\Client();
         $this->client->setClientId($this->clientId);
         $this->client->setClientSecret($this->clientSecret);
         $this->client->setRedirectUri($this->redirectUri);
