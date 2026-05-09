@@ -1,0 +1,122 @@
+{% extends 'layout/front.html.twig' %}
+
+{% block title %}Mon espace | SyfonuRH{% endblock %}
+{% block page_title %}Mon espace{% endblock %}
+
+{% block content %}
+<style>
+    .stat-card { border-radius: 16px; border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.06); transition: transform .2s ease; overflow: hidden; }
+    .stat-card:hover { transform: translateY(-3px); }
+    .stat-value { font-size: 2.2rem; font-weight: 800; line-height: 1; }
+    .stat-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; opacity: 0.75; }
+    .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+    .top-match-card { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+    .interview-item { border-left: 3px solid #6366f1; padding: .5rem .75rem; border-radius: 0 8px 8px 0; background: #f8faff; margin-bottom: .5rem; }
+</style>
+
+{# ── Hero Banner ── #}
+<div class="row mb-5 g-4">
+    <div class="col-xl-8 col-lg-6">
+        <div class="h-100 rounded-4 p-4 p-lg-5 d-flex flex-column justify-content-center"
+             style="background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: white;">
+            <div class="mb-2" style="font-size: 2rem;">👋</div>
+            <h1 class="fw-black text-white mb-2" style="font-size: 1.8rem;">
+                Bienvenue{% if app.user %}, {{ app.user.firstName|default(app.user.email) }}{% endif %}
+            </h1>
+            <p class="mb-4 text-white-50">Gestion des candidatures, entretiens et offres — tout en un seul endroit.</p>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{{ path('app_job_offre_index') }}" class="btn btn-light btn-sm rounded-pill px-4 fw-bold">
+                    <i class="ti ti-search me-1"></i>Parcourir les offres
+                </a>
+                <a href="{{ path('app_job_application_index') }}" class="btn btn-outline-light btn-sm rounded-pill px-4">
+                    <i class="ti ti-users me-1"></i>Pipeline RH
+                </a>
+                <a href="{{ path('app_job_application_export_csv') }}" class="btn btn-warning btn-sm rounded-pill px-4 fw-bold">
+                    <i class="ti ti-download me-1"></i>Exporter CSV
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4 col-lg-6">
+        <div class="row g-4 h-100">
+            <div class="col-6 h-100">
+                <div class="card stat-card h-100 top-match-card p-3 p-xl-4">
+                    <div class="mb-2 d-flex align-items-center gap-2">
+                        <i class="ti ti-sparkles fs-5"></i>
+                        <span class="fw-bold small" style="opacity:.9;">SyfonuMatch™</span>
+                    </div>
+                    {% if avg_score is not null %}
+                        <div class="stat-value text-white mb-1" style="font-size: 1.8rem;">{{ avg_score }}%</div>
+                        <div class="text-white-50" style="font-size: 0.65rem; line-height: 1.2;">Score moyen / {{ count_received_apps }} candidats</div>
+                    {% else %}
+                        <div class="text-white-50 text-center py-2"><i class="ti ti-brain fs-3"></i></div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-6 h-100">
+                <div class="card stat-card h-100 p-3 p-xl-4" style="background: white; border: 1px solid #e2e8f0;">
+                    <div class="mb-2 d-flex align-items-center gap-2">
+                        <i class="ti ti-target-arrow fs-5 text-success"></i>
+                        <span class="fw-bold small text-muted">Conversion</span>
+                    </div>
+                    <div class="stat-value text-success mb-1" style="font-size: 1.8rem;">{{ conversion_rate }}%</div>
+                    <div class="text-muted" style="font-size: 0.65rem; line-height: 1.2;">Taux de succès des recrutements</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Stats Recruteur ── #}
+<h6 class="text-muted fw-bold text-uppercase mb-3" style="letter-spacing:1px;font-size:.75rem;">
+    <i class="ti ti-briefcase me-1"></i>Mes Statistiques Recruteur
+</h6>
+<div class="row row-cols-2 row-cols-xl-5 g-3 mb-5">
+    <div class="col">
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted mb-2">Offres publiées</div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="stat-value text-primary">{{ count_my_offres }}</div>
+                <div class="stat-icon bg-primary-subtle text-primary"><i class="ti ti-briefcase"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted mb-2">Candidatures reçues</div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="stat-value text-dark">{{ count_received_apps }}</div>
+                <div class="stat-icon bg-secondary-subtle text-secondary"><i class="ti ti-inbox"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted mb-2">En attente</div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="stat-value text-warning">{{ count_pending }}</div>
+                <div class="stat-icon bg-warning-subtle text-warning"><i class="ti ti-clock"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted mb-2">Acceptés</div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="stat-value text-success">{{ count_accepted }}</div>
+                <div class="stat-icon bg-success-subtle text-success"><i class="ti ti-check"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card stat-card p-3 h-100">
+            <div class="stat-label text-muted mb-2">Refusés</div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="stat-value text-danger">{{ count_rejected }}</div>
+                <div class="stat-icon bg-danger-subtle text-danger"><i class="ti ti-x"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
