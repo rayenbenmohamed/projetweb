@@ -2,11 +2,15 @@
 
 namespace App\Command;
 
+<<<<<<< HEAD
 use App\Entity\Admin;
 use App\Entity\JobOffre;
 use App\Entity\User;
 use App\Entity\OfferStatus;
 use Doctrine\DBAL\Connection;
+=======
+use App\Entity\User;
+>>>>>>> dhia
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -79,6 +83,7 @@ class CreateAdminCommand extends Command
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 
+<<<<<<< HEAD
         $job = new JobOffre();
         $job->setTitle('Développeur Symfony Senior');
         $job->setLocation('Remote');
@@ -89,6 +94,9 @@ class CreateAdminCommand extends Command
         $job->setCreatedAt(new \DateTime());
         $job->setDescription('Rejoignez notre équipe pour construire le futur des RH !');
         $this->entityManager->persist($job);
+=======
+
+>>>>>>> dhia
         $this->entityManager->flush();
 
         $io->success('Compte ' . self::ADMIN_EMAIL . ' créé (mot de passe : **' . self::DEFAULT_PASSWORD . '**) et une offre exemple ajoutée.');

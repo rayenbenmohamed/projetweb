@@ -151,30 +151,12 @@
                 <span class="text">Forum</span>
             </a>
             <ul class="dropdown-menu flex-column">
-                <li class="nav-item"><a class="nav-link" href="#">Posts</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">Catégories</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ path('app_forum_index') }}">Tous les Posts</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ path('app_forum_post_new') }}">Créer un Post</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ path('app_forum_category_index') }}">Gérer les Catégories</a></li>
             </ul>
         </li>
 
-        {# CV #}
-        <li class="nav-item">
-            <a class="nav-link" href="#">
-                <span class="nav-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                         class="icon icon-tabler icon-tabler-id-badge">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                        <path d="M5 4m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z"/>
-                        <path d="M9 4v4"/><path d="M15 4v4"/>
-                        <path d="M9 12l.01 0"/><path d="M13 12l2 0"/>
-                        <path d="M9 16l.01 0"/><path d="M13 16l2 0"/>
-                    </svg>
-                </span>
-                <span class="text">CV</span>
-            </a>
-        </li>
-
-        {# --- Profil / Authentification --- #}
         <li class="nav-item">
             <div class="nav-heading">Compte</div>
             <hr class="mx-5 nav-line mb-1"/>

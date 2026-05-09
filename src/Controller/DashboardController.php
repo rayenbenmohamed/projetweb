@@ -2,11 +2,16 @@
 
 namespace App\Controller;
 
+<<<<<<< HEAD
 use App\Entity\JobApplication;
 use App\Repository\ContractRepository;
 use App\Repository\InterviewRepository;
 use App\Repository\JobApplicationRepository;
 use App\Repository\JobOffreRepository;
+=======
+use App\Repository\ForumPostRepository;
+use App\Repository\ForumCategoryRepository;
+>>>>>>> dhia
 use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,6 +20,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class DashboardController extends AbstractController
 {
+<<<<<<< HEAD
     #[Route('/app', name: 'app_app_dashboard')]
     public function index(
         JobOffreRepository $jobOffreRepo,
@@ -221,6 +227,16 @@ class DashboardController extends AbstractController
 
         return $this->render('dashboard/smart_matching.html.twig', [
             'recommendations' => $finalResults,
+=======
+    #[Route('/', name: 'app_dashboard')]
+    public function index(ForumPostRepository $postRepo, ForumCategoryRepository $catRepo, UserRepository $userRepo): Response
+    {
+        return $this->render('dashboard/index.html.twig', [
+            'count_users' => $userRepo->count([]),
+            'count_posts' => $postRepo->count([]),
+            'count_categories' => $catRepo->count([]),
+            'latest_posts' => $postRepo->findBy([], ['createdAt' => 'DESC'], 5),
+>>>>>>> dhia
         ]);
     }
 }

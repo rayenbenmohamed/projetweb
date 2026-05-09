@@ -1,4 +1,13 @@
 {
+    "doctrine/annotations": {
+        "version": "2.0",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "1.10",
+            "ref": "64d8583af5ea57b7afa4aba4b159907f3a148b05"
+        }
+    },
     "doctrine/deprecations": {
         "version": "1.1",
         "recipe": {
@@ -35,6 +44,7 @@
             "./migrations/.gitignore"
         ]
     },
+<<<<<<< HEAD
     "google/apiclient": {
         "version": "2.19",
         "recipe": {
@@ -60,6 +70,18 @@
             "./phpunit.dist.xml",
             "./tests/bootstrap.php",
             "./bin/phpunit"
+=======
+    "sensio/framework-extra-bundle": {
+        "version": "6.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "5.2",
+            "ref": "fb7e19da7f013d0d422fa9bce16f5c510e27609b"
+        },
+        "files": [
+            "./config/packages/sensio_framework_extra.yaml"
+>>>>>>> dhia
         ]
     },
     "symfony/console": {
@@ -106,6 +128,7 @@
             "./src/Kernel.php"
         ]
     },
+<<<<<<< HEAD
     "symfony/mailer": {
         "version": "6.4",
         "recipe": {
@@ -118,6 +141,8 @@
             "./config/packages/mailer.yaml"
         ]
     },
+=======
+>>>>>>> dhia
     "symfony/maker-bundle": {
         "version": "1.67",
         "recipe": {
